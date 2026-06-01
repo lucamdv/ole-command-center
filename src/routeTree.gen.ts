@@ -9,38 +9,194 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as OperacaoRouteImport } from './routes/operacao'
+import { Route as IntelligenceRouteImport } from './routes/intelligence'
+import { Route as EndossosRouteImport } from './routes/endossos'
+import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
+import { Route as ApolicesRouteImport } from './routes/apolices'
+import { Route as AnalyticsRouteImport } from './routes/analytics'
+import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApolicesIdRouteImport } from './routes/apolices.$id'
 
+const OperacaoRoute = OperacaoRouteImport.update({
+  id: '/operacao',
+  path: '/operacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IntelligenceRoute = IntelligenceRouteImport.update({
+  id: '/intelligence',
+  path: '/intelligence',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EndossosRoute = EndossosRouteImport.update({
+  id: '/endossos',
+  path: '/endossos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApolicesRoute = ApolicesRouteImport.update({
+  id: '/apolices',
+  path: '/apolices',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnalyticsRoute = AnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AlertasRoute = AlertasRouteImport.update({
+  id: '/alertas',
+  path: '/alertas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApolicesIdRoute = ApolicesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApolicesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/alertas': typeof AlertasRoute
+  '/analytics': typeof AnalyticsRoute
+  '/apolices': typeof ApolicesRouteWithChildren
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/endossos': typeof EndossosRoute
+  '/intelligence': typeof IntelligenceRoute
+  '/operacao': typeof OperacaoRoute
+  '/apolices/$id': typeof ApolicesIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/alertas': typeof AlertasRoute
+  '/analytics': typeof AnalyticsRoute
+  '/apolices': typeof ApolicesRouteWithChildren
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/endossos': typeof EndossosRoute
+  '/intelligence': typeof IntelligenceRoute
+  '/operacao': typeof OperacaoRoute
+  '/apolices/$id': typeof ApolicesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/alertas': typeof AlertasRoute
+  '/analytics': typeof AnalyticsRoute
+  '/apolices': typeof ApolicesRouteWithChildren
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/endossos': typeof EndossosRoute
+  '/intelligence': typeof IntelligenceRoute
+  '/operacao': typeof OperacaoRoute
+  '/apolices/$id': typeof ApolicesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/alertas'
+    | '/analytics'
+    | '/apolices'
+    | '/configuracoes'
+    | '/endossos'
+    | '/intelligence'
+    | '/operacao'
+    | '/apolices/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/alertas'
+    | '/analytics'
+    | '/apolices'
+    | '/configuracoes'
+    | '/endossos'
+    | '/intelligence'
+    | '/operacao'
+    | '/apolices/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/alertas'
+    | '/analytics'
+    | '/apolices'
+    | '/configuracoes'
+    | '/endossos'
+    | '/intelligence'
+    | '/operacao'
+    | '/apolices/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AlertasRoute: typeof AlertasRoute
+  AnalyticsRoute: typeof AnalyticsRoute
+  ApolicesRoute: typeof ApolicesRouteWithChildren
+  ConfiguracoesRoute: typeof ConfiguracoesRoute
+  EndossosRoute: typeof EndossosRoute
+  IntelligenceRoute: typeof IntelligenceRoute
+  OperacaoRoute: typeof OperacaoRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/operacao': {
+      id: '/operacao'
+      path: '/operacao'
+      fullPath: '/operacao'
+      preLoaderRoute: typeof OperacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/intelligence': {
+      id: '/intelligence'
+      path: '/intelligence'
+      fullPath: '/intelligence'
+      preLoaderRoute: typeof IntelligenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/endossos': {
+      id: '/endossos'
+      path: '/endossos'
+      fullPath: '/endossos'
+      preLoaderRoute: typeof EndossosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes': {
+      id: '/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof ConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apolices': {
+      id: '/apolices'
+      path: '/apolices'
+      fullPath: '/apolices'
+      preLoaderRoute: typeof ApolicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/analytics': {
+      id: '/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/alertas': {
+      id: '/alertas'
+      path: '/alertas'
+      fullPath: '/alertas'
+      preLoaderRoute: typeof AlertasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +204,38 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/apolices/$id': {
+      id: '/apolices/$id'
+      path: '/$id'
+      fullPath: '/apolices/$id'
+      preLoaderRoute: typeof ApolicesIdRouteImport
+      parentRoute: typeof ApolicesRoute
+    }
   }
 }
 
+interface ApolicesRouteChildren {
+  ApolicesIdRoute: typeof ApolicesIdRoute
+}
+
+const ApolicesRouteChildren: ApolicesRouteChildren = {
+  ApolicesIdRoute: ApolicesIdRoute,
+}
+
+const ApolicesRouteWithChildren = ApolicesRoute._addFileChildren(
+  ApolicesRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AlertasRoute: AlertasRoute,
+  AnalyticsRoute: AnalyticsRoute,
+  ApolicesRoute: ApolicesRouteWithChildren,
+  ConfiguracoesRoute: ConfiguracoesRoute,
+  EndossosRoute: EndossosRoute,
+  IntelligenceRoute: IntelligenceRoute,
+  OperacaoRoute: OperacaoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
