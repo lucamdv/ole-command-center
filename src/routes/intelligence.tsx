@@ -224,7 +224,7 @@ function Response({ question }: { question: string }) {
                   borderRadius: 8,
                   fontSize: 12,
                 }}
-                formatter={(v: number, n) => (n === "premium" ? formatBRL(v) : v)}
+                formatter={(v: any, n: any) => (n === "premium" ? formatBRL(Number(v)) : v)}
               />
               <Area type="monotone" dataKey="rejected" stroke="var(--primary)" strokeWidth={2} fill="url(#ai-area)" isAnimationActive={false} />
             </AreaChart>

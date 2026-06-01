@@ -149,7 +149,7 @@ function AnalyticsPage() {
                   borderRadius: 8,
                   fontSize: 12,
                 }}
-                formatter={(v: number) => formatBRL(v)}
+                formatter={(v: any) => formatBRL(Number(v))}
               />
               <Line type="monotone" dataKey="premium" stroke="var(--primary)" strokeWidth={2} dot={{ fill: "var(--primary)", r: 3 }} />
             </LineChart>
