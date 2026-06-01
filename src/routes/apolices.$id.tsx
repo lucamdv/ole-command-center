@@ -90,7 +90,7 @@ function ApoliceDetail() {
       <div>
         <SectionTitle title="Coberturas" subtitle={`${policy.coverages.length} coberturas contratadas`} />
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {policy.coverages.map((c) => (
+          {policy.coverages.map((c: typeof policy.coverages[number]) => (
             <div
               key={c.id}
               className={cn(
