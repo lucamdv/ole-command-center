@@ -267,7 +267,7 @@ export const ALERTS: Alert[] = POLICIES.flatMap((p) =>
     broker: p.broker,
     impact: Math.round(between(5000, 220_000)),
     createdAt: new Date(Date.now() - intBetween(60_000, 86_400_000 * 7)).toISOString(),
-    status: rng() > 0.7 ? "investigating" : rng() > 0.5 ? "open" : "resolved",
+    status: (rng() > 0.7 ? "investigating" : rng() > 0.5 ? "open" : "resolved") as AlertStatus,
     title: f.rule,
     description: f.description,
   })),
