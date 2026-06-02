@@ -7,6 +7,12 @@ import type { AuditHistoryItem, LatestAudit } from "./audit/types";
 const DEFAULT_WEBHOOK =
   "https://nuvembot.app.n8n.cloud/webhook-test/c80c897f-9951-43c8-9976-df81c44bce16";
 
+// URL pública estável do Lovable (preview). O n8n na nuvem consegue acessar.
+// Pode ser sobrescrita via secret PUBLIC_APP_URL (ex.: domínio final em produção).
+const LOVABLE_PROJECT_ID = "5db7fa90-1492-4717-b26e-8b99a107e006";
+const PREVIEW_PUBLIC_URL = `https://project--${LOVABLE_PROJECT_ID}-dev.lovable.app`;
+const PRODUCTION_PUBLIC_URL = `https://project--${LOVABLE_PROJECT_ID}.lovable.app`;
+
 /**
  * Dispara a auditoria de forma ASSÍNCRONA.
  *
