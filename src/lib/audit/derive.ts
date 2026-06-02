@@ -200,7 +200,7 @@ export function normalizeFinding(f: Pick<AuditFindingRow, "endosso" | "detalhes"
   nivel: string | null;
   endossoAnterior: string | null;
 } {
-  const d = (f.detalhes ?? {}) as Record<string, unknown>;
+  const d = (f.detalhes ?? {}) as unknown as Record<string, unknown>;
   const s = (k: string) => (typeof d[k] === "string" ? (d[k] as string).trim() : "");
   const motivo = s("motivo") || s("detalhe_erro") || s("mensagem") || s("message");
   const detalhe = s("detalhe") || s("descricao") || s("description") || "";
@@ -211,7 +211,7 @@ export function normalizeFinding(f: Pick<AuditFindingRow, "endosso" | "detalhes"
 }
 
 export function severityOf(f: Pick<AuditFindingRow, "tipo_erro" | "detalhes">): Severity {
-  const d = (f.detalhes ?? {}) as Record<string, unknown>;
+  const d = (f.detalhes ?? {}) as unknown as Record<string, unknown>;
   const nivel = typeof d.nivel === "string" ? d.nivel.toUpperCase() : "";
   if (nivel === "ERRO") return "erro";
   if (nivel === "ALERTA" || nivel === "WARN" || nivel === "ATENÇÃO") return "alerta";
