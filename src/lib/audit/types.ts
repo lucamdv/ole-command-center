@@ -4,10 +4,11 @@ export type AuditStatusGeral = "SUCESSO" | "ALERTA" | "ERRO";
 
 export interface AuditError {
   tipo_erro: string;
-  endosso?: string;
-  dataInicio?: string;
-  dataFim?: string;
-  [key: string]: unknown;
+  endosso?: string | null;
+  dataInicio?: string | null;
+  dataFim?: string | null;
+  motivo?: string | null;
+  detalhe?: string | null;
 }
 
 export interface ApoliceComErro {
