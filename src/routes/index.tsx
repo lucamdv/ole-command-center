@@ -175,27 +175,22 @@ function Dashboard({
 
   return (
     <div className="space-y-6">
-      {/* Status bar real */}
-      <div className="rounded-xl border border-border bg-surface/60 backdrop-blur grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-y md:divide-y-0 lg:divide-x divide-border overflow-hidden">
-        <StatusItem icon={ShieldCheck} label="Conformidade" value={formatPct(k.approvedRate, 1)} tone="success" />
-        <StatusItem icon={Database} label="Processadas" value={formatInt(k.audited)} />
-        <StatusItem icon={AlertOctagon} label="Inconsistências" value={formatInt(k.activeAlerts)} tone="warning" />
-        <StatusItem icon={FileWarning} label="Apólices afetadas" value={formatInt(k.affectedPolicies)} tone="destructive" />
-        <StatusItem icon={Zap} label="Regras acionadas" value={formatInt(k.uniqueErrorTypes)} tone="info" />
-        <StatusItem icon={Clock} label="Última run" value={relativeTime(latest.run.created_at)} />
+      {/* KPIs principais — 4 cartões */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <KpiCard label="Conformidade" value={k.approvedRate} suffix="%" delta={Number(k.deltaApproved.toFixed(1))} spark={series.map((s) => 100 - s.risk)} tone="success" hint="Taxa de aprovação" />
+        <KpiCard label="Apólices Auditadas" value={k.audited} format={formatInt} spark={sparkTotal} tone="default" hint={`${history.length} run(s) registradas`} />
+        <KpiCard label="Não Conformes" value={k.rejected} format={formatInt} delta={Number(k.deltaRejected.toFixed(1))} spark={sparkRejected} tone="destructive" hint={`${k.affectedPolicies} apólices afetadas`} />
+        <KpiCard label="Achados Ativos" value={k.activeAlerts} format={formatInt} delta={Number(k.deltaAlerts.toFixed(1))} spark={sparkRejected} tone="warning" hint={k.topErrorType ? `Top: ${k.topErrorType}` : "—"} />
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        <KpiCard label="Apólices Auditadas" value={k.audited} format={formatInt} spark={sparkTotal} tone="default" hint={`${history.length} run(s) registradas`} />
-        <KpiCard label="Conformes" value={k.approved} format={formatInt} delta={Number(k.deltaApproved.toFixed(1))} spark={sparkApproved} tone="success" hint={`${k.approvedRate.toFixed(1)}% do total`} />
-        <KpiCard label="Não Conformes" value={k.rejected} format={formatInt} delta={Number(k.deltaRejected.toFixed(1))} spark={sparkRejected} tone="destructive" hint="Reprovações automatizadas" />
-        <KpiCard label="Achados Ativos" value={k.activeAlerts} format={formatInt} delta={Number(k.deltaAlerts.toFixed(1))} spark={sparkRejected} tone="warning" hint="Inconsistências detectadas" />
-        <KpiCard label="Risco Operacional" value={k.operationalRisk} suffix="%" delta={Number(k.deltaRisk.toFixed(1))} spark={sparkRisk} tone="warning" hint="Reprovados / Total" />
-        <KpiCard label="Apólices Afetadas" value={k.affectedPolicies} format={formatInt} spark={sparkRejected} tone="destructive" hint="Únicas com falha" />
-        <KpiCard label="Regras Acionadas" value={k.uniqueErrorTypes} format={formatInt} tone="info" hint={k.topErrorType ? `Top: ${k.topErrorType}` : "—"} />
-        <KpiCard label="Conformidade" value={k.approvedRate} suffix="%" delta={Number(k.deltaApproved.toFixed(1))} spark={series.map((s) => 100 - s.risk)} tone="success" hint="Taxa de aprovação" />
+      {/* Linha secundária compacta */}
+      <div className="rounded-xl border border-border bg-surface/60 grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-border overflow-hidden">
+        <MiniStat label="Risco Operacional" value={`${k.operationalRisk.toFixed(1)}%`} tone="warning" />
+        <MiniStat label="Regras Acionadas" value={formatInt(k.uniqueErrorTypes)} tone="info" />
+        <MiniStat label="Apólices Afetadas" value={formatInt(k.affectedPolicies)} tone="destructive" />
+        <MiniStat label="Última Run" value={relativeTime(latest.run.created_at)} />
       </div>
+
 
       {/* Pulso real: tendência + distribuição */}
       <div className="rounded-2xl border border-border bg-surface/80 backdrop-blur overflow-hidden shadow-elevated">
