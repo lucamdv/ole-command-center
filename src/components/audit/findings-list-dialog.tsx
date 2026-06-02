@@ -39,6 +39,7 @@ import {
 import {
   countBySeverity,
   groupByApolice,
+  normalizeFinding,
   severityOf,
   type Severity,
 } from "@/lib/audit/derive";
