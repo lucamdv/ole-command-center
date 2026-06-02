@@ -1,84 +1,131 @@
+## Objetivo
 
-# OLÉ COPILOT — Plano de Construção
+Substituir o mock atual por dados reais vindos da auditoria do n8n. Um botão "Rodar Auditoria" na tela inicial dispara o webhook, persiste o resultado no Lovable Cloud, e TODOS os KPIs/telas passam a ser derivados da última run (com histórico para análise temporal).
 
-Plataforma SaaS enterprise de inteligência operacional para seguros. Tema dark obrigatório, estética premium (Linear/Stripe/Datadog/Ramp), com dados mock realistas prontos para integração futura com Supabase/N8N/APIs.
+## Contrato do webhook (extraído do JSON)
 
-## Escopo desta entrega (Fase 1 — UI completa com mocks)
-
-Construir toda a experiência visual e navegacional com dados mock estruturados. Sem backend nesta fase — a arquitetura fica preparada para plugar Lovable Cloud depois.
-
-## Sistema de Design
-
-- **Tema:** Dark-only. Sem toggle de tema claro.
-- **Tokens (src/styles.css):** mapear a paleta exata para variáveis semânticas em `oklch`:
-  - `--background` #090F1F · `--surface` #111827 · `--surface-2` #151E34 · `--card` #1B2745
-  - `--foreground` #FFFFFF · `--muted-foreground` #94A3B8
-  - `--primary` #4F8CFF · `--success` #22C55E · `--warning` #F59E0B · `--destructive` #EF4444 · `--info` #22D3EE
-  - Gradientes sutis, glow no primário, sombras profundas, bordas hairline (1px com baixo alpha).
-- **Tipografia:** Inter (UI) + JetBrains Mono (números, IDs, tickers). Tracking apertado em títulos, números tabulares.
-- **Motion:** Framer Motion — transições 200–400ms, easing custom, counters animados, skeletons, fade/slide sutis. Sem exageros.
-
-## Estrutura de Rotas (TanStack Router)
-
-```
-src/routes/
-  __root.tsx                 → shell com Sidebar + Header + <Outlet />
-  index.tsx                  → Visão Geral
-  operacao.tsx               → Operação
-  apolices.tsx               → Lista de apólices
-  apolices.$id.tsx           → Detalhe da apólice
-  endossos.tsx               → Endossos
-  alertas.tsx                → Alertas (SOC-style)
-  analytics.tsx              → Analytics estratégico
-  intelligence.tsx           → OLÉ Intelligence (IA)
-  configuracoes.tsx          → Configurações
+- **Endpoint**: `POST https://nuvembot.app.n8n.cloud/webhook-test/c80c897f-9951-43c8-9976-df81c44bce16`
+- **Body de entrada**: vazio (`{}`)
+- **Resposta**:
+```json
+{
+  "data_auditoria": "2026-06-02T...",
+  "resumo": { "aprovados": 0, "reprovados": 0, "total_processado": 0 },
+  "status_geral": "SUCESSO" | "ALERTA",
+  "mensagem_geral": "...",
+  "apolices_com_erro": [
+    {
+      "apolice": "056902026000213910007891000000",
+      "total_erros": 2,
+      "erros": [ { "tipo_erro": "DUPLICIDADE DE VIGÊNCIA", "endosso": "...", "dataInicio": "...", "dataFim": "...", ... } ]
+    }
+  ]
+}
 ```
 
-Cada rota com `head()` próprio (título/description PT-BR).
+Tipos de erro identificados no nó `Auditoria de Vigência`: `DUPLICIDADE DE VIGÊNCIA`, `GAP DE VIGÊNCIA`, e variantes derivadas dos motivos de endosso (FATURA, etc.). O front mapeia dinamicamente — qualquer `tipo_erro` novo aparece automaticamente.
 
-## Shell Persistente
+## Arquitetura
 
-- **Sidebar fixa** (collapsible icon): logo "OLÉ COPILOT" + subtítulo "Centro de Comando Operacional", 8 itens de menu com ícones Lucide, indicador de rota ativa, rodapé com avatar + status do sistema (dot pulsante verde "Operacional").
-- **Header fixo:** busca global com ⌘K (Command Palette via cmdk/shadcn Command), badge de notificações, dropdown de atividades recentes, indicador de sincronização (último sync + spinner sutil), avatar.
+### 1. Lovable Cloud (habilitar)
 
-## Componentes Proprietários (núcleo do produto)
+Duas tabelas:
 
-1. **StatusBar** — barra fina no topo da Visão Geral: status operacional, último sync, execuções hoje, tempo médio, taxa de sucesso, alertas. Tudo com ícones e micro-pulsos.
-2. **KPI Card Premium** — não é card shadcn padrão: valor grande mono, sparkline embutido (Recharts), delta colorido, label discreta, hover com gradiente sutil.
-3. **Pulso Operacional** — painel hero único combinando: gauge de saúde, fila atual (lista live), volume processado (área chart), taxa de erro (donut), throughput. Layout bento exclusivo, não um grid genérico de gráficos.
-4. **Heatmap de Risco** — matriz: linhas = regras de auditoria, colunas = últimas 12 semanas, células com escala de cor (transparente→vermelho), tooltip rico no hover.
-5. **Timeline de Endossos** — componente visual vertical proprietário (000000 → 000001 → …): cada nó mostra data, alteração, prêmio, cobertura, status, resultado da auditoria. Conector animado entre nós.
-6. **Linha do Tempo de Vigência** — barra horizontal com segmentos por período; GAPs em vermelho destacado, renovações marcadas, sobreposições com hachura.
-7. **Tabela de Auditoria expandível** — regra, severidade (badge), descrição, impacto, recomendação; expand inline.
+- `audit_runs`
+  - `id uuid pk`, `created_at timestamptz`, `data_auditoria timestamptz`
+  - `status_geral text`, `mensagem_geral text`
+  - `total_processado int`, `aprovados int`, `reprovados int`
+  - `duration_ms int`, `raw jsonb` (payload completo)
+- `audit_findings`
+  - `id uuid pk`, `run_id uuid fk -> audit_runs`, `apolice text`, `tipo_erro text`
+  - `endosso text`, `data_inicio date null`, `data_fim date null`
+  - `detalhes jsonb` (objeto erro original)
+  - índices: `(run_id)`, `(tipo_erro)`, `(apolice)`
 
-## Telas
+RLS: leitura pública (sem auth no escopo atual), inserts apenas via server function com `supabaseAdmin`. GRANTs explícitos para `anon`/`authenticated`.
 
-- **Visão Geral:** StatusBar + 7 KPIs executivos + Pulso Operacional + Heatmap de Risco.
-- **Operação:** centro de monitoramento — processamentos em andamento (lista live), fila, concluídos, falhas, métricas de tempo, alertas críticos. Estilo NOC.
-- **Apólices:** tabela densa estilo Linear — busca instant, filtros (status, produto, corretor, conformidade), virtualização visual, atalhos de teclado, row hover.
-- **Detalhe da Apólice:** header com número/status/conformidade + grid: dados, coberturas (cards), Timeline de Endossos, Linha do Tempo de Vigência, Tabela de Auditoria.
-- **Endossos:** visão consolidada cross-apólice.
-- **Alertas:** layout SOC — cada alerta = card de incidente (severidade colorida na borda esquerda), filtros por severidade/origem/status, ações inline.
-- **Analytics:** rankings (corretores/produtos/coberturas), tendência de erros, análise financeira, eficiência, distribuição de riscos. Recharts em todos.
-- **OLÉ Intelligence:** experiência própria — não é chat genérico. Input central com sugestões de perguntas, resposta estruturada em seções (Resumo Executivo, Causa Raiz, Impacto Financeiro/Operacional, Tendências, Insights, Recomendações, Gráficos). Mock de respostas nesta fase.
-- **Configurações:** placeholder estruturado (perfil, notificações, integrações, equipe).
+### 2. Server function (proxy + persistência)
 
-## Dados Mock
+`src/lib/audit.functions.ts`:
 
-`src/lib/mock/` com geradores tipados: apólices (~80), endossos encadeados, coberturas, execuções de auditoria, alertas, séries temporais. Tipos TS exportados servem como contrato para o backend futuro.
+- `runAudit()` — `createServerFn POST`:
+  1. `fetch` do webhook n8n (URL em `N8N_AUDIT_WEBHOOK_URL` via secret), timeout 120s
+  2. valida payload com Zod
+  3. insere `audit_runs` + `audit_findings` em batch via `supabaseAdmin`
+  4. retorna `{ runId, summary }`
+- `getLatestRun()` — última run + findings (para boot da plataforma)
+- `getRunHistory(limit)` — runs anteriores (para sparklines temporais)
 
-## Detalhes Técnicos
+### 3. Camada de dados no front
 
-- React 19 + TanStack Start + TS strict + Tailwind v4 + shadcn/ui + Framer Motion + Recharts + cmdk.
-- Todos os componentes em `src/components/` organizados por domínio: `layout/`, `kpi/`, `pulso/`, `heatmap/`, `timeline/`, `audit/`, `alerts/`, `intelligence/`.
-- Hooks utilitários: `useAnimatedCounter`, `useCommandPalette`, `useMockRealtime` (intervalos para simular sync).
-- Toasts via `sonner`. Skeletons em todas as listas.
-- Sem `useEffect+fetch`; quando houver backend, plugar TanStack Query nos pontos já preparados.
+Novo módulo `src/lib/audit/derive.ts` que recebe `{ run, findings, history }` e produz:
 
-## Fora de escopo desta fase
+- **KPIs**: `audited`, `approved`, `rejected`, `approvedRate`, `activeAlerts` (= findings da última run), `operationalRisk` (reprovados/total), `topRule`, `mttr` (entre runs)
+- **Pulso operacional**: throughput por run (histórico), distribuição por `tipo_erro`
+- **Heatmap**: `tipo_erro` × últimas N runs (substitui rules×weeks mockado)
+- **Tabela de apólices**: lista de `apolices_com_erro` da última run
+- **Timeline de endossos**: por apólice, derivada do array `erros[].endosso`
+- **Alertas**: 1 alerta por finding
 
-- Autenticação / Lovable Cloud / banco real.
-- IA real no OLÉ Intelligence (mock estruturado primeiro; depois plugamos Lovable AI Gateway).
-- Persistência de filtros/usuário.
+Hooks via TanStack Query:
+- `useLatestAudit()` → `queryKey: ["audit","latest"]`
+- `useAuditHistory()` → `queryKey: ["audit","history"]`
+- `useRunAudit()` → `useMutation` que chama `runAudit` e invalida ambas
 
-Posso seguir para implementação?
+### 4. UI
+
+**Header da tela inicial** (`src/routes/index.tsx`):
+
+- Substituir botão "Forçar sincronização" por **`<RunAuditButton />`** primário, com:
+  - estados: idle / running (spinner + cronômetro ao vivo + "Auditando carteira…") / success (toast + pulse verde) / error (toast destrutivo + retry)
+  - desabilitado durante execução
+  - atalho ⌘⇧A
+  - tooltip mostra data da última run
+- Faixa de status passa a ler `data_auditoria` da última run real
+
+**Estado vazio** (nenhuma run ainda):
+- Hero centralizado com ícone, "Nenhuma auditoria executada", CTA grande "Rodar primeira auditoria"
+- Esconde KPIs/heatmap até existir run
+
+**Todas as rotas** (`/operacao`, `/apolices`, `/alertas`, `/analytics`, `/intelligence`) passam a consumir os derivadores. Remover `src/lib/mock/data.ts` da árvore de imports (manter o arquivo só como fallback de design caso `history.length === 0`, ou deletar).
+
+### 5. Secret e configuração
+
+- Secret runtime: `N8N_AUDIT_WEBHOOK_URL` = `https://nuvembot.app.n8n.cloud/webhook-test/c80c897f-9951-43c8-9976-df81c44bce16`
+- Lido apenas dentro do `.handler()` do `runAudit`
+- ⚠️ Observação: a URL fornecida é `/webhook-test/...`, que no n8n só responde enquanto o workflow está em modo "Listen for test event". Para produção contínua, o usuário precisará ativar o workflow e trocar para `/webhook/...` — vou deixar isso explícito na UI (toast informativo se receber 404) e a troca do secret é 1 clique em Settings.
+
+## Detalhes técnicos
+
+- Timeout: webhook pode demorar (loop sobre apólices + chamadas HTTP encadeadas). Uso de `AbortSignal.timeout(180_000)` no fetch da server function.
+- Persistência idempotente: cada run é um novo registro (não dedup por `data_auditoria`).
+- Boot: `__root` faz `ensureQueryData` da última run; se `null`, mostra empty-state global.
+- Tipos compartilhados em `src/lib/audit/types.ts` (espelham o payload do n8n).
+- Sem auth ainda; tudo lê via `anon` com `SELECT` policy aberta nas duas tabelas.
+
+## Arquivos
+
+**Criar**
+- migração SQL (tabelas + RLS + GRANTs)
+- `src/lib/audit/types.ts`
+- `src/lib/audit/derive.ts`
+- `src/lib/audit.functions.ts`
+- `src/hooks/use-audit.ts`
+- `src/components/audit/run-audit-button.tsx`
+- `src/components/audit/empty-state.tsx`
+
+**Editar**
+- `src/routes/index.tsx` (botão + empty-state + KPIs a partir do derive)
+- `src/routes/operacao.tsx`, `apolices.tsx`, `apolices.$id.tsx`, `alertas.tsx`, `analytics.tsx`, `intelligence.tsx`
+- `src/components/pulso/pulso-operacional.tsx`, `heatmap/risk-heatmap.tsx`, `timeline/endorsement-timeline.tsx`, `audit/audit-table.tsx`, `kpi/kpi-card.tsx`, `layout/status-bar.tsx`, `layout/command-palette.tsx`
+- registrar `N8N_AUDIT_WEBHOOK_URL` como secret
+
+**Manter como fallback visual** (ou remover)
+- `src/lib/mock/data.ts`
+
+## Fora do escopo desta entrega
+
+- Auth/usuários
+- Agendamento automático de auditorias (cron)
+- OLÉ Intelligence chamando LLM real (continua mock até pedido)
+- Export de relatório PDF/CSV
