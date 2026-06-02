@@ -1,84 +1,103 @@
+# Auditoria de Emissão — Replicação do fluxo n8n na plataforma
 
-# OLÉ COPILOT — Plano de Construção
+Objetivo: substituir o n8n por uma execução nativa dentro do OLÉ COPILOT. Um botão **"Rodar auditoria"** na tela de Visão Geral dispara o pipeline completo contra a API Excelsior, mostra progresso em tempo real e renderiza os resultados (aprovados / reprovados + detalhamento por apólice). A parte do Notion é ignorada.
 
-Plataforma SaaS enterprise de inteligência operacional para seguros. Tema dark obrigatório, estética premium (Linear/Stripe/Datadog/Ramp), com dados mock realistas prontos para integração futura com Supabase/N8N/APIs.
+---
 
-## Escopo desta entrega (Fase 1 — UI completa com mocks)
+## Arquitetura
 
-Construir toda a experiência visual e navegacional com dados mock estruturados. Sem backend nesta fase — a arquitetura fica preparada para plugar Lovable Cloud depois.
+O pipeline roda no servidor (TanStack Start `createServerFn`) porque envolve credenciais sensíveis, chamadas cross-origin para a API Excelsior e centenas de requests encadeados. O frontend apenas dispara, recebe progresso via polling e renderiza.
 
-## Sistema de Design
-
-- **Tema:** Dark-only. Sem toggle de tema claro.
-- **Tokens (src/styles.css):** mapear a paleta exata para variáveis semânticas em `oklch`:
-  - `--background` #090F1F · `--surface` #111827 · `--surface-2` #151E34 · `--card` #1B2745
-  - `--foreground` #FFFFFF · `--muted-foreground` #94A3B8
-  - `--primary` #4F8CFF · `--success` #22C55E · `--warning` #F59E0B · `--destructive` #EF4444 · `--info` #22D3EE
-  - Gradientes sutis, glow no primário, sombras profundas, bordas hairline (1px com baixo alpha).
-- **Tipografia:** Inter (UI) + JetBrains Mono (números, IDs, tickers). Tracking apertado em títulos, números tabulares.
-- **Motion:** Framer Motion — transições 200–400ms, easing custom, counters animados, skeletons, fade/slide sutis. Sem exageros.
-
-## Estrutura de Rotas (TanStack Router)
-
-```
-src/routes/
-  __root.tsx                 → shell com Sidebar + Header + <Outlet />
-  index.tsx                  → Visão Geral
-  operacao.tsx               → Operação
-  apolices.tsx               → Lista de apólices
-  apolices.$id.tsx           → Detalhe da apólice
-  endossos.tsx               → Endossos
-  alertas.tsx                → Alertas (SOC-style)
-  analytics.tsx              → Analytics estratégico
-  intelligence.tsx           → OLÉ Intelligence (IA)
-  configuracoes.tsx          → Configurações
+```text
+[Botão Visão Geral]
+       │
+       ▼
+runAudit (createServerFn, POST)
+       │
+       ├── 1. Autenticação  → POST /v1/login                       → token
+       ├── 2. Lista docs    → GET  /backoffice/ro/emissao?sistema=1009
+       ├── 3. Filtra        → numero_documento termina em "000000"
+       ├── 4. Por apólice   → GET  /backoffice/ro/contratos/{nro}   → ultimo_endosso
+       ├── 5. Por endosso   → POST /backoffice/ro/emissao/{doc}     → JSON do endosso
+       └── 6. Auditoria     → regras JS (porta direta do n8n)
+                              │
+                              ▼
+                        AuditReport { aprovados, reprovados, apolices[] }
 ```
 
-Cada rota com `head()` próprio (título/description PT-BR).
+A execução é stateful: criamos um `AuditRun` em memória no servidor com `runId`, status (`running` / `done` / `error`), progresso (apólices processadas / total) e o relatório final. O cliente cria a run e faz polling de status até `done`, depois renderiza.
 
-## Shell Persistente
+---
 
-- **Sidebar fixa** (collapsible icon): logo "OLÉ COPILOT" + subtítulo "Centro de Comando Operacional", 8 itens de menu com ícones Lucide, indicador de rota ativa, rodapé com avatar + status do sistema (dot pulsante verde "Operacional").
-- **Header fixo:** busca global com ⌘K (Command Palette via cmdk/shadcn Command), badge de notificações, dropdown de atividades recentes, indicador de sincronização (último sync + spinner sutil), avatar.
+## Credenciais
 
-## Componentes Proprietários (núcleo do produto)
+A API Excelsior exige usuário/senha. Esses valores **não ficam no código** — são salvos como secrets do projeto:
 
-1. **StatusBar** — barra fina no topo da Visão Geral: status operacional, último sync, execuções hoje, tempo médio, taxa de sucesso, alertas. Tudo com ícones e micro-pulsos.
-2. **KPI Card Premium** — não é card shadcn padrão: valor grande mono, sparkline embutido (Recharts), delta colorido, label discreta, hover com gradiente sutil.
-3. **Pulso Operacional** — painel hero único combinando: gauge de saúde, fila atual (lista live), volume processado (área chart), taxa de erro (donut), throughput. Layout bento exclusivo, não um grid genérico de gráficos.
-4. **Heatmap de Risco** — matriz: linhas = regras de auditoria, colunas = últimas 12 semanas, células com escala de cor (transparente→vermelho), tooltip rico no hover.
-5. **Timeline de Endossos** — componente visual vertical proprietário (000000 → 000001 → …): cada nó mostra data, alteração, prêmio, cobertura, status, resultado da auditoria. Conector animado entre nós.
-6. **Linha do Tempo de Vigência** — barra horizontal com segmentos por período; GAPs em vermelho destacado, renovações marcadas, sobreposições com hachura.
-7. **Tabela de Auditoria expandível** — regra, severidade (badge), descrição, impacto, recomendação; expand inline.
+- `EXCELSIOR_USERNAME`
+- `EXCELSIOR_PASSWORD`
 
-## Telas
+Vou solicitá-los via `secrets--add_secret` no início da fase de build. Pré-preencho com os valores do JSON anexado como sugestão, mas o usuário confirma/edita no formulário seguro.
 
-- **Visão Geral:** StatusBar + 7 KPIs executivos + Pulso Operacional + Heatmap de Risco.
-- **Operação:** centro de monitoramento — processamentos em andamento (lista live), fila, concluídos, falhas, métricas de tempo, alertas críticos. Estilo NOC.
-- **Apólices:** tabela densa estilo Linear — busca instant, filtros (status, produto, corretor, conformidade), virtualização visual, atalhos de teclado, row hover.
-- **Detalhe da Apólice:** header com número/status/conformidade + grid: dados, coberturas (cards), Timeline de Endossos, Linha do Tempo de Vigência, Tabela de Auditoria.
-- **Endossos:** visão consolidada cross-apólice.
-- **Alertas:** layout SOC — cada alerta = card de incidente (severidade colorida na borda esquerda), filtros por severidade/origem/status, ações inline.
-- **Analytics:** rankings (corretores/produtos/coberturas), tendência de erros, análise financeira, eficiência, distribuição de riscos. Recharts em todos.
-- **OLÉ Intelligence:** experiência própria — não é chat genérico. Input central com sugestões de perguntas, resposta estruturada em seções (Resumo Executivo, Causa Raiz, Impacto Financeiro/Operacional, Tendências, Insights, Recomendações, Gráficos). Mock de respostas nesta fase.
-- **Configurações:** placeholder estruturado (perfil, notificações, integrações, equipe).
+---
 
-## Dados Mock
+## Implementação (técnico)
 
-`src/lib/mock/` com geradores tipados: apólices (~80), endossos encadeados, coberturas, execuções de auditoria, alertas, séries temporais. Tipos TS exportados servem como contrato para o backend futuro.
+### Backend — server functions
 
-## Detalhes Técnicos
+`src/lib/audit/excelsior.server.ts`
+- `authenticate()` → POST login, retorna `token` com cache em memória (TTL ~50 min).
+- `listPolicies(token)` → GET emissão lista; filtra `numero_documento` que termina em `000000`.
+- `getLastEndorsement(token, numeroApolice)` → GET contrato.
+- `getEndorsement(token, numeroDocumento)` → POST emissão por documento.
+- Helpers de retry/timeout (3 tentativas, backoff exponencial), concorrência limitada (`p-limit` style, 6 paralelos).
 
-- React 19 + TanStack Start + TS strict + Tailwind v4 + shadcn/ui + Framer Motion + Recharts + cmdk.
-- Todos os componentes em `src/components/` organizados por domínio: `layout/`, `kpi/`, `pulso/`, `heatmap/`, `timeline/`, `audit/`, `alerts/`, `intelligence/`.
-- Hooks utilitários: `useAnimatedCounter`, `useCommandPalette`, `useMockRealtime` (intervalos para simular sync).
-- Toasts via `sonner`. Skeletons em todas as listas.
-- Sem `useEffect+fetch`; quando houver backend, plugar TanStack Query nos pontos já preparados.
+`src/lib/audit/rules.ts` (porta literal do JS do n8n)
+- `auditPolicy(rawEndorsements[]): PolicyAuditResult`
+- Regras implementadas: DUPLICIDADE DE VIGÊNCIA, GAP DE DIA, VARIAÇÃO DE PRÊMIO, TAXA DE ADMINISTRAÇÃO (35%), DISTRIBUIÇÃO (20%), MARGEM DE SERVIÇO (5%), MARGEM ADICIONAL (0%), PRÊMIO DIRETO (saldo), LIMITE DE COBERTURA (MORTE 100k–500k), PRÊMIO FORA DO PADRÃO (USD 20–700), COBERTURA INATIVA.
+- Mesma lógica de filtro de endossos C (cancelamento) e exceções hardcoded.
 
-## Fora de escopo desta fase
+`src/lib/audit/runner.ts`
+- `startAuditRun()` cria run, dispara pipeline em background, retorna `runId`.
+- `getAuditRun(runId)` retorna estado atual (progresso + relatório parcial/final).
+- Store em memória (`Map<runId, AuditRun>`).
 
-- Autenticação / Lovable Cloud / banco real.
-- IA real no OLÉ Intelligence (mock estruturado primeiro; depois plugamos Lovable AI Gateway).
-- Persistência de filtros/usuário.
+`src/lib/audit/audit.functions.ts`
+- `startAudit` (POST) → retorna `{ runId }`.
+- `getAuditStatus` (GET com `runId`) → retorna `{ status, progress, report? }`.
 
-Posso seguir para implementação?
+### Frontend
+
+`src/components/audit/run-audit-button.tsx`
+- Botão "Rodar auditoria" no header da Visão Geral (substitui "Forçar sincronização").
+- Ao clicar: chama `startAudit`, abre um **drawer** lateral com:
+  - Barra de progresso (`X/Y apólices processadas`).
+  - Resumo ao vivo: ✅ aprovadas / 🚨 reprovadas.
+  - Lista de apólices reprovadas com erros agrupados por tipo, severidade colorida (erro=destructive, alerta=warning).
+- Polling a cada 1.5s via `useQuery` com `refetchInterval` até `status === 'done'`.
+- Toast ao concluir.
+
+`src/components/audit/audit-report.tsx`
+- Renderização do relatório: cards de KPI (total, aprovadas, reprovadas, erros totais), tabela expansível por apólice, badge de severidade por achado.
+
+### Integração com a Visão Geral
+- Substituo o botão decorativo "Forçar sincronização" pelo novo `RunAuditButton`.
+- Após a primeira run bem-sucedida, os KPIs reais do relatório (apólices auditadas, aprovadas, reprovadas) sobrescrevem os mocks da Visão Geral via um pequeno store (`useLastAuditReport` em `localStorage` + Zustand-lite com `useSyncExternalStore`).
+
+### Tratamento de erros
+- Falha de auth → toast "Credenciais inválidas — verifique EXCELSIOR_USERNAME/PASSWORD".
+- 429/5xx em chamada de endosso → retry; se exaurir, apólice marcada com `status: "ERRO_LEITURA"` e segue o pipeline.
+- A run nunca derruba a UI; erros aparecem no drawer.
+
+---
+
+## Escopo
+
+**Incluído**
+- Botão na Visão Geral, drawer com progresso, relatório completo.
+- Pipeline real contra API Excelsior, idêntico em regras ao n8n.
+- Secrets `EXCELSIOR_USERNAME` / `EXCELSIOR_PASSWORD`.
+
+**Fora**
+- Persistência das runs (fica em memória — próximo passo seria Lovable Cloud).
+- Notion (explicitamente ignorado).
+- Schedule diário (n8n usa cron 23h; aqui é on-demand).
