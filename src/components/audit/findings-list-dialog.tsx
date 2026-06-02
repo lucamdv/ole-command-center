@@ -106,8 +106,9 @@ export function FindingsListDialog({
       lines.push(`🔍 Apólice: ${g.apolice}`);
       for (const f of g.findings) {
         const icon = severityOf(f) === "erro" ? "🔴" : "⚠️";
-        const detalhe = f.detalhes?.motivo ?? f.detalhes?.detalhe ?? "";
-        lines.push(`  ${icon} ${f.tipo_erro} — ${detalhe}`);
+        const nrm = normalizeFinding(f);
+        const detalhe = nrm.motivo || nrm.detalhe || "";
+        lines.push(`  ${icon} ${f.tipo_erro}${nrm.endosso ? ` (end. ${nrm.endosso})` : ""} — ${detalhe}`);
       }
     }
     copy(lines.join("\n"), "Relatório copiado");
