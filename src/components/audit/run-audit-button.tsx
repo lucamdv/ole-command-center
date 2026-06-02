@@ -32,7 +32,7 @@ export function RunAuditButton() {
 
   const startMut = useMutation({
     mutationFn: () => startFn(),
-    onSuccess: (data) => {
+    onSuccess: (data: { runId: string }) => {
       setRunId(data.runId);
       setOpen(true);
       toast.success("Auditoria iniciada", { description: "Pipeline conectado à API Excelsior." });
