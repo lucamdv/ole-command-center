@@ -99,8 +99,8 @@ export const runAudit = createServerFn({ method: "POST" }).handler(async () => {
       aprovados: payload.resumo.aprovados,
       reprovados: payload.resumo.reprovados,
       duration_ms: durationMs,
-      raw: payload,
-    })
+      raw: payload as unknown as Record<string, unknown>,
+    } as never)
     .select("id")
     .single();
 
@@ -116,12 +116,14 @@ export const runAudit = createServerFn({ method: "POST" }).handler(async () => {
       endosso: e.endosso ?? null,
       data_inicio: parseIso(e.dataInicio ?? null),
       data_fim: parseIso(e.dataFim ?? null),
-      detalhes: e,
+      detalhes: e as unknown as Record<string, unknown>,
     })),
   );
 
   if (findings.length > 0) {
-    const { error: findErr } = await supabaseAdmin.from("audit_findings").insert(findings);
+    const { error: findErr } = await supabaseAdmin
+      .from("audit_findings")
+      .insert(findings as never);
     if (findErr) {
       throw new Error("Auditoria salva, mas falha ao gravar achados: " + findErr.message);
     }
