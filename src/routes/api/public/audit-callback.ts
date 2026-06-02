@@ -91,8 +91,24 @@ export const Route = createFileRoute("/api/public/audit-callback")({
         const durationMs = Date.now() - startedAt;
 
         if (payload.status === "error" || payload.error || payload.error_message) {
-          const message =
-            payload.error_message ?? payload.error ?? "Erro desconhecido no motor n8n.";
+          // Monta mensagem com o máximo de pistas possível
+          let message = payload.error_message ?? payload.error ?? "";
+          if (!message) {
+            const rawObj = candidate as Record<string, unknown>;
+            const keys = rawObj && typeof rawObj === "object" ? Object.keys(rawObj).join(", ") : "(payload não-objeto)";
+            const preview = JSON.stringify(candidate).slice(0, 300);
+            message = `n8n retornou status="error" sem detalhes. Chaves recebidas: [${keys}]. Payload: ${preview}`;
+          }
+
+          // Detecta uso do webhook de TESTE e adiciona dica
+          const webhookUrl = process.env.N8N_AUDIT_WEBHOOK_URL || "";
+          const isTestWebhook = webhookUrl.includes("/webhook-test/") || (!webhookUrl && true);
+          if (isTestWebhook) {
+            message +=
+              '\n\nDICA: você está usando o webhook de TESTE do n8n (/webhook-test/...). Ele só processa 1 execução por clique em "Listen for test event". Para uso contínuo, ative o workflow e troque para a URL de produção (/webhook/...).';
+          }
+
+          console.error("[audit-callback] n8n returned error", { runId, raw: candidate });
           const { error: errUpd } = await supabaseAdmin
             .from("audit_runs")
             .update({
