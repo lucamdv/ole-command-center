@@ -74,6 +74,23 @@ export const Route = createFileRoute("/api/public/audit-callback")({
         ).getTime();
         const durationMs = Date.now() - startedAt;
 
+        if (payload.status === "error" || payload.error || payload.error_message) {
+          const message = payload.error_message ?? payload.error ?? "Erro desconhecido no motor n8n.";
+          const { error: errUpd } = await supabaseAdmin
+            .from("audit_runs")
+            .update({
+              status: "error",
+              status_geral: "ERRO",
+              error_message: message,
+              duration_ms: durationMs,
+              raw: payload as unknown as Record<string, unknown>,
+            } as never)
+            .eq("id", payload.run_id);
+
+          if (errUpd) return json({ error: errUpd.message }, 500);
+          return json({ ok: true, run_id: payload.run_id, status: "error", duration_ms: durationMs });
+        }
+
         // 4. Atualiza audit_run
         const { error: updErr } = await supabaseAdmin
           .from("audit_runs")
