@@ -66,7 +66,11 @@ function VisaoGeral() {
 
   return (
     <div className="space-y-6">
-      <PageHeader latestAt={latest?.run?.created_at ?? null} status={latest?.run?.status_geral ?? null} />
+      <PageHeader
+        latestAt={latest?.run?.created_at ?? null}
+        status={latest?.run?.status_geral ?? null}
+        latest={latest ?? null}
+      />
 
       {!latest ? (
         <AuditEmptyState />
@@ -77,7 +81,15 @@ function VisaoGeral() {
   );
 }
 
-function PageHeader({ latestAt, status }: { latestAt: string | null; status: string | null }) {
+function PageHeader({
+  latestAt,
+  status,
+  latest,
+}: {
+  latestAt: string | null;
+  status: string | null;
+  latest: LatestAudit | null;
+}) {
   return (
     <div className="flex items-start justify-between gap-6 flex-wrap">
       <div>
@@ -106,7 +118,29 @@ function PageHeader({ latestAt, status }: { latestAt: string | null; status: str
             : "Dispare a primeira auditoria para alimentar a plataforma."}
         </p>
       </div>
-      <RunAuditButton />
+      <div className="flex items-center gap-2 flex-wrap">
+        {latest && (
+          <>
+            <FindingsListDialog
+              latest={latest}
+              trigger={
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <List className="h-4 w-4" /> Ver lista
+                </Button>
+              }
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => exportAuditPdf(latest)}
+            >
+              <FileDown className="h-4 w-4" /> Exportar PDF
+            </Button>
+          </>
+        )}
+        <RunAuditButton />
+      </div>
     </div>
   );
 }
