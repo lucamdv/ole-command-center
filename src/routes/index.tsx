@@ -336,12 +336,31 @@ function Dashboard({
           </div>
           <div className="space-y-2">
             {grouped.slice(0, 8).map((g) => (
-              <div key={g.apolice} className="flex items-center gap-3 px-3 py-2 rounded-lg border border-border/60 bg-surface-2/40">
+              <div key={g.apolice} className="flex items-start gap-3 px-3 py-2.5 rounded-lg border border-border/60 bg-surface-2/40">
                 <div className="min-w-0 flex-1">
-                  <div className="font-mono text-[12px] text-foreground truncate">{shortApolice(g.apolice)}</div>
-                  <div className="text-[10.5px] text-muted-foreground truncate">{g.tipos.join(" · ")}</div>
+                  <div className="flex items-start gap-1.5">
+                    <span className="font-mono text-[12px] text-foreground break-all leading-snug">{g.apolice}</span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(g.apolice);
+                          toast.success("Apólice copiada");
+                        } catch {
+                          toast.error("Falha ao copiar");
+                        }
+                      }}
+                      className="opacity-50 hover:opacity-100 shrink-0 mt-0.5"
+                      title="Copiar número"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </button>
+                  </div>
+                  <div className="text-[10.5px] text-muted-foreground truncate mt-1" title={g.tipos.join(" · ")}>
+                    {g.tipos.join(" · ")}
+                  </div>
                 </div>
-                <div className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/30">
+                <div className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/30 shrink-0">
                   {g.total} erro{g.total > 1 ? "s" : ""}
                 </div>
               </div>
