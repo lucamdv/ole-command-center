@@ -75,7 +75,8 @@ export function FindingsListDialog({
       if (tipo !== "__all__" && f.tipo_erro !== tipo) return false;
       if (sev !== "__all__" && severityOf(f) !== sev) return false;
       if (term) {
-        const hay = `${f.apolice} ${f.tipo_erro} ${f.detalhes?.motivo ?? ""} ${f.detalhes?.detalhe ?? ""}`.toLowerCase();
+        const n = normalizeFinding(f);
+        const hay = `${f.apolice} ${f.tipo_erro} ${n.motivo} ${n.detalhe} ${n.endosso ?? ""}`.toLowerCase();
         if (!hay.includes(term)) return false;
       }
       return true;
