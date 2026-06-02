@@ -62,37 +62,43 @@ export type Database = {
         Row: {
           aprovados: number
           created_at: string
-          data_auditoria: string
+          data_auditoria: string | null
           duration_ms: number | null
+          error_message: string | null
           id: string
           mensagem_geral: string | null
-          raw: Json
+          raw: Json | null
           reprovados: number
-          status_geral: string
+          status: string
+          status_geral: string | null
           total_processado: number
         }
         Insert: {
           aprovados?: number
           created_at?: string
-          data_auditoria: string
+          data_auditoria?: string | null
           duration_ms?: number | null
+          error_message?: string | null
           id?: string
           mensagem_geral?: string | null
-          raw: Json
+          raw?: Json | null
           reprovados?: number
-          status_geral: string
+          status: string
+          status_geral?: string | null
           total_processado?: number
         }
         Update: {
           aprovados?: number
           created_at?: string
-          data_auditoria?: string
+          data_auditoria?: string | null
           duration_ms?: number | null
+          error_message?: string | null
           id?: string
           mensagem_geral?: string | null
-          raw?: Json
+          raw?: Json | null
           reprovados?: number
-          status_geral?: string
+          status?: string
+          status_geral?: string | null
           total_processado?: number
         }
         Relationships: []
