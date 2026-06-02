@@ -4,6 +4,7 @@ import { KpiCard } from "@/components/kpi/kpi-card";
 import { PulsoOperacional } from "@/components/pulso/pulso-operacional";
 import { RiskHeatmap } from "@/components/heatmap/risk-heatmap";
 import { computeKpis, HOURLY_THROUGHPUT, WEEKLY_TREND } from "@/lib/mock/data";
+import { RunAuditButton } from "@/components/audit/run-audit-button";
 import { formatBRL, formatCompact, formatInt } from "@/lib/format";
 
 export const Route = createFileRoute("/")({
@@ -43,9 +44,7 @@ function VisaoGeral() {
           <button className="h-9 px-3 rounded-lg border border-border bg-surface text-[12.5px] hover:bg-surface-2 transition">
             Exportar relatório
           </button>
-          <button className="h-9 px-3 rounded-lg bg-primary text-primary-foreground text-[12.5px] font-medium hover:opacity-95 transition shadow-glow">
-            Forçar sincronização
-          </button>
+          <RunAuditButton />
         </div>
       </div>
 
