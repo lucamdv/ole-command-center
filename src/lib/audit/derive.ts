@@ -249,7 +249,7 @@ export interface EndossoBucket {
 export function groupByEndosso(findings: AuditFindingRow[]): EndossoBucket[] {
   const map = new Map<string, { items: AuditFindingRow[]; apolices: Set<string> }>();
   for (const f of findings) {
-    const key = f.endosso?.trim() || "—";
+    const key = normalizeFinding(f).endosso || "—";
     const cur = map.get(key) ?? { items: [], apolices: new Set<string>() };
     cur.items.push(f);
     cur.apolices.add(f.apolice);
