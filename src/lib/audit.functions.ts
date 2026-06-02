@@ -57,7 +57,7 @@ export const runAudit = createServerFn({ method: "POST" }).handler(async () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ trigger: "ole-copilot", at: new Date().toISOString() }),
-      signal: AbortSignal.timeout(240_000),
+      signal: AbortSignal.timeout(600_000),
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Falha de rede";
