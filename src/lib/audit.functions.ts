@@ -4,8 +4,7 @@ import { z } from "zod";
 import type { AuditHistoryItem, LatestAudit } from "./audit/types";
 
 // URL pode ser sobrescrita pelo secret N8N_AUDIT_WEBHOOK_URL em produção.
-const DEFAULT_WEBHOOK =
-  "https://nuvembot.app.n8n.cloud/webhook/c80c897f-9951-43c8-9976-df81c44bce16";
+const DEFAULT_WEBHOOK = "https://nuvembot.app.n8n.cloud/webhook-test/c80c897f-9951-43c8-9976-df81c44bce16";
 const EMPTY_SUMMARY = {
   aprovados: 0,
   reprovados: 0,
@@ -57,8 +56,7 @@ export const runAudit = createServerFn({ method: "POST" }).handler(async () => {
   // Prioridade: PUBLIC_APP_URL (secret) → host do request se não-localhost → URL estável do Lovable.
   const reqHost = getRequestHost();
   const proto = getRequestHeader("x-forwarded-proto") || "https";
-  const isLocal =
-    !reqHost || reqHost.includes("localhost") || reqHost.startsWith("127.") || reqHost.startsWith("0.");
+  const isLocal = !reqHost || reqHost.includes("localhost") || reqHost.startsWith("127.") || reqHost.startsWith("0.");
   const base =
     process.env.PUBLIC_APP_URL ||
     (isLocal
