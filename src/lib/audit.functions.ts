@@ -1,143 +1,112 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequestHost, getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
-import type { AuditPayload, AuditHistoryItem, LatestAudit } from "./audit/types";
+import type { AuditHistoryItem, LatestAudit } from "./audit/types";
 
 // URL pode ser sobrescrita pelo secret N8N_AUDIT_WEBHOOK_URL em produção.
 const DEFAULT_WEBHOOK =
   "https://nuvembot.app.n8n.cloud/webhook-test/c80c897f-9951-43c8-9976-df81c44bce16";
 
-const AuditErrorSchema = z
-  .object({
-    tipo_erro: z.string(),
-    endosso: z.string().optional().nullable(),
-    dataInicio: z.string().optional().nullable(),
-    dataFim: z.string().optional().nullable(),
-  })
-  .passthrough();
-
-const PayloadSchema = z.object({
-  data_auditoria: z.string(),
-  resumo: z.object({
-    aprovados: z.number(),
-    reprovados: z.number(),
-    total_processado: z.number(),
-  }),
-  status_geral: z.string(),
-  mensagem_geral: z.string().optional().default(""),
-  apolices_com_erro: z
-    .array(
-      z.object({
-        apolice: z.string(),
-        total_erros: z.number().optional().default(0),
-        erros: z.array(AuditErrorSchema).optional().default([]),
-      }),
-    )
-    .optional()
-    .default([]),
-});
-
-function parseIso(maybe?: string | null): string | null {
-  if (!maybe) return null;
-  // n8n às vezes manda "DD/MM/YYYY"
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(maybe)) {
-    const [d, m, y] = maybe.split("/");
-    return `${y}-${m}-${d}`;
-  }
-  const d = new Date(maybe);
-  return isNaN(+d) ? null : d.toISOString().slice(0, 10);
-}
-
+/**
+ * Dispara a auditoria de forma ASSÍNCRONA.
+ *
+ * Fluxo:
+ *  1. Cria uma linha em audit_runs com status='running'.
+ *  2. Faz POST para o n8n enviando { run_id, callback_url } no body.
+ *     O webhook do n8n deve estar configurado para "Respond Immediately".
+ *     O fluxo n8n, ao terminar, deve POSTar o resultado em callback_url
+ *     com o header x-callback-secret = AUDIT_CALLBACK_SECRET.
+ *  3. Retorna o run_id imediatamente. O frontend faz polling.
+ */
 export const runAudit = createServerFn({ method: "POST" }).handler(async () => {
   const url = process.env.N8N_AUDIT_WEBHOOK_URL || DEFAULT_WEBHOOK;
-  const startedAt = Date.now();
-
-  let res: Response;
-  try {
-    res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ trigger: "ole-copilot", at: new Date().toISOString() }),
-      signal: AbortSignal.timeout(600_000),
-    });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "Falha de rede";
-    throw new Error(`Não foi possível alcançar o motor de auditoria: ${msg}`);
-  }
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    if (res.status === 404 && url.includes("/webhook-test/")) {
-      throw new Error(
-        "Webhook n8n (modo teste) não está escutando. No n8n, clique em \"Listen for test event\" e tente novamente, ou ative o workflow e troque a URL para /webhook/.",
-      );
-    }
-    throw new Error(`Motor de auditoria retornou ${res.status}: ${body.slice(0, 200)}`);
-  }
-
-  const rawJson = await res.json().catch(() => null);
-  // n8n às vezes embrulha resposta em array
-  const candidate = Array.isArray(rawJson) ? rawJson[0] : rawJson;
-  const parsed = PayloadSchema.safeParse(candidate);
-  if (!parsed.success) {
-    throw new Error(
-      "Payload do n8n não corresponde ao contrato esperado: " +
-        parsed.error.issues.map((i) => i.message).join("; "),
-    );
-  }
-  const payload = parsed.data as AuditPayload;
-  const durationMs = Date.now() - startedAt;
-
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  const { data: runRow, error: runErr } = await supabaseAdmin
+  // 1. Cria o run em status 'running'
+  const { data: runRow, error: insertErr } = await supabaseAdmin
     .from("audit_runs")
     .insert({
-      data_auditoria: payload.data_auditoria,
-      status_geral: payload.status_geral,
-      mensagem_geral: payload.mensagem_geral,
-      total_processado: payload.resumo.total_processado,
-      aprovados: payload.resumo.aprovados,
-      reprovados: payload.resumo.reprovados,
-      duration_ms: durationMs,
-      raw: payload as unknown as Record<string, unknown>,
+      status: "running",
+      status_geral: "PROCESSANDO",
+      total_processado: 0,
+      aprovados: 0,
+      reprovados: 0,
+      raw: {},
     } as never)
     .select("id")
     .single();
 
-  if (runErr || !runRow) {
-    throw new Error("Falha ao persistir auditoria: " + (runErr?.message ?? "sem id"));
+  if (insertErr || !runRow) {
+    throw new Error("Falha ao criar run: " + (insertErr?.message ?? "sem id"));
   }
 
-  const findings = payload.apolices_com_erro.flatMap((a) =>
-    a.erros.map((e) => ({
-      run_id: runRow.id,
-      apolice: a.apolice,
-      tipo_erro: e.tipo_erro,
-      endosso: e.endosso ?? null,
-      data_inicio: parseIso(e.dataInicio ?? null),
-      data_fim: parseIso(e.dataFim ?? null),
-      detalhes: e as unknown as Record<string, unknown>,
-    })),
-  );
+  const runId = (runRow as { id: string }).id;
 
-  if (findings.length > 0) {
-    const { error: findErr } = await supabaseAdmin
-      .from("audit_findings")
-      .insert(findings as never);
-    if (findErr) {
-      throw new Error("Auditoria salva, mas falha ao gravar achados: " + findErr.message);
+  // Monta callback URL pública
+  const host = getRequestHost();
+  const proto = getRequestHeader("x-forwarded-proto") || "https";
+  const callbackUrl = `${proto}://${host}/api/public/audit-callback`;
+
+  // 2. Dispara o webhook do n8n (espera resposta imediata)
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        run_id: runId,
+        callback_url: callbackUrl,
+        trigger: "ole-copilot",
+        at: new Date().toISOString(),
+      }),
+      signal: AbortSignal.timeout(30_000),
+    });
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      const errMsg =
+        res.status === 404 && url.includes("/webhook-test/")
+          ? 'Webhook n8n (modo teste) não está escutando. Clique em "Listen for test event" no n8n.'
+          : `Motor de auditoria retornou ${res.status}: ${body.slice(0, 200)}`;
+
+      await supabaseAdmin
+        .from("audit_runs")
+        .update({ status: "error", error_message: errMsg } as never)
+        .eq("id", runId);
+
+      throw new Error(errMsg);
     }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Falha de rede";
+    await supabaseAdmin
+      .from("audit_runs")
+      .update({ status: "error", error_message: msg } as never)
+      .eq("id", runId);
+    throw new Error(`Não foi possível disparar a auditoria: ${msg}`);
   }
 
-  return {
-    runId: runRow.id,
-    resumo: payload.resumo,
-    status: payload.status_geral,
-    mensagem: payload.mensagem_geral,
-    findingsCount: findings.length,
-    durationMs,
-  };
+  return { runId, status: "running" as const };
 });
+
+export const getAuditRunStatus = createServerFn({ method: "GET" })
+  .inputValidator((d: { runId: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: run, error } = await supabaseAdmin
+      .from("audit_runs")
+      .select("id, status, status_geral, error_message, total_processado, aprovados, reprovados")
+      .eq("id", data.runId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return run as {
+      id: string;
+      status: string;
+      status_geral: string | null;
+      error_message: string | null;
+      total_processado: number;
+      aprovados: number;
+      reprovados: number;
+    } | null;
+  });
 
 export const getLatestAudit = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -145,6 +114,7 @@ export const getLatestAudit = createServerFn({ method: "GET" }).handler(async ()
   const { data: runs, error: runErr } = await supabaseAdmin
     .from("audit_runs")
     .select("*")
+    .eq("status", "success")
     .order("created_at", { ascending: false })
     .limit(1);
 
@@ -155,7 +125,7 @@ export const getLatestAudit = createServerFn({ method: "GET" }).handler(async ()
   const { data: findings, error: findErr } = await supabaseAdmin
     .from("audit_findings")
     .select("*")
-    .eq("run_id", run.id)
+    .eq("run_id", (run as { id: string }).id)
     .order("apolice", { ascending: true });
 
   if (findErr) throw new Error(findErr.message);
@@ -169,9 +139,47 @@ export const getAuditHistory = createServerFn({ method: "GET" }).handler(async (
   const { data, error } = await supabaseAdmin
     .from("audit_runs")
     .select("id, created_at, data_auditoria, status_geral, total_processado, aprovados, reprovados, duration_ms")
+    .eq("status", "success")
     .order("created_at", { ascending: false })
     .limit(30);
 
   if (error) throw new Error(error.message);
   return (data ?? []) as AuditHistoryItem[];
+});
+
+// Schema exportado para uso no callback route
+export const CallbackPayloadSchema = z.object({
+  run_id: z.string().uuid(),
+  data_auditoria: z.string().optional(),
+  resumo: z
+    .object({
+      aprovados: z.number(),
+      reprovados: z.number(),
+      total_processado: z.number(),
+    })
+    .optional(),
+  status_geral: z.string().optional(),
+  mensagem_geral: z.string().optional(),
+  apolices_com_erro: z
+    .array(
+      z.object({
+        apolice: z.string(),
+        total_erros: z.number().optional().default(0),
+        erros: z
+          .array(
+            z
+              .object({
+                tipo_erro: z.string(),
+                endosso: z.string().optional().nullable(),
+                dataInicio: z.string().optional().nullable(),
+                dataFim: z.string().optional().nullable(),
+              })
+              .passthrough(),
+          )
+          .optional()
+          .default([]),
+      }),
+    )
+    .optional()
+    .default([]),
 });

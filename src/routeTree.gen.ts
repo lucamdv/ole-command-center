@@ -18,6 +18,7 @@ import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApolicesIdRouteImport } from './routes/apolices.$id'
+import { Route as ApiPublicAuditCallbackRouteImport } from './routes/api/public/audit-callback'
 
 const OperacaoRoute = OperacaoRouteImport.update({
   id: '/operacao',
@@ -64,6 +65,11 @@ const ApolicesIdRoute = ApolicesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApolicesRoute,
 } as any)
+const ApiPublicAuditCallbackRoute = ApiPublicAuditCallbackRouteImport.update({
+  id: '/api/public/audit-callback',
+  path: '/api/public/audit-callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/intelligence': typeof IntelligenceRoute
   '/operacao': typeof OperacaoRoute
   '/apolices/$id': typeof ApolicesIdRoute
+  '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/intelligence': typeof IntelligenceRoute
   '/operacao': typeof OperacaoRoute
   '/apolices/$id': typeof ApolicesIdRoute
+  '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -98,6 +106,7 @@ export interface FileRoutesById {
   '/intelligence': typeof IntelligenceRoute
   '/operacao': typeof OperacaoRoute
   '/apolices/$id': typeof ApolicesIdRoute
+  '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/intelligence'
     | '/operacao'
     | '/apolices/$id'
+    | '/api/public/audit-callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/intelligence'
     | '/operacao'
     | '/apolices/$id'
+    | '/api/public/audit-callback'
   id:
     | '__root__'
     | '/'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/intelligence'
     | '/operacao'
     | '/apolices/$id'
+    | '/api/public/audit-callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -144,6 +156,7 @@ export interface RootRouteChildren {
   EndossosRoute: typeof EndossosRoute
   IntelligenceRoute: typeof IntelligenceRoute
   OperacaoRoute: typeof OperacaoRoute
+  ApiPublicAuditCallbackRoute: typeof ApiPublicAuditCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -211,6 +224,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApolicesIdRouteImport
       parentRoute: typeof ApolicesRoute
     }
+    '/api/public/audit-callback': {
+      id: '/api/public/audit-callback'
+      path: '/api/public/audit-callback'
+      fullPath: '/api/public/audit-callback'
+      preLoaderRoute: typeof ApiPublicAuditCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -235,6 +255,7 @@ const rootRouteChildren: RootRouteChildren = {
   EndossosRoute: EndossosRoute,
   IntelligenceRoute: IntelligenceRoute,
   OperacaoRoute: OperacaoRoute,
+  ApiPublicAuditCallbackRoute: ApiPublicAuditCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
