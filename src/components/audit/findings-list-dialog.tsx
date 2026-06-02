@@ -447,8 +447,22 @@ function TableView({
               <TableCell className="text-[12px] font-mono align-top">{f.endosso ?? "—"}</TableCell>
               <TableCell className="text-[12px] font-mono align-top">{f.data_inicio ?? "—"}</TableCell>
               <TableCell className="text-[12px] font-mono align-top">{f.data_fim ?? "—"}</TableCell>
-              <TableCell className="text-[12px] text-muted-foreground align-top">
-                {f.detalhes?.motivo ?? f.detalhes?.detalhe ?? "—"}
+              <TableCell className="text-[12px] align-top max-w-[420px]">
+                {f.detalhes?.motivo && (
+                  <div className="text-foreground/90">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 mr-1">Motivo:</span>
+                    {f.detalhes.motivo}
+                  </div>
+                )}
+                {f.detalhes?.detalhe && f.detalhes.detalhe !== f.detalhes.motivo && (
+                  <div className="text-muted-foreground mt-0.5">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 mr-1">Detalhe:</span>
+                    {f.detalhes.detalhe}
+                  </div>
+                )}
+                {!f.detalhes?.motivo && !f.detalhes?.detalhe && (
+                  <span className="text-muted-foreground">—</span>
+                )}
               </TableCell>
             </TableRow>
           );
