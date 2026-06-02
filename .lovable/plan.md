@@ -1,55 +1,74 @@
 ## Objetivo
 
-Reduzir a poluição visual da Visão Geral, exibir o número completo das apólices no card "Apólices com mais inconsistências" e adicionar dois recursos ao resultado da auditoria: exportar PDF e abrir um consolidado em forma de lista.
+Alinhar a apresentação dos achados ao formato Notion enviado (banner consolidado + blocos por apólice + bullets com severidade e texto integral) e tornar a Visão Geral muito mais densa em informação acionável.
 
-## 1. Limpar a Visão Geral
+## 1. Lista Consolidada — estilo Notion (principal mudança)
 
-Hoje o topo tem três camadas que repetem a mesma informação: a barra de status (6 itens), o grid de 8 KPIs e o bloco "Pulso Operacional". Vou:
+Hoje a lista é uma tabela "achatada". Vou reescrever `findings-list-dialog.tsx` para reproduzir o relatório do Notion:
 
-- **Remover a barra de status superior** (já está duplicada no grid de KPIs).
-- **Reduzir o grid de 8 → 4 KPIs principais**: Conformidade, Apólices Auditadas, Não Conformes, Achados Ativos. Os demais (Risco, Apólices Afetadas, Regras Acionadas) viram itens secundários menores numa única linha compacta abaixo.
-- **Unificar paleta de cores** dos KPIs (menos tons concorrendo) e padronizar tipografia (números grandes, hint discreto).
-- Manter Pulso Operacional, Matriz de Risco e os dois cards inferiores como estão estruturalmente (já estão bons), apenas ajustando respiros (padding/gap) para reduzir a sensação de densidade.
+**Cabeçalho do diálogo (banner)**
+- Linha 1: "📊 Relatório Consolidado de Auditoria"
+- Linha 2: `Data: <data_auditoria>` · chips: `✅ <aprovados> OK` · `⚠️ <reprovados> Intervenções Necessárias` · `🔍 <apolices_afetadas> apólices` · `📋 <total_achados> achados`
+- Toolbar: busca (nº apólice ou texto do motivo), filtro por tipo, filtro por severidade (Todos / Erros / Alertas), toggle de visão (Agrupado ↔ Tabela), botões "Copiar tudo" e "Exportar PDF".
 
-## 2. Apólices com mais inconsistências — número completo
+**Visão Agrupada (padrão)**
+- Uma seção por apólice, ordenadas por nº de achados desc.
+- Header da seção: `🔍 Apólice: <número completo em mono, break-all>` + badge `N erros` / `M alertas` + botão "Copiar nº" + link "Abrir detalhes" → `/apolices/$id`.
+- Lista de bullets, um por achado:
+  - Ícone de severidade (🔴 para `ERRO`, ⚠️ para `ALERTA`, derivado de `tipo_erro` começando com "ERRO"/"ALERTA" ou da presença em `detalhes.motivo`).
+  - Texto: `<TIPO_ERRO>` em bold + " — " + `detalhes.motivo` (ou `detalhe`) **integral**, sem truncar.
+  - Linha secundária discreta: `Endosso <endosso> · <data_inicio> → <data_fim>` quando existirem.
+- Seções colapsáveis (default expandido), com "Expandir tudo / Recolher tudo".
 
-No card atual, `shortApolice(g.apolice)` corta o número. Vou:
+**Visão Tabela (toggle)**
+- Mantém a tabela atual como visão alternativa para quem quer ordenar/escanear rapidamente.
 
-- Trocar para exibir o número **completo** em `font-mono`, com `break-all` para quebrar em telas estreitas.
-- Manter os tipos de erro como segunda linha, com `truncate` + `title` para hover.
-- Adicionar botão "Copiar nº" discreto ao lado.
+**Função utilitária**
+- `severityOf(finding)` em `src/lib/audit/derive.ts`: retorna `'erro' | 'alerta' | 'info'` a partir de `tipo_erro` / `motivo`.
 
-## 3. Exportar resultados em PDF
+## 2. Visão Geral — painel mais completo e detalhista
 
-Adicionar botão **"Exportar PDF"** no cabeçalho da Visão Geral (ao lado de "Rodar Auditoria") e também na página `/apolices` se aplicável.
+Manter a estrutura limpa que já existe, mas adicionar camadas de detalhe. Mudanças em `src/routes/index.tsx`:
 
-- Geração 100% client-side com `jspdf` + `jspdf-autotable` (sem backend).
-- Conteúdo do PDF:
-  - Cabeçalho com logo/título, data da auditoria, status geral.
-  - Resumo (Total processado, Aprovados, Reprovados, % conformidade).
-  - Tabela 1: Top apólices afetadas (nº completo, qtd de erros, tipos).
-  - Tabela 2: Detalhamento por achado (apólice, tipo de erro, endosso, datas).
-- Arquivo nomeado `auditoria-OLE-{YYYY-MM-DD-HHmm}.pdf`.
+**a. Banner consolidado no topo (acima dos KPIs)**
+- Mesma linguagem da lista: `✅ X OK | ⚠️ Y Intervenções | 🔍 Z apólices afetadas | 📋 N achados`, com micro-deltas vs run anterior.
 
-## 4. Consolidado em forma de lista
+**b. KPIs principais**
+- Mantém os 4 cartões. Adiciono um **5º compacto**: "Severidade" (split bar Erros vs Alertas com contagem).
 
-Adicionar botão **"Ver lista consolidada"** no cabeçalho. Abre um `Dialog` (shadcn) em tela cheia com:
+**c. Nova faixa "Breakdown por Severidade × Tipo"**
+- Tabela densa: `Tipo de erro | Severidade | Ocorrências | Apólices únicas | % do total | Sparkline tendência (últimas runs)`.
+- Ordenada por ocorrências desc, com barra de progresso inline.
 
-- Tabela única e densa de todos os achados da última run, com colunas: Apólice (nº completo), Tipo de erro, Endosso, Início, Fim, Detalhes.
-- Filtro por tipo de erro (select) e busca por nº de apólice.
-- Botão "Exportar PDF" também dentro do diálogo (reaproveita a função do item 3).
-- Ordenação por coluna.
+**d. Card "Endossos mais problemáticos"**
+- Agrupa achados por `endosso` e mostra top 8: número do endosso, qtd achados, apólices distintas.
 
-## Arquivos a alterar/criar
+**e. Card "Janela de Vigência mais afetada"**
+- Heatmap/bar por mês (de `data_inicio`): quantos achados caem em cada mês — ajuda enxergar concentração temporal.
 
-- `src/routes/index.tsx` — limpeza visual, nº completo, botões "Exportar PDF" e "Ver lista".
-- `src/components/audit/export-pdf-button.tsx` *(novo)* — encapsula geração do PDF.
-- `src/components/audit/findings-list-dialog.tsx` *(novo)* — diálogo com lista consolidada + filtros.
-- `src/lib/audit/export-pdf.ts` *(novo)* — função pura que monta o PDF a partir de `latest`.
-- `package.json` — adicionar `jspdf` e `jspdf-autotable`.
+**f. Card "Histórico detalhado de runs" (substitui o área-chart simples por algo mais rico)**
+- Tabela compacta das últimas 10 runs: data, status, total, aprovados, reprovados, % conformidade, duração, delta vs anterior — clicável.
+
+**g. "Apólices com mais inconsistências"**
+- Já mostra nº completo. Adiciono: contagem separada de Erros vs Alertas por apólice, e os 3 primeiros motivos resumidos.
+
+**h. Matriz de Risco**
+- Mantém. Adiciono legenda de intensidade e total por linha à direita.
+
+## 3. PDF — alinhar ao novo formato
+
+Em `src/lib/audit/export-pdf.ts`:
+- Página 1: banner consolidado (data, status, OK / Intervenções), resumo, top apólices.
+- A partir da página 2: **seção por apólice** (igual à visão agrupada do diálogo), com bullets `🔴/⚠️ TIPO — motivo integral`, igual ao Notion. Mantém tabela de detalhamento final como anexo.
+
+## 4. Arquivos
+
+- `src/components/audit/findings-list-dialog.tsx` — reescrita para visão agrupada + toggle tabela + banner.
+- `src/lib/audit/derive.ts` — adicionar `severityOf`, `groupByEndosso`, `bucketByMonth`.
+- `src/routes/index.tsx` — banner, 5º KPI, novos cards (severidade×tipo, endossos, janela de vigência, histórico detalhado), enriquecer card de top apólices.
+- `src/lib/audit/export-pdf.ts` — reformatar PDF para refletir o agrupamento Notion.
 
 ## Fora de escopo
 
-- Mudanças em backend / callback do n8n.
-- Mudanças nas demais rotas (`/analytics`, `/apolices`, etc.) além do botão de exportar, se necessário.
-- Envio de PDF por e-mail / armazenamento no Cloud (pode virar próximo passo).
+- Backend / schema / n8n callback.
+- Outras rotas (`/apolices`, `/analytics`, etc.) — apenas se um link novo apontar para elas, sem alterá-las.
