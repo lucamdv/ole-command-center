@@ -69,11 +69,13 @@ export function useRunAudit() {
       if (!row) {
         // ainda não disponível, segue polling
       } else if (row.status === "success") {
+        const reprov = row.reprovados ?? 0;
+        const total = row.total_processado ?? 0;
         toast.success("Auditoria concluída", {
           description:
-            row.reprovados === 0
-              ? `${row.total_processado} apólices · todas em conformidade.`
-              : `${row.reprovados} de ${row.total_processado} com inconsistências.`,
+            reprov === 0
+              ? `${total} apólices · todas em conformidade.`
+              : `${reprov} de ${total} com inconsistências.`,
         });
         qc.invalidateQueries({ queryKey: ["audit"] });
         stopPolling();
