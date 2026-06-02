@@ -43,9 +43,7 @@ function VisaoGeral() {
           <button className="h-9 px-3 rounded-lg border border-border bg-surface text-[12.5px] hover:bg-surface-2 transition">
             Exportar relatório
           </button>
-          <button className="h-9 px-3 rounded-lg bg-primary text-primary-foreground text-[12.5px] font-medium hover:opacity-95 transition shadow-glow">
-            Forçar sincronização
-          </button>
+          <RunAuditButton />
         </div>
       </div>
 
