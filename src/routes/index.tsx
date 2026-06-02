@@ -162,12 +162,14 @@ function Dashboard({
 
   const series = runSeries(history);
   const sparkRejected = series.map((s) => s.rejected);
-  const sparkRisk = series.map((s) => s.risk);
   const sparkTotal = series.map((s) => s.total);
 
   const breakdown = errorTypeBreakdown(latest.findings);
   const grouped = groupByApolice(latest.findings);
   const heatmap = buildHeatmap(latest, history, 12);
+  const sev = countBySeverity(latest.findings);
+  const endossos = groupByEndosso(latest.findings);
+  const months = bucketByMonth(latest.findings);
 
   const PIE_COLORS = [
     "var(--destructive)",
@@ -179,6 +181,9 @@ function Dashboard({
 
   return (
     <div className="space-y-6">
+      {/* Banner consolidado estilo Notion */}
+      <ConsolidatedBanner latest={latest} sev={sev} grouped={grouped.length} />
+
       {/* KPIs principais — 4 cartões */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <KpiCard label="Conformidade" value={k.approvedRate} suffix="%" delta={Number(k.deltaApproved.toFixed(1))} spark={series.map((s) => 100 - s.risk)} tone="success" hint="Taxa de aprovação" />
@@ -187,13 +192,18 @@ function Dashboard({
         <KpiCard label="Achados Ativos" value={k.activeAlerts} format={formatInt} delta={Number(k.deltaAlerts.toFixed(1))} spark={sparkRejected} tone="warning" hint={k.topErrorType ? `Top: ${k.topErrorType}` : "—"} />
       </div>
 
-      {/* Linha secundária compacta */}
-      <div className="rounded-xl border border-border bg-surface/60 grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-border overflow-hidden">
-        <MiniStat label="Risco Operacional" value={`${k.operationalRisk.toFixed(1)}%`} tone="warning" />
-        <MiniStat label="Regras Acionadas" value={formatInt(k.uniqueErrorTypes)} tone="info" />
-        <MiniStat label="Apólices Afetadas" value={formatInt(k.affectedPolicies)} tone="destructive" />
-        <MiniStat label="Última Run" value={relativeTime(latest.run.created_at)} />
+      {/* Severidade split + linha secundária */}
+      <div className="grid lg:grid-cols-3 gap-3">
+        <SeveritySplit sev={sev} />
+        <div className="rounded-xl border border-border bg-surface/60 grid grid-cols-2 md:grid-cols-4 lg:col-span-2 divide-y md:divide-y-0 md:divide-x divide-border overflow-hidden">
+          <MiniStat label="Risco Operacional" value={`${k.operationalRisk.toFixed(1)}%`} tone="warning" />
+          <MiniStat label="Regras Acionadas" value={formatInt(k.uniqueErrorTypes)} tone="info" />
+          <MiniStat label="Apólices Afetadas" value={formatInt(k.affectedPolicies)} tone="destructive" />
+          <MiniStat label="Última Run" value={relativeTime(latest.run.created_at)} />
+        </div>
       </div>
+
+
 
 
       {/* Pulso real: tendência + distribuição */}
