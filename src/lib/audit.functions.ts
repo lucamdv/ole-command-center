@@ -6,6 +6,11 @@ import type { AuditHistoryItem, LatestAudit } from "./audit/types";
 // URL pode ser sobrescrita pelo secret N8N_AUDIT_WEBHOOK_URL em produção.
 const DEFAULT_WEBHOOK =
   "https://nuvembot.app.n8n.cloud/webhook-test/c80c897f-9951-43c8-9976-df81c44bce16";
+const EMPTY_SUMMARY = {
+  aprovados: 0,
+  reprovados: 0,
+  total_processado: 0,
+};
 
 // URL pública estável do Lovable (preview). O n8n na nuvem consegue acessar.
 // Pode ser sobrescrita via secret PUBLIC_APP_URL (ex.: domínio final em produção).
@@ -72,6 +77,11 @@ export const runAudit = createServerFn({ method: "POST" }).handler(async () => {
         run_id: runId,
         callback_url: callbackUrl,
         trigger: "ole-copilot",
+        mode: "async_callback",
+        status_geral: "PROCESSANDO",
+        mensagem_geral: "Auditoria em processamento.",
+        resumo: EMPTY_SUMMARY,
+        apolices_com_erro: [],
         at: new Date().toISOString(),
       }),
       signal: AbortSignal.timeout(30_000),
@@ -166,12 +176,15 @@ export const getAuditHistory = createServerFn({ method: "GET" }).handler(async (
 // Schema exportado para uso no callback route
 export const CallbackPayloadSchema = z.object({
   run_id: z.string().uuid(),
+  status: z.string().optional(),
+  error: z.string().optional(),
+  error_message: z.string().optional(),
   data_auditoria: z.string().optional(),
   resumo: z
     .object({
-      aprovados: z.number(),
-      reprovados: z.number(),
-      total_processado: z.number(),
+      aprovados: z.coerce.number().optional().default(0),
+      reprovados: z.coerce.number().optional().default(0),
+      total_processado: z.coerce.number().optional().default(0),
     })
     .optional(),
   status_geral: z.string().optional(),
