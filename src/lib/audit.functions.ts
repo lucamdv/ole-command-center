@@ -160,7 +160,7 @@ export const getLatestAudit = createServerFn({ method: "GET" }).handler(async ()
 
   if (findErr) throw new Error(findErr.message);
 
-  return { run, findings: findings ?? [] } as LatestAudit;
+  return { run, findings: findings ?? [] } as unknown as LatestAudit;
 });
 
 export const getAuditHistory = createServerFn({ method: "GET" }).handler(async () => {
