@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import { AlertOctagon, Clock, Database, FileWarning, ShieldCheck, TrendingUp, Zap } from "lucide-react";
+import { Copy, FileDown, List, TrendingUp } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -14,9 +14,12 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { toast } from "sonner";
 import { KpiCard } from "@/components/kpi/kpi-card";
 import { RunAuditButton } from "@/components/audit/run-audit-button";
 import { AuditEmptyState } from "@/components/audit/empty-state";
+import { FindingsListDialog } from "@/components/audit/findings-list-dialog";
+import { Button } from "@/components/ui/button";
 import { useAuditHistory, useLatestAudit } from "@/hooks/use-audit";
 import {
   buildHeatmap,
@@ -24,9 +27,10 @@ import {
   errorTypeBreakdown,
   groupByApolice,
   runSeries,
-  shortApolice,
 } from "@/lib/audit/derive";
-import { formatDateTime, formatInt, formatPct, relativeTime } from "@/lib/format";
+import { exportAuditPdf } from "@/lib/audit/export-pdf";
+import type { LatestAudit } from "@/lib/audit/types";
+import { formatDateTime, formatInt, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
@@ -62,7 +66,11 @@ function VisaoGeral() {
 
   return (
     <div className="space-y-6">
-      <PageHeader latestAt={latest?.run?.created_at ?? null} status={latest?.run?.status_geral ?? null} />
+      <PageHeader
+        latestAt={latest?.run?.created_at ?? null}
+        status={latest?.run?.status_geral ?? null}
+        latest={latest ?? null}
+      />
 
       {!latest ? (
         <AuditEmptyState />
@@ -73,7 +81,15 @@ function VisaoGeral() {
   );
 }
 
-function PageHeader({ latestAt, status }: { latestAt: string | null; status: string | null }) {
+function PageHeader({
+  latestAt,
+  status,
+  latest,
+}: {
+  latestAt: string | null;
+  status: string | null;
+  latest: LatestAudit | null;
+}) {
   return (
     <div className="flex items-start justify-between gap-6 flex-wrap">
       <div>
@@ -102,7 +118,29 @@ function PageHeader({ latestAt, status }: { latestAt: string | null; status: str
             : "Dispare a primeira auditoria para alimentar a plataforma."}
         </p>
       </div>
-      <RunAuditButton />
+      <div className="flex items-center gap-2 flex-wrap">
+        {latest && (
+          <>
+            <FindingsListDialog
+              latest={latest}
+              trigger={
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <List className="h-4 w-4" /> Ver lista
+                </Button>
+              }
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => exportAuditPdf(latest)}
+            >
+              <FileDown className="h-4 w-4" /> Exportar PDF
+            </Button>
+          </>
+        )}
+        <RunAuditButton />
+      </div>
     </div>
   );
 }
@@ -118,7 +156,6 @@ function Dashboard({
   if (!k) return null;
 
   const series = runSeries(history);
-  const sparkApproved = series.map((s) => s.approved);
   const sparkRejected = series.map((s) => s.rejected);
   const sparkRisk = series.map((s) => s.risk);
   const sparkTotal = series.map((s) => s.total);
@@ -137,27 +174,22 @@ function Dashboard({
 
   return (
     <div className="space-y-6">
-      {/* Status bar real */}
-      <div className="rounded-xl border border-border bg-surface/60 backdrop-blur grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-y md:divide-y-0 lg:divide-x divide-border overflow-hidden">
-        <StatusItem icon={ShieldCheck} label="Conformidade" value={formatPct(k.approvedRate, 1)} tone="success" />
-        <StatusItem icon={Database} label="Processadas" value={formatInt(k.audited)} />
-        <StatusItem icon={AlertOctagon} label="Inconsistências" value={formatInt(k.activeAlerts)} tone="warning" />
-        <StatusItem icon={FileWarning} label="Apólices afetadas" value={formatInt(k.affectedPolicies)} tone="destructive" />
-        <StatusItem icon={Zap} label="Regras acionadas" value={formatInt(k.uniqueErrorTypes)} tone="info" />
-        <StatusItem icon={Clock} label="Última run" value={relativeTime(latest.run.created_at)} />
+      {/* KPIs principais — 4 cartões */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <KpiCard label="Conformidade" value={k.approvedRate} suffix="%" delta={Number(k.deltaApproved.toFixed(1))} spark={series.map((s) => 100 - s.risk)} tone="success" hint="Taxa de aprovação" />
+        <KpiCard label="Apólices Auditadas" value={k.audited} format={formatInt} spark={sparkTotal} tone="default" hint={`${history.length} run(s) registradas`} />
+        <KpiCard label="Não Conformes" value={k.rejected} format={formatInt} delta={Number(k.deltaRejected.toFixed(1))} spark={sparkRejected} tone="destructive" hint={`${k.affectedPolicies} apólices afetadas`} />
+        <KpiCard label="Achados Ativos" value={k.activeAlerts} format={formatInt} delta={Number(k.deltaAlerts.toFixed(1))} spark={sparkRejected} tone="warning" hint={k.topErrorType ? `Top: ${k.topErrorType}` : "—"} />
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        <KpiCard label="Apólices Auditadas" value={k.audited} format={formatInt} spark={sparkTotal} tone="default" hint={`${history.length} run(s) registradas`} />
-        <KpiCard label="Conformes" value={k.approved} format={formatInt} delta={Number(k.deltaApproved.toFixed(1))} spark={sparkApproved} tone="success" hint={`${k.approvedRate.toFixed(1)}% do total`} />
-        <KpiCard label="Não Conformes" value={k.rejected} format={formatInt} delta={Number(k.deltaRejected.toFixed(1))} spark={sparkRejected} tone="destructive" hint="Reprovações automatizadas" />
-        <KpiCard label="Achados Ativos" value={k.activeAlerts} format={formatInt} delta={Number(k.deltaAlerts.toFixed(1))} spark={sparkRejected} tone="warning" hint="Inconsistências detectadas" />
-        <KpiCard label="Risco Operacional" value={k.operationalRisk} suffix="%" delta={Number(k.deltaRisk.toFixed(1))} spark={sparkRisk} tone="warning" hint="Reprovados / Total" />
-        <KpiCard label="Apólices Afetadas" value={k.affectedPolicies} format={formatInt} spark={sparkRejected} tone="destructive" hint="Únicas com falha" />
-        <KpiCard label="Regras Acionadas" value={k.uniqueErrorTypes} format={formatInt} tone="info" hint={k.topErrorType ? `Top: ${k.topErrorType}` : "—"} />
-        <KpiCard label="Conformidade" value={k.approvedRate} suffix="%" delta={Number(k.deltaApproved.toFixed(1))} spark={series.map((s) => 100 - s.risk)} tone="success" hint="Taxa de aprovação" />
+      {/* Linha secundária compacta */}
+      <div className="rounded-xl border border-border bg-surface/60 grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-border overflow-hidden">
+        <MiniStat label="Risco Operacional" value={`${k.operationalRisk.toFixed(1)}%`} tone="warning" />
+        <MiniStat label="Regras Acionadas" value={formatInt(k.uniqueErrorTypes)} tone="info" />
+        <MiniStat label="Apólices Afetadas" value={formatInt(k.affectedPolicies)} tone="destructive" />
+        <MiniStat label="Última Run" value={relativeTime(latest.run.created_at)} />
       </div>
+
 
       {/* Pulso real: tendência + distribuição */}
       <div className="rounded-2xl border border-border bg-surface/80 backdrop-blur overflow-hidden shadow-elevated">
@@ -303,12 +335,31 @@ function Dashboard({
           </div>
           <div className="space-y-2">
             {grouped.slice(0, 8).map((g) => (
-              <div key={g.apolice} className="flex items-center gap-3 px-3 py-2 rounded-lg border border-border/60 bg-surface-2/40">
+              <div key={g.apolice} className="flex items-start gap-3 px-3 py-2.5 rounded-lg border border-border/60 bg-surface-2/40">
                 <div className="min-w-0 flex-1">
-                  <div className="font-mono text-[12px] text-foreground truncate">{shortApolice(g.apolice)}</div>
-                  <div className="text-[10.5px] text-muted-foreground truncate">{g.tipos.join(" · ")}</div>
+                  <div className="flex items-start gap-1.5">
+                    <span className="font-mono text-[12px] text-foreground break-all leading-snug">{g.apolice}</span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(g.apolice);
+                          toast.success("Apólice copiada");
+                        } catch {
+                          toast.error("Falha ao copiar");
+                        }
+                      }}
+                      className="opacity-50 hover:opacity-100 shrink-0 mt-0.5"
+                      title="Copiar número"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </button>
+                  </div>
+                  <div className="text-[10.5px] text-muted-foreground truncate mt-1" title={g.tipos.join(" · ")}>
+                    {g.tipos.join(" · ")}
+                  </div>
                 </div>
-                <div className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/30">
+                <div className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/30 shrink-0">
                   {g.total} erro{g.total > 1 ? "s" : ""}
                 </div>
               </div>
@@ -349,34 +400,29 @@ function Dashboard({
   );
 }
 
-function StatusItem({
-  icon: Icon,
+function MiniStat({
   label,
   value,
   tone,
 }: {
-  icon: typeof ShieldCheck;
   label: string;
   value: string;
   tone?: "success" | "info" | "warning" | "destructive";
 }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-3 min-w-0">
+    <div className="px-4 py-3 min-w-0">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground/80 truncate">{label}</div>
       <div
         className={cn(
-          "h-8 w-8 grid place-items-center rounded-lg shrink-0",
-          tone === "success" && "bg-success/10 text-success",
-          tone === "info" && "bg-info/10 text-info",
-          tone === "warning" && "bg-warning/10 text-warning",
-          tone === "destructive" && "bg-destructive/10 text-destructive",
-          !tone && "bg-primary/10 text-primary",
+          "text-[15px] font-semibold tabular-nums truncate mt-0.5",
+          tone === "success" && "text-success",
+          tone === "info" && "text-info",
+          tone === "warning" && "text-warning",
+          tone === "destructive" && "text-destructive",
+          !tone && "text-foreground",
         )}
       >
-        <Icon className="h-4 w-4" />
-      </div>
-      <div className="min-w-0">
-        <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground/80 truncate">{label}</div>
-        <div className="text-[13px] font-semibold tabular-nums text-foreground truncate">{value}</div>
+        {value}
       </div>
     </div>
   );
