@@ -189,9 +189,34 @@ export function shortApolice(num: string): string {
 
 export type Severity = "erro" | "alerta" | "info";
 
+/**
+ * Normaliza os campos de um finding lidando com nomes alternativos vindos do n8n
+ * (ex.: `detalhe_erro` em vez de `motivo`/`detalhe`, `endosso_com_erro` em vez de `endosso`).
+ */
+export function normalizeFinding(f: Pick<AuditFindingRow, "endosso" | "detalhes">): {
+  motivo: string;
+  detalhe: string;
+  endosso: string | null;
+  nivel: string | null;
+  endossoAnterior: string | null;
+} {
+  const d = (f.detalhes ?? {}) as unknown as Record<string, unknown>;
+  const s = (k: string) => (typeof d[k] === "string" ? (d[k] as string).trim() : "");
+  const motivo = s("motivo") || s("detalhe_erro") || s("mensagem") || s("message");
+  const detalhe = s("detalhe") || s("descricao") || s("description") || "";
+  const endosso = (f.endosso?.trim() || s("endosso_com_erro") || s("endosso") || "") || null;
+  const nivel = s("nivel") || null;
+  const endossoAnterior = s("endosso_anterior") || null;
+  return { motivo, detalhe, endosso, nivel, endossoAnterior };
+}
+
 export function severityOf(f: Pick<AuditFindingRow, "tipo_erro" | "detalhes">): Severity {
-  const hay = `${f.tipo_erro ?? ""} ${f.detalhes?.motivo ?? ""} ${f.detalhes?.detalhe ?? ""}`.toUpperCase();
-  if (hay.includes("ERRO") || hay.startsWith("ERRO")) return "erro";
+  const d = (f.detalhes ?? {}) as unknown as Record<string, unknown>;
+  const nivel = typeof d.nivel === "string" ? d.nivel.toUpperCase() : "";
+  if (nivel === "ERRO") return "erro";
+  if (nivel === "ALERTA" || nivel === "WARN" || nivel === "ATENÇÃO") return "alerta";
+  const hay = `${f.tipo_erro ?? ""} ${d.motivo ?? ""} ${d.detalhe ?? ""} ${d.detalhe_erro ?? ""}`.toUpperCase();
+  if (hay.includes("ERRO")) return "erro";
   if (hay.includes("ALERTA") || hay.includes("ATENÇÃO") || hay.includes("WARN")) return "alerta";
   return "info";
 }
@@ -224,7 +249,7 @@ export interface EndossoBucket {
 export function groupByEndosso(findings: AuditFindingRow[]): EndossoBucket[] {
   const map = new Map<string, { items: AuditFindingRow[]; apolices: Set<string> }>();
   for (const f of findings) {
-    const key = f.endosso?.trim() || "—";
+    const key = normalizeFinding(f).endosso || "—";
     const cur = map.get(key) ?? { items: [], apolices: new Set<string>() };
     cur.items.push(f);
     cur.apolices.add(f.apolice);

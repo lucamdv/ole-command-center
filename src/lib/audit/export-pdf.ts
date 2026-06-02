@@ -1,7 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { LatestAudit } from "./types";
-import { countBySeverity, groupByApolice, severityOf } from "./derive";
+import { countBySeverity, groupByApolice, normalizeFinding, severityOf } from "./derive";
 import { formatDateTime, formatInt, formatPct } from "@/lib/format";
 
 function pad(n: number) {
@@ -138,14 +138,15 @@ export function exportAuditPdf(latest: LatestAudit) {
     // Bullets dos achados
     for (const f of g.findings) {
       const sv = severityOf(f);
+      const nrm = normalizeFinding(f);
       const tipoTxt = f.tipo_erro ?? "";
-      const motivo = f.detalhes?.motivo ?? f.detalhes?.detalhe ?? "";
+      const motivo = nrm.motivo || nrm.detalhe || "";
       const tag = sv === "erro" ? "[ERRO]" : sv === "alerta" ? "[ALERTA]" : "[INFO]";
       const tagColor = sv === "erro" ? COLORS.danger : sv === "alerta" ? COLORS.warn : COLORS.muted;
 
       const lineText = `${tipoTxt} — ${motivo}`;
       const wrapped = doc.splitTextToSize(lineText, usableWidth - 60);
-      const blockH = wrapped.length * 11 + (f.endosso || f.data_inicio || f.data_fim ? 11 : 0) + 6;
+      const blockH = wrapped.length * 11 + (nrm.endosso || f.data_inicio || f.data_fim ? 11 : 0) + 6;
 
       if (cursorY + blockH > pageHeight - margin) {
         doc.addPage();
@@ -165,9 +166,9 @@ export function exportAuditPdf(latest: LatestAudit) {
       doc.text(wrapped, margin + 56, cursorY + 8);
 
       let lineY = cursorY + 8 + wrapped.length * 11;
-      if (f.endosso || f.data_inicio || f.data_fim) {
+      if (nrm.endosso || f.data_inicio || f.data_fim) {
         const meta = [
-          f.endosso ? `Endosso ${f.endosso}` : null,
+          nrm.endosso ? `Endosso ${nrm.endosso}` : null,
           f.data_inicio ? f.data_inicio : null,
           f.data_fim ? `→ ${f.data_fim}` : null,
         ].filter(Boolean).join("  ·  ");

@@ -39,6 +39,7 @@ import {
 import {
   countBySeverity,
   groupByApolice,
+  normalizeFinding,
   severityOf,
   type Severity,
 } from "@/lib/audit/derive";
@@ -74,7 +75,8 @@ export function FindingsListDialog({
       if (tipo !== "__all__" && f.tipo_erro !== tipo) return false;
       if (sev !== "__all__" && severityOf(f) !== sev) return false;
       if (term) {
-        const hay = `${f.apolice} ${f.tipo_erro} ${f.detalhes?.motivo ?? ""} ${f.detalhes?.detalhe ?? ""}`.toLowerCase();
+        const n = normalizeFinding(f);
+        const hay = `${f.apolice} ${f.tipo_erro} ${n.motivo} ${n.detalhe} ${n.endosso ?? ""}`.toLowerCase();
         if (!hay.includes(term)) return false;
       }
       return true;
@@ -104,8 +106,9 @@ export function FindingsListDialog({
       lines.push(`🔍 Apólice: ${g.apolice}`);
       for (const f of g.findings) {
         const icon = severityOf(f) === "erro" ? "🔴" : "⚠️";
-        const detalhe = f.detalhes?.motivo ?? f.detalhes?.detalhe ?? "";
-        lines.push(`  ${icon} ${f.tipo_erro} — ${detalhe}`);
+        const nrm = normalizeFinding(f);
+        const detalhe = nrm.motivo || nrm.detalhe || "";
+        lines.push(`  ${icon} ${f.tipo_erro}${nrm.endosso ? ` (end. ${nrm.endosso})` : ""} — ${detalhe}`);
       }
     }
     copy(lines.join("\n"), "Relatório copiado");
@@ -332,8 +335,7 @@ function GroupedView({
 function FindingBullet({ f }: { f: AuditFindingRow }) {
   const sev = severityOf(f);
   const Icon = sev === "erro" ? XCircle : AlertTriangle;
-  const motivo = f.detalhes?.motivo?.trim();
-  const detalhe = f.detalhes?.detalhe?.trim();
+  const n = normalizeFinding(f);
   return (
     <li className="flex gap-2.5 text-[12.5px] leading-relaxed">
       <Icon
@@ -357,26 +359,31 @@ function FindingBullet({ f }: { f: AuditFindingRow }) {
             {sev === "erro" ? "ERRO" : sev === "alerta" ? "ALERTA" : "INFO"}
           </span>
           <span className="font-semibold text-foreground">{f.tipo_erro}</span>
-          {f.endosso && (
+          {n.endosso && (
             <span className="inline-flex items-center font-mono text-[10.5px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
-              Endosso {f.endosso}
+              Endosso {n.endosso}
+            </span>
+          )}
+          {n.endossoAnterior && n.endossoAnterior !== "N/A" && (
+            <span className="inline-flex items-center font-mono text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground border">
+              Anterior {n.endossoAnterior}
             </span>
           )}
         </div>
 
-        {motivo && (
+        {n.motivo && (
           <div className="mt-1 text-[12.5px]">
             <span className="text-[10.5px] uppercase tracking-wider text-muted-foreground/70 mr-1.5">Motivo:</span>
-            <span className="text-foreground/90">{motivo}</span>
+            <span className="text-foreground/90">{n.motivo}</span>
           </div>
         )}
-        {detalhe && detalhe !== motivo && (
+        {n.detalhe && n.detalhe !== n.motivo && (
           <div className="mt-0.5 text-[12px]">
             <span className="text-[10.5px] uppercase tracking-wider text-muted-foreground/70 mr-1.5">Detalhe:</span>
-            <span className="text-muted-foreground">{detalhe}</span>
+            <span className="text-muted-foreground">{n.detalhe}</span>
           </div>
         )}
-        {!motivo && !detalhe && (
+        {!n.motivo && !n.detalhe && (
           <div className="mt-1 text-[12px] text-muted-foreground italic">Sem mensagem adicional.</div>
         )}
 
@@ -444,25 +451,32 @@ function TableView({
                 </div>
               </TableCell>
               <TableCell className="text-[12px] align-top">{f.tipo_erro}</TableCell>
-              <TableCell className="text-[12px] font-mono align-top">{f.endosso ?? "—"}</TableCell>
+              <TableCell className="text-[12px] font-mono align-top">{normalizeFinding(f).endosso ?? "—"}</TableCell>
               <TableCell className="text-[12px] font-mono align-top">{f.data_inicio ?? "—"}</TableCell>
               <TableCell className="text-[12px] font-mono align-top">{f.data_fim ?? "—"}</TableCell>
               <TableCell className="text-[12px] align-top max-w-[420px]">
-                {f.detalhes?.motivo && (
-                  <div className="text-foreground/90">
-                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 mr-1">Motivo:</span>
-                    {f.detalhes.motivo}
-                  </div>
-                )}
-                {f.detalhes?.detalhe && f.detalhes.detalhe !== f.detalhes.motivo && (
-                  <div className="text-muted-foreground mt-0.5">
-                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 mr-1">Detalhe:</span>
-                    {f.detalhes.detalhe}
-                  </div>
-                )}
-                {!f.detalhes?.motivo && !f.detalhes?.detalhe && (
-                  <span className="text-muted-foreground">—</span>
-                )}
+                {(() => {
+                  const n = normalizeFinding(f);
+                  return (
+                    <>
+                      {n.motivo && (
+                        <div className="text-foreground/90">
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 mr-1">Motivo:</span>
+                          {n.motivo}
+                        </div>
+                      )}
+                      {n.detalhe && n.detalhe !== n.motivo && (
+                        <div className="text-muted-foreground mt-0.5">
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 mr-1">Detalhe:</span>
+                          {n.detalhe}
+                        </div>
+                      )}
+                      {!n.motivo && !n.detalhe && (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </>
+                  );
+                })()}
               </TableCell>
             </TableRow>
           );
