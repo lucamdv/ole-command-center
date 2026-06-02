@@ -30,7 +30,7 @@ import {
 } from "@/lib/audit/derive";
 import { exportAuditPdf } from "@/lib/audit/export-pdf";
 import type { LatestAudit } from "@/lib/audit/types";
-import { formatDateTime, formatInt, formatPct, relativeTime } from "@/lib/format";
+import { formatDateTime, formatInt, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
