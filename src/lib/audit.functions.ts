@@ -66,7 +66,7 @@ export const runAudit = createServerFn({ method: "POST" }).handler(async () => {
         ? PRODUCTION_PUBLIC_URL
         : PREVIEW_PUBLIC_URL
       : `${proto}://${reqHost}`);
-  const callbackUrl = `${base.replace(/\/$/, "")}/api/public/audit-callback`;
+  const callbackUrl = `${base.replace(/\/$/, "")}/api/public/audit-callback?run_id=${runId}`;
 
   // 2. Dispara o webhook do n8n (espera resposta imediata)
   try {
@@ -175,7 +175,7 @@ export const getAuditHistory = createServerFn({ method: "GET" }).handler(async (
 
 // Schema exportado para uso no callback route
 export const CallbackPayloadSchema = z.object({
-  run_id: z.string().uuid(),
+  run_id: z.string().uuid().optional(),
   status: z.string().optional(),
   error: z.string().optional(),
   error_message: z.string().optional(),

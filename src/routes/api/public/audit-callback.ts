@@ -4,7 +4,7 @@ import { CallbackPayloadSchema } from "@/lib/audit.functions";
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, x-callback-secret",
+  "Access-Control-Allow-Headers": "Content-Type, x-callback-secret, x-audit-secret",
   "Access-Control-Max-Age": "86400",
 };
 
@@ -31,9 +31,11 @@ export const Route = createFileRoute("/api/public/audit-callback")({
       OPTIONS: async () => new Response(null, { status: 204, headers: CORS }),
 
       POST: async ({ request }) => {
-        // 1. Valida secret
+        // 1. Valida secret (aceita ambos os nomes de header para compatibilidade com fluxos n8n existentes)
         const expected = process.env.AUDIT_CALLBACK_SECRET;
-        const provided = request.headers.get("x-callback-secret");
+        const provided =
+          request.headers.get("x-callback-secret") ||
+          request.headers.get("x-audit-secret");
         if (!expected || provided !== expected) {
           return json({ error: "Unauthorized" }, 401);
         }
@@ -55,6 +57,20 @@ export const Route = createFileRoute("/api/public/audit-callback")({
         }
         const payload = parsed.data;
 
+        // run_id pode vir no body OU na query string (?run_id=...) — n8n
+        // sempre tem acesso ao callback_url original, então a query é mais robusta.
+        const url = new URL(request.url);
+        const runId = payload.run_id ?? url.searchParams.get("run_id") ?? undefined;
+        if (!runId) {
+          return json(
+            {
+              error:
+                "run_id ausente. Inclua run_id no body do POST OU na query string do callback_url (já é enviado automaticamente).",
+            },
+            400,
+          );
+        }
+
         const { supabaseAdmin } = await import(
           "@/integrations/supabase/client.server"
         );
@@ -63,7 +79,7 @@ export const Route = createFileRoute("/api/public/audit-callback")({
         const { data: existing, error: fetchErr } = await supabaseAdmin
           .from("audit_runs")
           .select("id, created_at")
-          .eq("id", payload.run_id)
+          .eq("id", runId)
           .maybeSingle();
 
         if (fetchErr) return json({ error: fetchErr.message }, 500);
@@ -75,7 +91,8 @@ export const Route = createFileRoute("/api/public/audit-callback")({
         const durationMs = Date.now() - startedAt;
 
         if (payload.status === "error" || payload.error || payload.error_message) {
-          const message = payload.error_message ?? payload.error ?? "Erro desconhecido no motor n8n.";
+          const message =
+            payload.error_message ?? payload.error ?? "Erro desconhecido no motor n8n.";
           const { error: errUpd } = await supabaseAdmin
             .from("audit_runs")
             .update({
@@ -85,13 +102,13 @@ export const Route = createFileRoute("/api/public/audit-callback")({
               duration_ms: durationMs,
               raw: payload as unknown as Record<string, unknown>,
             } as never)
-            .eq("id", payload.run_id);
+            .eq("id", runId);
 
           if (errUpd) return json({ error: errUpd.message }, 500);
-          return json({ ok: true, run_id: payload.run_id, status: "error", duration_ms: durationMs });
+          return json({ ok: true, run_id: runId, status: "error", duration_ms: durationMs });
         }
 
-        // 4. Atualiza audit_run
+        // 4. Atualiza audit_run com sucesso
         const { error: updErr } = await supabaseAdmin
           .from("audit_runs")
           .update({
@@ -105,14 +122,14 @@ export const Route = createFileRoute("/api/public/audit-callback")({
             duration_ms: durationMs,
             raw: payload as unknown as Record<string, unknown>,
           } as never)
-          .eq("id", payload.run_id);
+          .eq("id", runId);
 
         if (updErr) return json({ error: updErr.message }, 500);
 
         // 5. Insere findings
         const findings = payload.apolices_com_erro.flatMap((a) =>
           a.erros.map((e) => ({
-            run_id: payload.run_id,
+            run_id: runId,
             apolice: a.apolice,
             tipo_erro: e.tipo_erro,
             endosso: e.endosso ?? null,
@@ -131,7 +148,7 @@ export const Route = createFileRoute("/api/public/audit-callback")({
 
         return json({
           ok: true,
-          run_id: payload.run_id,
+          run_id: runId,
           findings: findings.length,
           duration_ms: durationMs,
         });
