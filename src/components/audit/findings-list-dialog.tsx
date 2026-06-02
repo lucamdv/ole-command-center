@@ -1,5 +1,17 @@
 import { useMemo, useState } from "react";
-import { Copy, FileDown, Search } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  FileDown,
+  LayoutList,
+  Search,
+  Table as TableIcon,
+  XCircle,
+} from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,9 +36,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { LatestAudit } from "@/lib/audit/types";
+import {
+  countBySeverity,
+  groupByApolice,
+  severityOf,
+  type Severity,
+} from "@/lib/audit/derive";
 import { exportAuditPdf } from "@/lib/audit/export-pdf";
-import { toast } from "sonner";
+import type { AuditFindingRow, LatestAudit } from "@/lib/audit/types";
+import { formatDate, formatDateTime, formatInt } from "@/lib/format";
+import { cn } from "@/lib/utils";
+
+type View = "agrupado" | "tabela";
 
 export function FindingsListDialog({
   latest,
@@ -38,6 +59,9 @@ export function FindingsListDialog({
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [tipo, setTipo] = useState<string>("__all__");
+  const [sev, setSev] = useState<Severity | "__all__">("__all__");
+  const [view, setView] = useState<View>("agrupado");
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   const tipos = useMemo(
     () => Array.from(new Set(latest.findings.map((f) => f.tipo_erro))).sort(),
@@ -48,40 +72,94 @@ export function FindingsListDialog({
     const term = q.trim().toLowerCase();
     return latest.findings.filter((f) => {
       if (tipo !== "__all__" && f.tipo_erro !== tipo) return false;
-      if (term && !f.apolice.toLowerCase().includes(term)) return false;
+      if (sev !== "__all__" && severityOf(f) !== sev) return false;
+      if (term) {
+        const hay = `${f.apolice} ${f.tipo_erro} ${f.detalhes?.motivo ?? ""} ${f.detalhes?.detalhe ?? ""}`.toLowerCase();
+        if (!hay.includes(term)) return false;
+      }
       return true;
     });
-  }, [latest.findings, q, tipo]);
+  }, [latest.findings, q, tipo, sev]);
 
-  const copy = async (txt: string) => {
+  const grouped = useMemo(() => groupByApolice(filtered), [filtered]);
+  const totals = countBySeverity(latest.findings);
+
+  const copy = async (txt: string, msg = "Copiado") => {
     try {
       await navigator.clipboard.writeText(txt);
-      toast.success("Apólice copiada");
+      toast.success(msg);
     } catch {
       toast.error("Falha ao copiar");
     }
   };
 
+  const copyAll = () => {
+    const lines: string[] = [];
+    lines.push(`Relatório Consolidado de Auditoria — ${formatDateTime(latest.run.data_auditoria ?? latest.run.created_at)}`);
+    lines.push(
+      `✅ ${latest.run.aprovados} OK | ⚠️ ${latest.run.reprovados} Intervenções Necessárias`,
+    );
+    for (const g of grouped) {
+      lines.push("");
+      lines.push(`🔍 Apólice: ${g.apolice}`);
+      for (const f of g.findings) {
+        const icon = severityOf(f) === "erro" ? "🔴" : "⚠️";
+        const detalhe = f.detalhes?.motivo ?? f.detalhes?.detalhe ?? "";
+        lines.push(`  ${icon} ${f.tipo_erro} — ${detalhe}`);
+      }
+    }
+    copy(lines.join("\n"), "Relatório copiado");
+  };
+
+  const toggleAll = (collapse: boolean) => {
+    setCollapsed(Object.fromEntries(grouped.map((g) => [g.apolice, collapse])));
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] flex flex-col p-0 gap-0">
-        <DialogHeader className="px-6 py-4 border-b border-border">
-          <DialogTitle className="text-[15px]">
-            Consolidado de achados — {latest.findings.length} ocorrências
+      <DialogContent className="max-w-6xl w-[95vw] max-h-[92vh] flex flex-col p-0 gap-0">
+        {/* Banner topo */}
+        <DialogHeader className="px-6 py-4 border-b border-border bg-gradient-to-r from-surface-2 to-surface">
+          <DialogTitle className="text-[15px] flex items-center gap-2">
+            <span>📊</span> Relatório Consolidado de Auditoria
           </DialogTitle>
+          <div className="flex flex-wrap items-center gap-2 mt-2 text-[12px]">
+            <span className="text-muted-foreground">
+              Data: <span className="font-mono text-foreground">{formatDateTime(latest.run.data_auditoria ?? latest.run.created_at)}</span>
+            </span>
+            <span className="text-muted-foreground/40">·</span>
+            <Chip tone="success">✅ {formatInt(latest.run.aprovados)} OK</Chip>
+            <Chip tone="warning">⚠️ {formatInt(latest.run.reprovados)} Intervenções</Chip>
+            <Chip tone="destructive">🔴 {formatInt(totals.erros)} erros</Chip>
+            <Chip tone="warning">⚠️ {formatInt(totals.alertas)} alertas</Chip>
+            <Chip tone="info">🔍 {formatInt(grouped.length)} apólices</Chip>
+            <Chip tone="default">📋 {formatInt(filtered.length)} achados</Chip>
+          </div>
         </DialogHeader>
 
+        {/* Toolbar */}
         <div className="px-6 py-3 border-b border-border flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-[200px]">
+          <div className="relative flex-1 min-w-[220px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar por número de apólice…"
+              placeholder="Buscar por nº de apólice ou texto do motivo…"
               className="pl-8 h-9 text-[12.5px]"
             />
           </div>
+          <Select value={sev} onValueChange={(v) => setSev(v as Severity | "__all__")}>
+            <SelectTrigger className="h-9 w-[140px] text-[12.5px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todas severidades</SelectItem>
+              <SelectItem value="erro">🔴 Erros</SelectItem>
+              <SelectItem value="alerta">⚠️ Alertas</SelectItem>
+              <SelectItem value="info">ℹ️ Info</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={tipo} onValueChange={setTipo}>
             <SelectTrigger className="h-9 w-[240px] text-[12.5px]">
               <SelectValue placeholder="Todos os tipos" />
@@ -89,76 +167,277 @@ export function FindingsListDialog({
             <SelectContent>
               <SelectItem value="__all__">Todos os tipos</SelectItem>
               {tipos.map((t) => (
-                <SelectItem key={t} value={t}>
-                  {t}
-                </SelectItem>
+                <SelectItem key={t} value={t}>{t}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => exportAuditPdf(latest)}
-            className="gap-1.5"
-          >
+
+          <div className="flex items-center rounded-md border border-border overflow-hidden h-9 ml-auto">
+            <button
+              type="button"
+              onClick={() => setView("agrupado")}
+              className={cn(
+                "px-2.5 h-full text-[11.5px] font-medium flex items-center gap-1.5 transition",
+                view === "agrupado" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/40",
+              )}
+            >
+              <LayoutList className="h-3.5 w-3.5" /> Agrupado
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("tabela")}
+              className={cn(
+                "px-2.5 h-full text-[11.5px] font-medium flex items-center gap-1.5 transition border-l border-border",
+                view === "tabela" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/40",
+              )}
+            >
+              <TableIcon className="h-3.5 w-3.5" /> Tabela
+            </button>
+          </div>
+
+          {view === "agrupado" && grouped.length > 0 && (
+            <>
+              <Button size="sm" variant="ghost" className="h-9 text-[11.5px]" onClick={() => toggleAll(false)}>
+                Expandir
+              </Button>
+              <Button size="sm" variant="ghost" className="h-9 text-[11.5px]" onClick={() => toggleAll(true)}>
+                Recolher
+              </Button>
+            </>
+          )}
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={copyAll}>
+            <Copy className="h-3.5 w-3.5" /> Copiar tudo
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => exportAuditPdf(latest)} className="gap-1.5">
             <FileDown className="h-4 w-4" /> Exportar PDF
           </Button>
         </div>
 
-        <div className="flex-1 overflow-auto">
-          <Table>
-            <TableHeader className="sticky top-0 bg-surface z-10">
-              <TableRow>
-                <TableHead className="text-[11px]">Apólice</TableHead>
-                <TableHead className="text-[11px]">Tipo de erro</TableHead>
-                <TableHead className="text-[11px]">Endosso</TableHead>
-                <TableHead className="text-[11px]">Início</TableHead>
-                <TableHead className="text-[11px]">Fim</TableHead>
-                <TableHead className="text-[11px]">Detalhe</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((f) => (
-                <TableRow key={f.id}>
-                  <TableCell className="font-mono text-[11.5px] align-top">
-                    <div className="flex items-start gap-1.5">
-                      <span className="break-all">{f.apolice}</span>
-                      <button
-                        type="button"
-                        onClick={() => copy(f.apolice)}
-                        className="opacity-50 hover:opacity-100 shrink-0"
-                        title="Copiar"
-                      >
-                        <Copy className="h-3 w-3" />
-                      </button>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-[12px] align-top">{f.tipo_erro}</TableCell>
-                  <TableCell className="text-[12px] font-mono align-top">
-                    {f.endosso ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-[12px] font-mono align-top">
-                    {f.data_inicio ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-[12px] font-mono align-top">
-                    {f.data_fim ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-[12px] text-muted-foreground align-top">
-                    {f.detalhes?.motivo ?? f.detalhes?.detalhe ?? "—"}
-                  </TableCell>
-                </TableRow>
-              ))}
-              {filtered.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-[12px] text-muted-foreground">
-                    Nenhum achado para o filtro atual.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+        {/* Body */}
+        <div className="flex-1 overflow-auto bg-background/40">
+          {view === "agrupado" ? (
+            <GroupedView
+              groups={grouped}
+              collapsed={collapsed}
+              onToggle={(k) => setCollapsed((s) => ({ ...s, [k]: !s[k] }))}
+              onCopy={copy}
+            />
+          ) : (
+            <TableView findings={filtered} onCopy={copy} />
+          )}
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function Chip({
+  children,
+  tone,
+}: {
+  children: React.ReactNode;
+  tone: "success" | "warning" | "destructive" | "info" | "default";
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-mono border",
+        tone === "success" && "bg-success/10 text-success border-success/30",
+        tone === "warning" && "bg-warning/10 text-warning border-warning/30",
+        tone === "destructive" && "bg-destructive/10 text-destructive border-destructive/30",
+        tone === "info" && "bg-info/10 text-info border-info/30",
+        tone === "default" && "bg-muted/40 text-muted-foreground border-border",
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+function GroupedView({
+  groups,
+  collapsed,
+  onToggle,
+  onCopy,
+}: {
+  groups: ReturnType<typeof groupByApolice>;
+  collapsed: Record<string, boolean>;
+  onToggle: (apolice: string) => void;
+  onCopy: (txt: string, msg?: string) => void;
+}) {
+  if (groups.length === 0) {
+    return (
+      <div className="text-center py-16 text-[12.5px] text-success">
+        ✅ Nenhum achado para o filtro atual.
+      </div>
+    );
+  }
+  return (
+    <div className="divide-y divide-border">
+      {groups.map((g) => {
+        const sev = countBySeverity(g.findings);
+        const isCollapsed = collapsed[g.apolice];
+        return (
+          <section key={g.apolice} className="bg-surface/40">
+            <header className="px-5 py-3 flex items-start gap-3 sticky top-0 z-10 bg-surface/95 backdrop-blur border-b border-border">
+              <button
+                type="button"
+                onClick={() => onToggle(g.apolice)}
+                className="mt-0.5 text-muted-foreground hover:text-foreground transition"
+              >
+                {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </button>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">🔍 Apólice</span>
+                  <span className="font-mono text-[13px] text-foreground break-all">{g.apolice}</span>
+                  <button
+                    type="button"
+                    onClick={() => onCopy(g.apolice, "Apólice copiada")}
+                    className="opacity-60 hover:opacity-100"
+                    title="Copiar número"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-1.5 mt-1.5 text-[11px]">
+                  {sev.erros > 0 && <Chip tone="destructive">🔴 {sev.erros} erros</Chip>}
+                  {sev.alertas > 0 && <Chip tone="warning">⚠️ {sev.alertas} alertas</Chip>}
+                  {sev.infos > 0 && <Chip tone="info">ℹ️ {sev.infos} info</Chip>}
+                  <Link
+                    to="/apolices/$id"
+                    params={{ id: g.apolice }}
+                    className="ml-1 text-[11px] text-primary hover:underline"
+                  >
+                    Abrir detalhes →
+                  </Link>
+                </div>
+              </div>
+            </header>
+
+            {!isCollapsed && (
+              <ul className="px-5 py-3 space-y-2.5">
+                {g.findings.map((f) => (
+                  <FindingBullet key={f.id} f={f} />
+                ))}
+              </ul>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function FindingBullet({ f }: { f: AuditFindingRow }) {
+  const sev = severityOf(f);
+  const Icon = sev === "erro" ? XCircle : AlertTriangle;
+  const text = f.detalhes?.motivo ?? f.detalhes?.detalhe ?? "—";
+  return (
+    <li className="flex gap-2.5 text-[12.5px] leading-relaxed">
+      <Icon
+        className={cn(
+          "h-4 w-4 shrink-0 mt-0.5",
+          sev === "erro" && "text-destructive",
+          sev === "alerta" && "text-warning",
+          sev === "info" && "text-info",
+        )}
+      />
+      <div className="flex-1 min-w-0">
+        <span
+          className={cn(
+            "font-mono text-[10.5px] uppercase tracking-wider px-1.5 py-0.5 rounded mr-1.5 align-[1px]",
+            sev === "erro" && "bg-destructive/10 text-destructive",
+            sev === "alerta" && "bg-warning/10 text-warning",
+            sev === "info" && "bg-info/10 text-info",
+          )}
+        >
+          {sev === "erro" ? "ERRO" : sev === "alerta" ? "ALERTA" : "INFO"}
+        </span>
+        <span className="font-semibold text-foreground">{f.tipo_erro}</span>
+        <span className="text-muted-foreground"> — {text}</span>
+        {(f.endosso || f.data_inicio || f.data_fim) && (
+          <div className="mt-1 text-[11px] font-mono text-muted-foreground/80">
+            {f.endosso && <>Endosso {f.endosso}</>}
+            {f.endosso && (f.data_inicio || f.data_fim) && <span className="mx-1.5">·</span>}
+            {f.data_inicio && <>{formatDate(f.data_inicio)}</>}
+            {f.data_inicio && f.data_fim && <span className="mx-1"> → </span>}
+            {f.data_fim && <>{formatDate(f.data_fim)}</>}
+          </div>
+        )}
+      </div>
+    </li>
+  );
+}
+
+function TableView({
+  findings,
+  onCopy,
+}: {
+  findings: AuditFindingRow[];
+  onCopy: (txt: string, msg?: string) => void;
+}) {
+  return (
+    <Table>
+      <TableHeader className="sticky top-0 bg-surface z-10">
+        <TableRow>
+          <TableHead className="text-[11px]">Sev</TableHead>
+          <TableHead className="text-[11px]">Apólice</TableHead>
+          <TableHead className="text-[11px]">Tipo de erro</TableHead>
+          <TableHead className="text-[11px]">Endosso</TableHead>
+          <TableHead className="text-[11px]">Início</TableHead>
+          <TableHead className="text-[11px]">Fim</TableHead>
+          <TableHead className="text-[11px]">Detalhe</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {findings.map((f) => {
+          const sev = severityOf(f);
+          return (
+            <TableRow key={f.id}>
+              <TableCell className="align-top">
+                <span
+                  className={cn(
+                    "font-mono text-[10px] uppercase px-1.5 py-0.5 rounded",
+                    sev === "erro" && "bg-destructive/10 text-destructive",
+                    sev === "alerta" && "bg-warning/10 text-warning",
+                    sev === "info" && "bg-info/10 text-info",
+                  )}
+                >
+                  {sev}
+                </span>
+              </TableCell>
+              <TableCell className="font-mono text-[11.5px] align-top">
+                <div className="flex items-start gap-1.5">
+                  <span className="break-all">{f.apolice}</span>
+                  <button
+                    type="button"
+                    onClick={() => onCopy(f.apolice, "Apólice copiada")}
+                    className="opacity-50 hover:opacity-100 shrink-0"
+                    title="Copiar"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </button>
+                </div>
+              </TableCell>
+              <TableCell className="text-[12px] align-top">{f.tipo_erro}</TableCell>
+              <TableCell className="text-[12px] font-mono align-top">{f.endosso ?? "—"}</TableCell>
+              <TableCell className="text-[12px] font-mono align-top">{f.data_inicio ?? "—"}</TableCell>
+              <TableCell className="text-[12px] font-mono align-top">{f.data_fim ?? "—"}</TableCell>
+              <TableCell className="text-[12px] text-muted-foreground align-top">
+                {f.detalhes?.motivo ?? f.detalhes?.detalhe ?? "—"}
+              </TableCell>
+            </TableRow>
+          );
+        })}
+        {findings.length === 0 && (
+          <TableRow>
+            <TableCell colSpan={7} className="text-center py-8 text-[12px] text-muted-foreground">
+              Nenhum achado para o filtro atual.
+            </TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+    </Table>
   );
 }
