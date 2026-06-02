@@ -410,6 +410,18 @@ function Dashboard({
           </div>
         </div>
       </div>
+
+      {/* Breakdown Severidade × Tipo */}
+      <BreakdownTable findings={latest.findings} totalFindings={latest.findings.length} />
+
+      {/* Endossos + Janela de vigência */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        <EndossosCard endossos={endossos} />
+        <MonthlyWindowCard months={months} />
+      </div>
+
+      {/* Histórico detalhado de runs */}
+      <RunHistoryTable history={history} />
     </div>
   );
 }
