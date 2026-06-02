@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import { AlertOctagon, Clock, Database, FileWarning, ShieldCheck, TrendingUp, Zap } from "lucide-react";
+import { Copy, FileDown, List, TrendingUp } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -14,9 +14,12 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { toast } from "sonner";
 import { KpiCard } from "@/components/kpi/kpi-card";
 import { RunAuditButton } from "@/components/audit/run-audit-button";
 import { AuditEmptyState } from "@/components/audit/empty-state";
+import { FindingsListDialog } from "@/components/audit/findings-list-dialog";
+import { Button } from "@/components/ui/button";
 import { useAuditHistory, useLatestAudit } from "@/hooks/use-audit";
 import {
   buildHeatmap,
@@ -24,8 +27,9 @@ import {
   errorTypeBreakdown,
   groupByApolice,
   runSeries,
-  shortApolice,
 } from "@/lib/audit/derive";
+import { exportAuditPdf } from "@/lib/audit/export-pdf";
+import type { LatestAudit } from "@/lib/audit/types";
 import { formatDateTime, formatInt, formatPct, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
