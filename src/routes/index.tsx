@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import { Copy, FileDown, List, TrendingUp } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Copy, FileDown, List, TrendingUp, XCircle } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -23,15 +23,20 @@ import { Button } from "@/components/ui/button";
 import { useAuditHistory, useLatestAudit } from "@/hooks/use-audit";
 import {
   buildHeatmap,
+  bucketByMonth,
+  countBySeverity,
   deriveKpis,
   errorTypeBreakdown,
   groupByApolice,
+  groupByEndosso,
   runSeries,
+  severityOf,
 } from "@/lib/audit/derive";
 import { exportAuditPdf } from "@/lib/audit/export-pdf";
-import type { LatestAudit } from "@/lib/audit/types";
-import { formatDateTime, formatInt, relativeTime } from "@/lib/format";
+import type { AuditFindingRow, LatestAudit } from "@/lib/audit/types";
+import { formatDateTime, formatInt, formatPct, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
