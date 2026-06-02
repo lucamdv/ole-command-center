@@ -332,7 +332,8 @@ function GroupedView({
 function FindingBullet({ f }: { f: AuditFindingRow }) {
   const sev = severityOf(f);
   const Icon = sev === "erro" ? XCircle : AlertTriangle;
-  const text = f.detalhes?.motivo ?? f.detalhes?.detalhe ?? "—";
+  const motivo = f.detalhes?.motivo?.trim();
+  const detalhe = f.detalhes?.detalhe?.trim();
   return (
     <li className="flex gap-2.5 text-[12.5px] leading-relaxed">
       <Icon
@@ -344,25 +345,47 @@ function FindingBullet({ f }: { f: AuditFindingRow }) {
         )}
       />
       <div className="flex-1 min-w-0">
-        <span
-          className={cn(
-            "font-mono text-[10.5px] uppercase tracking-wider px-1.5 py-0.5 rounded mr-1.5 align-[1px]",
-            sev === "erro" && "bg-destructive/10 text-destructive",
-            sev === "alerta" && "bg-warning/10 text-warning",
-            sev === "info" && "bg-info/10 text-info",
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span
+            className={cn(
+              "font-mono text-[10.5px] uppercase tracking-wider px-1.5 py-0.5 rounded",
+              sev === "erro" && "bg-destructive/10 text-destructive",
+              sev === "alerta" && "bg-warning/10 text-warning",
+              sev === "info" && "bg-info/10 text-info",
+            )}
+          >
+            {sev === "erro" ? "ERRO" : sev === "alerta" ? "ALERTA" : "INFO"}
+          </span>
+          <span className="font-semibold text-foreground">{f.tipo_erro}</span>
+          {f.endosso && (
+            <span className="inline-flex items-center font-mono text-[10.5px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+              Endosso {f.endosso}
+            </span>
           )}
-        >
-          {sev === "erro" ? "ERRO" : sev === "alerta" ? "ALERTA" : "INFO"}
-        </span>
-        <span className="font-semibold text-foreground">{f.tipo_erro}</span>
-        <span className="text-muted-foreground"> — {text}</span>
-        {(f.endosso || f.data_inicio || f.data_fim) && (
-          <div className="mt-1 text-[11px] font-mono text-muted-foreground/80">
-            {f.endosso && <>Endosso {f.endosso}</>}
-            {f.endosso && (f.data_inicio || f.data_fim) && <span className="mx-1.5">·</span>}
-            {f.data_inicio && <>{formatDate(f.data_inicio)}</>}
-            {f.data_inicio && f.data_fim && <span className="mx-1"> → </span>}
-            {f.data_fim && <>{formatDate(f.data_fim)}</>}
+        </div>
+
+        {motivo && (
+          <div className="mt-1 text-[12.5px]">
+            <span className="text-[10.5px] uppercase tracking-wider text-muted-foreground/70 mr-1.5">Motivo:</span>
+            <span className="text-foreground/90">{motivo}</span>
+          </div>
+        )}
+        {detalhe && detalhe !== motivo && (
+          <div className="mt-0.5 text-[12px]">
+            <span className="text-[10.5px] uppercase tracking-wider text-muted-foreground/70 mr-1.5">Detalhe:</span>
+            <span className="text-muted-foreground">{detalhe}</span>
+          </div>
+        )}
+        {!motivo && !detalhe && (
+          <div className="mt-1 text-[12px] text-muted-foreground italic">Sem mensagem adicional.</div>
+        )}
+
+        {(f.data_inicio || f.data_fim) && (
+          <div className="mt-1 text-[11px] font-mono text-muted-foreground/80 flex items-center gap-1.5">
+            <span className="uppercase tracking-wider text-muted-foreground/60">Vigência:</span>
+            {f.data_inicio && <span>{formatDate(f.data_inicio)}</span>}
+            {f.data_inicio && f.data_fim && <span>→</span>}
+            {f.data_fim && <span>{formatDate(f.data_fim)}</span>}
           </div>
         )}
       </div>
