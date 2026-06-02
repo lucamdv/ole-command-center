@@ -150,17 +150,24 @@ export const Route = createFileRoute("/api/public/audit-callback")({
 
         if (updErr) return json({ error: updErr.message }, 500);
 
-        // 5. Insere findings
+        // 5. Insere findings (normaliza nomes alternativos vindos do n8n)
         const findings = payload.apolices_com_erro.flatMap((a) =>
-          a.erros.map((e) => ({
-            run_id: runId,
-            apolice: a.apolice,
-            tipo_erro: e.tipo_erro,
-            endosso: e.endosso ?? null,
-            data_inicio: parseIso(e.dataInicio ?? null),
-            data_fim: parseIso(e.dataFim ?? null),
-            detalhes: e as unknown as Record<string, unknown>,
-          })),
+          a.erros.map((e) => {
+            const ex = e as Record<string, unknown>;
+            const endossoVal =
+              (e.endosso as string | null | undefined) ??
+              (ex.endosso_com_erro as string | null | undefined) ??
+              null;
+            return {
+              run_id: runId,
+              apolice: a.apolice,
+              tipo_erro: e.tipo_erro,
+              endosso: endossoVal,
+              data_inicio: parseIso((e.dataInicio as string | null | undefined) ?? (ex.data_inicio as string | null | undefined) ?? null),
+              data_fim: parseIso((e.dataFim as string | null | undefined) ?? (ex.data_fim as string | null | undefined) ?? null),
+              detalhes: e as unknown as Record<string, unknown>,
+            };
+          }),
         );
 
         if (findings.length > 0) {
