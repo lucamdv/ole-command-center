@@ -66,7 +66,7 @@ export const runAudit = createServerFn({ method: "POST" }).handler(async () => {
         ? PRODUCTION_PUBLIC_URL
         : PREVIEW_PUBLIC_URL
       : `${proto}://${reqHost}`);
-  const callbackUrl = `${base.replace(/\/$/, "")}/api/public/audit-callback`;
+  const callbackUrl = `${base.replace(/\/$/, "")}/api/public/audit-callback?run_id=${runId}`;
 
   // 2. Dispara o webhook do n8n (espera resposta imediata)
   try {
