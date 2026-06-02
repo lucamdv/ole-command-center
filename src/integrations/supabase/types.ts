@@ -14,7 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audit_findings: {
+        Row: {
+          apolice: string
+          created_at: string
+          data_fim: string | null
+          data_inicio: string | null
+          detalhes: Json
+          endosso: string | null
+          id: string
+          run_id: string
+          tipo_erro: string
+        }
+        Insert: {
+          apolice: string
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          detalhes: Json
+          endosso?: string | null
+          id?: string
+          run_id: string
+          tipo_erro: string
+        }
+        Update: {
+          apolice?: string
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          detalhes?: Json
+          endosso?: string | null
+          id?: string
+          run_id?: string
+          tipo_erro?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_findings_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "audit_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_runs: {
+        Row: {
+          aprovados: number
+          created_at: string
+          data_auditoria: string
+          duration_ms: number | null
+          id: string
+          mensagem_geral: string | null
+          raw: Json
+          reprovados: number
+          status_geral: string
+          total_processado: number
+        }
+        Insert: {
+          aprovados?: number
+          created_at?: string
+          data_auditoria: string
+          duration_ms?: number | null
+          id?: string
+          mensagem_geral?: string | null
+          raw: Json
+          reprovados?: number
+          status_geral: string
+          total_processado?: number
+        }
+        Update: {
+          aprovados?: number
+          created_at?: string
+          data_auditoria?: string
+          duration_ms?: number | null
+          id?: string
+          mensagem_geral?: string | null
+          raw?: Json
+          reprovados?: number
+          status_geral?: string
+          total_processado?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
