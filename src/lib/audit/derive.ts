@@ -186,3 +186,85 @@ export function shortApolice(num: string): string {
   if (num.length <= 12) return num;
   return `…${num.slice(-12, -6)}·${num.slice(-6)}`;
 }
+
+export type Severity = "erro" | "alerta" | "info";
+
+export function severityOf(f: Pick<AuditFindingRow, "tipo_erro" | "detalhes">): Severity {
+  const hay = `${f.tipo_erro ?? ""} ${f.detalhes?.motivo ?? ""} ${f.detalhes?.detalhe ?? ""}`.toUpperCase();
+  if (hay.includes("ERRO") || hay.startsWith("ERRO")) return "erro";
+  if (hay.includes("ALERTA") || hay.includes("ATENÇÃO") || hay.includes("WARN")) return "alerta";
+  return "info";
+}
+
+export interface SeverityBreakdown {
+  erros: number;
+  alertas: number;
+  infos: number;
+}
+
+export function countBySeverity(findings: AuditFindingRow[]): SeverityBreakdown {
+  const out: SeverityBreakdown = { erros: 0, alertas: 0, infos: 0 };
+  for (const f of findings) {
+    const s = severityOf(f);
+    if (s === "erro") out.erros++;
+    else if (s === "alerta") out.alertas++;
+    else out.infos++;
+  }
+  return out;
+}
+
+export interface EndossoBucket {
+  endosso: string;
+  total: number;
+  apolices: number;
+  erros: number;
+  alertas: number;
+}
+
+export function groupByEndosso(findings: AuditFindingRow[]): EndossoBucket[] {
+  const map = new Map<string, { items: AuditFindingRow[]; apolices: Set<string> }>();
+  for (const f of findings) {
+    const key = f.endosso?.trim() || "—";
+    const cur = map.get(key) ?? { items: [], apolices: new Set<string>() };
+    cur.items.push(f);
+    cur.apolices.add(f.apolice);
+    map.set(key, cur);
+  }
+  return Array.from(map.entries())
+    .map(([endosso, v]) => {
+      const sev = countBySeverity(v.items);
+      return {
+        endosso,
+        total: v.items.length,
+        apolices: v.apolices.size,
+        erros: sev.erros,
+        alertas: sev.alertas,
+      };
+    })
+    .sort((a, b) => b.total - a.total);
+}
+
+export interface MonthBucket {
+  key: string; // YYYY-MM
+  label: string;
+  count: number;
+}
+
+export function bucketByMonth(findings: AuditFindingRow[]): MonthBucket[] {
+  const map = new Map<string, number>();
+  for (const f of findings) {
+    const d = f.data_inicio || f.data_fim;
+    if (!d) continue;
+    const key = d.slice(0, 7);
+    map.set(key, (map.get(key) ?? 0) + 1);
+  }
+  return Array.from(map.entries())
+    .map(([key, count]) => {
+      const [y, m] = key.split("-");
+      const label = new Intl.DateTimeFormat("pt-BR", { month: "short", year: "2-digit" }).format(
+        new Date(Number(y), Number(m) - 1, 1),
+      );
+      return { key, label, count };
+    })
+    .sort((a, b) => a.key.localeCompare(b.key));
+}
