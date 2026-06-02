@@ -176,7 +176,7 @@ export const getAuditHistory = createServerFn({ method: "GET" }).handler(async (
 // Schema exportado para uso no callback route
 export const CallbackPayloadSchema = z.object({
   run_id: z.string().uuid(),
-  status: z.enum(["success", "error", "running"]).optional(),
+  status: z.string().optional(),
   error: z.string().optional(),
   error_message: z.string().optional(),
   data_auditoria: z.string().optional(),
