@@ -83,6 +83,8 @@ export function useRunAudit() {
       } else if (row.status === "error") {
         toast.error("Falha na auditoria", {
           description: row.error_message ?? "Erro desconhecido no motor.",
+          duration: 30_000,
+          style: { whiteSpace: "pre-wrap", fontFamily: "ui-monospace, SFMono-Regular, monospace", fontSize: "12px" },
         });
         stopPolling();
         return;
