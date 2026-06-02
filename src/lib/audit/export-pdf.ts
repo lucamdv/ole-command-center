@@ -1,7 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { LatestAudit } from "./types";
-import { countBySeverity, groupByApolice, severityOf } from "./derive";
+import { countBySeverity, groupByApolice, normalizeFinding, severityOf } from "./derive";
 import { formatDateTime, formatInt, formatPct } from "@/lib/format";
 
 function pad(n: number) {
