@@ -453,3 +453,334 @@ function MiniStat({
     </div>
   );
 }
+
+function ConsolidatedBanner({
+  latest,
+  sev,
+  grouped,
+}: {
+  latest: LatestAudit;
+  sev: { erros: number; alertas: number; infos: number };
+  grouped: number;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-gradient-to-r from-surface to-surface-2 px-5 py-4 flex flex-wrap items-center gap-x-6 gap-y-2 shadow-elevated">
+      <div className="flex items-center gap-2">
+        <span className="text-[18px]">📊</span>
+        <div>
+          <div className="text-[13px] font-semibold tracking-tight">Relatório Consolidado de Auditoria</div>
+          <div className="text-[11px] font-mono text-muted-foreground">
+            {formatDateTime(latest.run.data_auditoria ?? latest.run.created_at)}
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5 ml-auto">
+        <BannerChip icon={<CheckCircle2 className="h-3 w-3" />} tone="success">
+          {formatInt(latest.run.aprovados)} OK
+        </BannerChip>
+        <BannerChip icon={<AlertTriangle className="h-3 w-3" />} tone="warning">
+          {formatInt(latest.run.reprovados)} Intervenções
+        </BannerChip>
+        <BannerChip icon={<XCircle className="h-3 w-3" />} tone="destructive">
+          {formatInt(sev.erros)} erros
+        </BannerChip>
+        <BannerChip icon={<AlertTriangle className="h-3 w-3" />} tone="warning">
+          {formatInt(sev.alertas)} alertas
+        </BannerChip>
+        <BannerChip tone="info">🔍 {formatInt(grouped)} apólices</BannerChip>
+        <BannerChip tone="default">📋 {formatInt(latest.findings.length)} achados</BannerChip>
+      </div>
+    </div>
+  );
+}
+
+function BannerChip({
+  children,
+  icon,
+  tone,
+}: {
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+  tone: "success" | "warning" | "destructive" | "info" | "default";
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-mono border",
+        tone === "success" && "bg-success/10 text-success border-success/30",
+        tone === "warning" && "bg-warning/10 text-warning border-warning/30",
+        tone === "destructive" && "bg-destructive/10 text-destructive border-destructive/30",
+        tone === "info" && "bg-info/10 text-info border-info/30",
+        tone === "default" && "bg-muted/40 text-muted-foreground border-border",
+      )}
+    >
+      {icon}
+      {children}
+    </span>
+  );
+}
+
+function SeveritySplit({ sev }: { sev: { erros: number; alertas: number; infos: number } }) {
+  const total = sev.erros + sev.alertas + sev.infos;
+  const pe = total ? (sev.erros / total) * 100 : 0;
+  const pa = total ? (sev.alertas / total) * 100 : 0;
+  const pi = total ? (sev.infos / total) * 100 : 0;
+  return (
+    <div className="rounded-xl border border-border bg-surface p-4">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">Severidade</span>
+        <span className="text-[11px] font-mono text-muted-foreground">{formatInt(total)} achados</span>
+      </div>
+      <div className="h-2.5 rounded-full overflow-hidden flex bg-muted/40">
+        {pe > 0 && <div style={{ width: `${pe}%` }} className="bg-destructive" />}
+        {pa > 0 && <div style={{ width: `${pa}%` }} className="bg-warning" />}
+        {pi > 0 && <div style={{ width: `${pi}%` }} className="bg-info" />}
+      </div>
+      <div className="grid grid-cols-3 gap-2 mt-3 text-[11px]">
+        <SevLeg color="bg-destructive" label="Erros" value={sev.erros} />
+        <SevLeg color="bg-warning" label="Alertas" value={sev.alertas} />
+        <SevLeg color="bg-info" label="Info" value={sev.infos} />
+      </div>
+    </div>
+  );
+}
+
+function SevLeg({ color, label, value }: { color: string; label: string; value: number }) {
+  return (
+    <div className="flex items-center gap-1.5 min-w-0">
+      <span className={cn("h-2 w-2 rounded-full shrink-0", color)} />
+      <span className="text-muted-foreground truncate">{label}</span>
+      <span className="font-mono text-foreground ml-auto">{formatInt(value)}</span>
+    </div>
+  );
+}
+
+function ApoliceSevBadge({ findings }: { findings: AuditFindingRow[] }) {
+  const s = countBySeverity(findings);
+  return (
+    <div className="flex flex-col items-end gap-1 shrink-0">
+      {s.erros > 0 && (
+        <span className="text-[10.5px] font-mono font-semibold px-2 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/30">
+          🔴 {s.erros} erros
+        </span>
+      )}
+      {s.alertas > 0 && (
+        <span className="text-[10.5px] font-mono font-semibold px-2 py-0.5 rounded bg-warning/10 text-warning border border-warning/30">
+          ⚠️ {s.alertas} alertas
+        </span>
+      )}
+    </div>
+  );
+}
+
+function BreakdownTable({ findings, totalFindings }: { findings: AuditFindingRow[]; totalFindings: number }) {
+  const rows = (() => {
+    const map = new Map<string, { count: number; apolices: Set<string>; sev: "erro" | "alerta" | "info" }>();
+    for (const f of findings) {
+      const key = f.tipo_erro;
+      const cur = map.get(key) ?? { count: 0, apolices: new Set<string>(), sev: severityOf(f) };
+      cur.count++;
+      cur.apolices.add(f.apolice);
+      map.set(key, cur);
+    }
+    return Array.from(map.entries())
+      .map(([tipo, v]) => ({ tipo, count: v.count, apolices: v.apolices.size, sev: v.sev }))
+      .sort((a, b) => b.count - a.count);
+  })();
+
+  if (rows.length === 0) return null;
+
+  return (
+    <div className="rounded-2xl border border-border bg-surface shadow-elevated overflow-hidden">
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+        <div>
+          <div className="text-[14px] font-semibold tracking-tight">Breakdown Severidade × Tipo</div>
+          <div className="text-[11px] text-muted-foreground">{rows.length} regras acionadas · {formatInt(totalFindings)} achados totais</div>
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-[12px]">
+          <thead className="bg-surface-2/60 text-[10.5px] uppercase tracking-wider text-muted-foreground">
+            <tr>
+              <th className="text-left px-4 py-2.5 font-medium">Tipo de erro</th>
+              <th className="text-left px-3 py-2.5 font-medium w-20">Severidade</th>
+              <th className="text-right px-3 py-2.5 font-medium w-24">Ocorrências</th>
+              <th className="text-right px-3 py-2.5 font-medium w-24">Apólices</th>
+              <th className="text-left px-3 py-2.5 font-medium w-[220px]">% do total</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {rows.map((r) => {
+              const pct = totalFindings ? (r.count / totalFindings) * 100 : 0;
+              const color = r.sev === "erro" ? "bg-destructive" : r.sev === "alerta" ? "bg-warning" : "bg-info";
+              return (
+                <tr key={r.tipo} className="hover:bg-surface-2/40">
+                  <td className="px-4 py-2.5 text-foreground">{r.tipo}</td>
+                  <td className="px-3 py-2.5">
+                    <span
+                      className={cn(
+                        "font-mono text-[10px] uppercase px-1.5 py-0.5 rounded",
+                        r.sev === "erro" && "bg-destructive/10 text-destructive",
+                        r.sev === "alerta" && "bg-warning/10 text-warning",
+                        r.sev === "info" && "bg-info/10 text-info",
+                      )}
+                    >
+                      {r.sev}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2.5 text-right font-mono tabular-nums">{formatInt(r.count)}</td>
+                  <td className="px-3 py-2.5 text-right font-mono tabular-nums">{formatInt(r.apolices)}</td>
+                  <td className="px-3 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 rounded-full bg-muted/40 overflow-hidden">
+                        <div className={cn("h-full", color)} style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="font-mono text-[11px] text-muted-foreground w-12 text-right">{formatPct(pct, 1)}</span>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function EndossosCard({ endossos }: { endossos: ReturnType<typeof groupByEndosso> }) {
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-5 shadow-elevated">
+      <div className="mb-4">
+        <div className="text-[13px] font-semibold">Endossos mais problemáticos</div>
+        <div className="text-[11px] text-muted-foreground">Top 8 endossos por número de achados</div>
+      </div>
+      {endossos.length === 0 ? (
+        <div className="text-center py-8 text-[12px] text-muted-foreground">Sem dados de endossos.</div>
+      ) : (
+        <div className="space-y-1.5">
+          {endossos.slice(0, 8).map((e) => (
+            <div key={e.endosso} className="flex items-center gap-3 px-3 py-2 rounded-lg border border-border/60 bg-surface-2/40">
+              <div className="font-mono text-[12px] text-foreground w-20 shrink-0">{e.endosso}</div>
+              <div className="flex-1 text-[11px] text-muted-foreground font-mono">
+                {e.apolices} apólice{e.apolices > 1 ? "s" : ""}
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {e.erros > 0 && (
+                  <span className="text-[10.5px] font-mono px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">{e.erros}E</span>
+                )}
+                {e.alertas > 0 && (
+                  <span className="text-[10.5px] font-mono px-1.5 py-0.5 rounded bg-warning/10 text-warning">{e.alertas}A</span>
+                )}
+                <span className="text-[11px] font-mono font-semibold text-foreground ml-1 tabular-nums">{e.total}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MonthlyWindowCard({ months }: { months: ReturnType<typeof bucketByMonth> }) {
+  const max = Math.max(1, ...months.map((m) => m.count));
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-5 shadow-elevated">
+      <div className="mb-4">
+        <div className="text-[13px] font-semibold">Janela de Vigência mais afetada</div>
+        <div className="text-[11px] text-muted-foreground">Distribuição dos achados por mês de início</div>
+      </div>
+      {months.length === 0 ? (
+        <div className="text-center py-8 text-[12px] text-muted-foreground">Sem datas de vigência nos achados.</div>
+      ) : (
+        <div className="space-y-1.5">
+          {months.map((m) => (
+            <div key={m.key} className="flex items-center gap-3">
+              <div className="text-[11px] font-mono text-muted-foreground w-16 shrink-0">{m.label}</div>
+              <div className="flex-1 h-5 bg-muted/30 rounded overflow-hidden">
+                <div
+                  className="h-full bg-warning/70 flex items-center justify-end pr-1.5 text-[10px] font-mono text-warning-foreground"
+                  style={{ width: `${(m.count / max) * 100}%` }}
+                >
+                  {m.count >= 3 ? m.count : ""}
+                </div>
+              </div>
+              <span className="text-[11px] font-mono tabular-nums w-10 text-right text-foreground">{m.count}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RunHistoryTable({ history }: { history: ReturnType<typeof useAuditHistory>["data"] extends infer T ? Exclude<T, undefined> : never }) {
+  if (history.length === 0) return null;
+  const rows = history.slice(0, 10);
+  return (
+    <div className="rounded-2xl border border-border bg-surface shadow-elevated overflow-hidden">
+      <div className="px-5 py-4 border-b border-border">
+        <div className="text-[14px] font-semibold tracking-tight">Histórico de Auditorias</div>
+        <div className="text-[11px] text-muted-foreground">Últimas {rows.length} execuções</div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-[12px]">
+          <thead className="bg-surface-2/60 text-[10.5px] uppercase tracking-wider text-muted-foreground">
+            <tr>
+              <th className="text-left px-4 py-2.5 font-medium">Data</th>
+              <th className="text-left px-3 py-2.5 font-medium">Status</th>
+              <th className="text-right px-3 py-2.5 font-medium">Total</th>
+              <th className="text-right px-3 py-2.5 font-medium">OK</th>
+              <th className="text-right px-3 py-2.5 font-medium">Intervenções</th>
+              <th className="text-right px-3 py-2.5 font-medium">Conformidade</th>
+              <th className="text-right px-3 py-2.5 font-medium">Duração</th>
+              <th className="text-right px-3 py-2.5 font-medium">Δ vs anterior</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {rows.map((h, idx) => {
+              const prev = rows[idx + 1];
+              const conf = h.total_processado ? (h.aprovados / h.total_processado) * 100 : 0;
+              const prevConf = prev?.total_processado ? (prev.aprovados / prev.total_processado) * 100 : conf;
+              const delta = conf - prevConf;
+              const dur = h.duration_ms != null ? `${(h.duration_ms / 1000).toFixed(1)}s` : "—";
+              return (
+                <tr key={h.id} className="hover:bg-surface-2/40">
+                  <td className="px-4 py-2.5 font-mono text-[11.5px] text-muted-foreground">
+                    {formatDateTime(h.created_at)}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <span
+                      className={cn(
+                        "text-[10px] font-mono uppercase px-1.5 py-0.5 rounded",
+                        h.status_geral === "SUCESSO"
+                          ? "bg-success/10 text-success"
+                          : "bg-warning/10 text-warning",
+                      )}
+                    >
+                      {h.status_geral}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2.5 text-right font-mono tabular-nums">{formatInt(h.total_processado)}</td>
+                  <td className="px-3 py-2.5 text-right font-mono tabular-nums text-success">{formatInt(h.aprovados)}</td>
+                  <td className="px-3 py-2.5 text-right font-mono tabular-nums text-destructive">{formatInt(h.reprovados)}</td>
+                  <td className="px-3 py-2.5 text-right font-mono tabular-nums">{formatPct(conf, 1)}</td>
+                  <td className="px-3 py-2.5 text-right font-mono text-muted-foreground">{dur}</td>
+                  <td className={cn(
+                    "px-3 py-2.5 text-right font-mono tabular-nums",
+                    !prev && "text-muted-foreground/40",
+                    prev && delta > 0 && "text-success",
+                    prev && delta < 0 && "text-destructive",
+                    prev && delta === 0 && "text-muted-foreground",
+                  )}>
+                    {prev ? `${delta > 0 ? "+" : ""}${delta.toFixed(1)}pp` : "—"}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
