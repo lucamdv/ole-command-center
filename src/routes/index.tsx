@@ -156,8 +156,6 @@ function Dashboard({
   if (!k) return null;
 
   const series = runSeries(history);
-  const sparkApproved = series.map((s) => s.approved);
-  void sparkApproved;
   const sparkRejected = series.map((s) => s.rejected);
   const sparkRisk = series.map((s) => s.risk);
   const sparkTotal = series.map((s) => s.total);
