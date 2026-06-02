@@ -47,7 +47,15 @@ export const Route = createFileRoute("/api/public/audit-callback")({
         } catch {
           return json({ error: "Invalid JSON" }, 400);
         }
-        const candidate = Array.isArray(raw) ? raw[0] : raw;
+        const root = Array.isArray(raw) ? raw[0] : raw;
+        // n8n às vezes envelopa o resultado em { run_id, status, payload: {...} }.
+        // Desembrulha se o payload real estiver aninhado.
+        const candidate =
+          root && typeof root === "object" && "payload" in (root as Record<string, unknown>) &&
+          (root as Record<string, unknown>).payload &&
+          typeof (root as Record<string, unknown>).payload === "object"
+            ? { ...((root as { payload: Record<string, unknown> }).payload), run_id: (root as { run_id?: string }).run_id ?? ((root as { payload: { run_id?: string } }).payload.run_id) }
+            : root;
         const parsed = CallbackPayloadSchema.safeParse(candidate);
         if (!parsed.success) {
           return json(
