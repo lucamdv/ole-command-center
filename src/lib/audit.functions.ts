@@ -48,10 +48,20 @@ export const runAudit = createServerFn({ method: "POST" }).handler(async () => {
 
   const runId = (runRow as { id: string }).id;
 
-  // Monta callback URL pública
-  const host = getRequestHost();
+  // Monta callback URL pública (n8n na nuvem precisa de URL acessível externamente).
+  // Prioridade: PUBLIC_APP_URL (secret) → host do request se não-localhost → URL estável do Lovable.
+  const reqHost = getRequestHost();
   const proto = getRequestHeader("x-forwarded-proto") || "https";
-  const callbackUrl = `${proto}://${host}/api/public/audit-callback`;
+  const isLocal =
+    !reqHost || reqHost.includes("localhost") || reqHost.startsWith("127.") || reqHost.startsWith("0.");
+  const base =
+    process.env.PUBLIC_APP_URL ||
+    (isLocal
+      ? process.env.NODE_ENV === "production"
+        ? PRODUCTION_PUBLIC_URL
+        : PREVIEW_PUBLIC_URL
+      : `${proto}://${reqHost}`);
+  const callbackUrl = `${base.replace(/\/$/, "")}/api/public/audit-callback`;
 
   // 2. Dispara o webhook do n8n (espera resposta imediata)
   try {
