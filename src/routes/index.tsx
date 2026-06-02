@@ -374,9 +374,8 @@ function Dashboard({
                     {g.tipos.join(" · ")}
                   </div>
                 </div>
-                <div className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/30 shrink-0">
-                  {g.total} erro{g.total > 1 ? "s" : ""}
-                </div>
+                <ApoliceSevBadge findings={g.findings} />
+
               </div>
             ))}
             {grouped.length === 0 && (
