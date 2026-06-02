@@ -401,34 +401,29 @@ function Dashboard({
   );
 }
 
-function StatusItem({
-  icon: Icon,
+function MiniStat({
   label,
   value,
   tone,
 }: {
-  icon: typeof ShieldCheck;
   label: string;
   value: string;
   tone?: "success" | "info" | "warning" | "destructive";
 }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-3 min-w-0">
+    <div className="px-4 py-3 min-w-0">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground/80 truncate">{label}</div>
       <div
         className={cn(
-          "h-8 w-8 grid place-items-center rounded-lg shrink-0",
-          tone === "success" && "bg-success/10 text-success",
-          tone === "info" && "bg-info/10 text-info",
-          tone === "warning" && "bg-warning/10 text-warning",
-          tone === "destructive" && "bg-destructive/10 text-destructive",
-          !tone && "bg-primary/10 text-primary",
+          "text-[15px] font-semibold tabular-nums truncate mt-0.5",
+          tone === "success" && "text-success",
+          tone === "info" && "text-info",
+          tone === "warning" && "text-warning",
+          tone === "destructive" && "text-destructive",
+          !tone && "text-foreground",
         )}
       >
-        <Icon className="h-4 w-4" />
-      </div>
-      <div className="min-w-0">
-        <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground/80 truncate">{label}</div>
-        <div className="text-[13px] font-semibold tabular-nums text-foreground truncate">{value}</div>
+        {value}
       </div>
     </div>
   );
