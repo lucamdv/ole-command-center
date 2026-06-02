@@ -9,20 +9,20 @@ export function RunAuditButton({ compact = false }: { compact?: boolean }) {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
-    if (!mutation.isPending) {
+    if (!mutation.isRunning) {
       setElapsed(0);
       return;
     }
     const start = Date.now();
     const i = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 250);
     return () => clearInterval(i);
-  }, [mutation.isPending]);
+  }, [mutation.isRunning]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "a") {
         e.preventDefault();
-        if (!mutation.isPending) mutation.mutate();
+        if (!mutation.isRunning) mutation.mutate();
       }
     };
     window.addEventListener("keydown", onKey);
