@@ -4,6 +4,7 @@ import { KpiCard } from "@/components/kpi/kpi-card";
 import { PulsoOperacional } from "@/components/pulso/pulso-operacional";
 import { RiskHeatmap } from "@/components/heatmap/risk-heatmap";
 import { computeKpis, HOURLY_THROUGHPUT, WEEKLY_TREND } from "@/lib/mock/data";
+import { RunAuditButton } from "@/components/audit/run-audit-button";
 import { formatBRL, formatCompact, formatInt } from "@/lib/format";
 
 export const Route = createFileRoute("/")({
