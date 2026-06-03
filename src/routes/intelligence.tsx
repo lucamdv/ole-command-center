@@ -15,6 +15,7 @@ import {
 } from "@/lib/oliver.functions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { MessageResponse } from "@/components/ai-elements/message";
 import {
   Dialog,
   DialogContent,
