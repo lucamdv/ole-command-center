@@ -430,8 +430,23 @@ function parseLimiteApolice(p: Obj): LimiteApoliceInfo | null {
   };
 }
 
+function parseCancelamento(proposta: Obj, tipoEndosso: TipoEndosso | null): CancelamentoInfo | null {
+  if (tipoEndosso !== "B" && tipoEndosso !== "C") return null;
+  const motivo = asStr(proposta.motivo_endosso);
+  const descricao = asStr(proposta.descricao_motivo_endosso);
+  const cancelado = asStr(proposta.numero_endosso_cancelado);
+  const pagamento = asStr(proposta.pagamento);
+  if (!motivo && !descricao && !cancelado && !pagamento) return null;
+  return {
+    motivo,
+    descricaoMotivo: descricao,
+    numeroEndossoCancelado: cancelado,
+    pagamento,
+  };
+}
+
 export function translateProposta(input: unknown): PropostaTraduzida {
-  const { proposta, envelope, isWrapperVazio } = unwrapProposta(input);
+  const { proposta, envelope, isWrapperVazio, tipoEndosso } = unwrapProposta(input);
   return {
     dadosGerais: parseDados(proposta, envelope),
     datas: parseDatas(proposta, envelope),
@@ -440,6 +455,8 @@ export function translateProposta(input: unknown): PropostaTraduzida {
     pagamento: parsePagamento(proposta),
     cotacoes: parseCotacoes(proposta),
     limiteApolice: parseLimiteApolice(proposta),
+    cancelamento: parseCancelamento(proposta, tipoEndosso),
+    tipoEndosso,
     raw: proposta,
     isWrapperVazio,
   };
