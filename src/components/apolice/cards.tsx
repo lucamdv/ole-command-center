@@ -107,7 +107,73 @@ export function Section({
   );
 }
 
-// ============ Header da apólice/endosso ============
+// ============ Badge de tipo de documento ============
+export function badgeStylesFor(
+  tipo: "APOLICE" | "ENDOSSO",
+  tipoEndosso: TipoEndosso | null,
+): { label: string; className: string } {
+  if (tipo === "APOLICE") {
+    return {
+      label: "APÓLICE",
+      className: "bg-primary/10 text-primary border-primary/30",
+    };
+  }
+  switch (tipoEndosso) {
+    case "A":
+      return {
+        label: "ENDOSSO A",
+        className: "bg-warning/10 text-warning border-warning/30",
+      };
+    case "B":
+      return {
+        label: "ENDOSSO B",
+        className: "bg-accent/15 text-accent-foreground border-accent/40",
+      };
+    case "C":
+      return {
+        label: "ENDOSSO C",
+        className: "bg-destructive/10 text-destructive border-destructive/30",
+      };
+    default:
+      return {
+        label: "ENDOSSO",
+        className: "bg-muted text-muted-foreground border-border",
+      };
+  }
+}
+
+export function EndossoBadge({
+  tipo,
+  tipoEndosso,
+  sequencial,
+  size = "md",
+}: {
+  tipo: "APOLICE" | "ENDOSSO";
+  tipoEndosso: TipoEndosso | null;
+  sequencial?: string;
+  size?: "sm" | "md";
+}) {
+  const { label, className } = badgeStylesFor(tipo, tipoEndosso);
+  const sizeCls =
+    size === "sm"
+      ? "px-1.5 py-0.5 text-[10px]"
+      : "px-2 py-0.5 text-[10.5px]";
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-md font-mono font-semibold border whitespace-nowrap",
+        sizeCls,
+        className,
+      )}
+    >
+      {label}
+      {sequencial && tipo === "ENDOSSO" && (
+        <span className="ml-1 opacity-70">· {sequencial}</span>
+      )}
+    </span>
+  );
+}
+
 export function DocumentoHeader({
   documento,
   premioValor,
@@ -130,17 +196,12 @@ export function DocumentoHeader({
     >
       <div className="flex items-start justify-between gap-6 flex-wrap">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 mb-2">
-            <span
-              className={cn(
-                "inline-flex items-center px-2 py-0.5 rounded-md text-[10.5px] font-mono font-semibold border",
-                isApolice
-                  ? "bg-primary/10 text-primary border-primary/30"
-                  : "bg-warning/10 text-warning border-warning/30",
-              )}
-            >
-              {isApolice ? "APÓLICE" : `ENDOSSO ${documento.sequencial}`}
-            </span>
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <EndossoBadge
+              tipo={documento.tipo}
+              tipoEndosso={documento.tipoEndosso}
+              sequencial={isApolice ? undefined : documento.sequencial}
+            />
             {!isApolice && (
               <span className="text-[11px] text-muted-foreground">
                 da apólice <span className="font-mono">{documento.numeroApolice}</span>
@@ -169,6 +230,44 @@ export function DocumentoHeader({
       </div>
       {extra && <div className="mt-6">{extra}</div>}
     </motion.div>
+  );
+}
+
+// ============ Cancelamento / alteração (endosso B/C) ============
+export function CancelamentoCard({
+  cancelamento,
+  tipoEndosso,
+}: {
+  cancelamento: CancelamentoInfo;
+  tipoEndosso: TipoEndosso | null;
+}) {
+  const titulo =
+    tipoEndosso === "C"
+      ? "Dados do cancelamento"
+      : tipoEndosso === "B"
+        ? "Dados da alteração"
+        : "Dados do endosso";
+  return (
+    <div className="rounded-xl border border-border bg-surface overflow-hidden">
+      <div className="px-5 py-3 border-b border-border bg-surface-2/50 text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+        {titulo}
+      </div>
+      <div className="p-5 grid sm:grid-cols-3 gap-4">
+        <Field label="Endosso afetado" value={cancelamento.numeroEndossoCancelado} mono />
+        <Field label="Motivo" value={cancelamento.motivo} />
+        <Field label="Pagamento" value={cancelamento.pagamento} />
+        {cancelamento.descricaoMotivo && (
+          <div className="sm:col-span-3">
+            <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground mb-1.5">
+              Descrição
+            </div>
+            <p className="text-[13px] leading-relaxed text-foreground whitespace-pre-wrap">
+              {cancelamento.descricaoMotivo}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
