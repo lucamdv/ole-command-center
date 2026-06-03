@@ -116,6 +116,7 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
           o?.numero_endosso_seguradora ?? o?.numero_endosso ?? o?.numeroEndosso ?? null;
 
         let processed = 0;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         for (const apolice of payload.dados as Array<Record<string, any>>) {
           const numero = pickNum(apolice);
           if (!numero) continue;
