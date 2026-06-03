@@ -50,11 +50,11 @@ export const getAnalyticsAggregates = createServerFn({ method: "GET" }).handler(
     const revMap = new Map<string, { usd: number; brl: number; policies: Set<string> }>();
 
     for (const p of policies ?? []) {
-      // proposta pode ser objeto ou string
-      const proposta =
+      const raw =
         typeof p.proposta === "string"
           ? safeJson(p.proposta)
           : ((p.proposta ?? {}) as Record<string, unknown>);
+      const proposta = resolveProposta(raw);
 
       const datas = (proposta.datas ?? {}) as Record<string, unknown>;
       const inicio =
