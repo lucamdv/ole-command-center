@@ -19,7 +19,10 @@ import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApolicesIdRouteImport } from './routes/apolices.$id'
+import { Route as ApiPublicPolicySyncCallbackRouteImport } from './routes/api/public/policy-sync-callback'
 import { Route as ApiPublicAuditCallbackRouteImport } from './routes/api/public/audit-callback'
+import { Route as ApolicesIdEndossosNumRouteImport } from './routes/apolices.$id.endossos.$num'
+import { Route as ApiPublicHooksPolicySyncRouteImport } from './routes/api/public/hooks/policy-sync'
 
 const OperacaoRoute = OperacaoRouteImport.update({
   id: '/operacao',
@@ -71,11 +74,28 @@ const ApolicesIdRoute = ApolicesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApolicesRoute,
 } as any)
+const ApiPublicPolicySyncCallbackRoute =
+  ApiPublicPolicySyncCallbackRouteImport.update({
+    id: '/api/public/policy-sync-callback',
+    path: '/api/public/policy-sync-callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicAuditCallbackRoute = ApiPublicAuditCallbackRouteImport.update({
   id: '/api/public/audit-callback',
   path: '/api/public/audit-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApolicesIdEndossosNumRoute = ApolicesIdEndossosNumRouteImport.update({
+  id: '/endossos/$num',
+  path: '/endossos/$num',
+  getParentRoute: () => ApolicesIdRoute,
+} as any)
+const ApiPublicHooksPolicySyncRoute =
+  ApiPublicHooksPolicySyncRouteImport.update({
+    id: '/api/public/hooks/policy-sync',
+    path: '/api/public/hooks/policy-sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -87,8 +107,11 @@ export interface FileRoutesByFullPath {
   '/ferramentas': typeof FerramentasRoute
   '/intelligence': typeof IntelligenceRoute
   '/operacao': typeof OperacaoRoute
-  '/apolices/$id': typeof ApolicesIdRoute
+  '/apolices/$id': typeof ApolicesIdRouteWithChildren
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
+  '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
+  '/api/public/hooks/policy-sync': typeof ApiPublicHooksPolicySyncRoute
+  '/apolices/$id/endossos/$num': typeof ApolicesIdEndossosNumRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -100,8 +123,11 @@ export interface FileRoutesByTo {
   '/ferramentas': typeof FerramentasRoute
   '/intelligence': typeof IntelligenceRoute
   '/operacao': typeof OperacaoRoute
-  '/apolices/$id': typeof ApolicesIdRoute
+  '/apolices/$id': typeof ApolicesIdRouteWithChildren
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
+  '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
+  '/api/public/hooks/policy-sync': typeof ApiPublicHooksPolicySyncRoute
+  '/apolices/$id/endossos/$num': typeof ApolicesIdEndossosNumRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -114,8 +140,11 @@ export interface FileRoutesById {
   '/ferramentas': typeof FerramentasRoute
   '/intelligence': typeof IntelligenceRoute
   '/operacao': typeof OperacaoRoute
-  '/apolices/$id': typeof ApolicesIdRoute
+  '/apolices/$id': typeof ApolicesIdRouteWithChildren
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
+  '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
+  '/api/public/hooks/policy-sync': typeof ApiPublicHooksPolicySyncRoute
+  '/apolices/$id/endossos/$num': typeof ApolicesIdEndossosNumRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -131,6 +160,9 @@ export interface FileRouteTypes {
     | '/operacao'
     | '/apolices/$id'
     | '/api/public/audit-callback'
+    | '/api/public/policy-sync-callback'
+    | '/api/public/hooks/policy-sync'
+    | '/apolices/$id/endossos/$num'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -144,6 +176,9 @@ export interface FileRouteTypes {
     | '/operacao'
     | '/apolices/$id'
     | '/api/public/audit-callback'
+    | '/api/public/policy-sync-callback'
+    | '/api/public/hooks/policy-sync'
+    | '/apolices/$id/endossos/$num'
   id:
     | '__root__'
     | '/'
@@ -157,6 +192,9 @@ export interface FileRouteTypes {
     | '/operacao'
     | '/apolices/$id'
     | '/api/public/audit-callback'
+    | '/api/public/policy-sync-callback'
+    | '/api/public/hooks/policy-sync'
+    | '/apolices/$id/endossos/$num'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -170,6 +208,8 @@ export interface RootRouteChildren {
   IntelligenceRoute: typeof IntelligenceRoute
   OperacaoRoute: typeof OperacaoRoute
   ApiPublicAuditCallbackRoute: typeof ApiPublicAuditCallbackRoute
+  ApiPublicPolicySyncCallbackRoute: typeof ApiPublicPolicySyncCallbackRoute
+  ApiPublicHooksPolicySyncRoute: typeof ApiPublicHooksPolicySyncRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -244,6 +284,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApolicesIdRouteImport
       parentRoute: typeof ApolicesRoute
     }
+    '/api/public/policy-sync-callback': {
+      id: '/api/public/policy-sync-callback'
+      path: '/api/public/policy-sync-callback'
+      fullPath: '/api/public/policy-sync-callback'
+      preLoaderRoute: typeof ApiPublicPolicySyncCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/audit-callback': {
       id: '/api/public/audit-callback'
       path: '/api/public/audit-callback'
@@ -251,15 +298,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAuditCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/apolices/$id/endossos/$num': {
+      id: '/apolices/$id/endossos/$num'
+      path: '/endossos/$num'
+      fullPath: '/apolices/$id/endossos/$num'
+      preLoaderRoute: typeof ApolicesIdEndossosNumRouteImport
+      parentRoute: typeof ApolicesIdRoute
+    }
+    '/api/public/hooks/policy-sync': {
+      id: '/api/public/hooks/policy-sync'
+      path: '/api/public/hooks/policy-sync'
+      fullPath: '/api/public/hooks/policy-sync'
+      preLoaderRoute: typeof ApiPublicHooksPolicySyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface ApolicesIdRouteChildren {
+  ApolicesIdEndossosNumRoute: typeof ApolicesIdEndossosNumRoute
+}
+
+const ApolicesIdRouteChildren: ApolicesIdRouteChildren = {
+  ApolicesIdEndossosNumRoute: ApolicesIdEndossosNumRoute,
+}
+
+const ApolicesIdRouteWithChildren = ApolicesIdRoute._addFileChildren(
+  ApolicesIdRouteChildren,
+)
+
 interface ApolicesRouteChildren {
-  ApolicesIdRoute: typeof ApolicesIdRoute
+  ApolicesIdRoute: typeof ApolicesIdRouteWithChildren
 }
 
 const ApolicesRouteChildren: ApolicesRouteChildren = {
-  ApolicesIdRoute: ApolicesIdRoute,
+  ApolicesIdRoute: ApolicesIdRouteWithChildren,
 }
 
 const ApolicesRouteWithChildren = ApolicesRoute._addFileChildren(
@@ -277,7 +350,19 @@ const rootRouteChildren: RootRouteChildren = {
   IntelligenceRoute: IntelligenceRoute,
   OperacaoRoute: OperacaoRoute,
   ApiPublicAuditCallbackRoute: ApiPublicAuditCallbackRoute,
+  ApiPublicPolicySyncCallbackRoute: ApiPublicPolicySyncCallbackRoute,
+  ApiPublicHooksPolicySyncRoute: ApiPublicHooksPolicySyncRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
