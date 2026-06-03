@@ -191,40 +191,58 @@ const asNum = (v: unknown): number | null => {
 };
 
 /** Aceita o "envelope" do endosso ({ endosso_A: { proposta_endosso_A: { proposta } } })
- *  ou já a própria proposta. */
-export function unwrapProposta(input: unknown): { proposta: Obj; envelope: Obj | null; isWrapperVazio: boolean } {
-  if (!isObj(input)) return { proposta: {}, envelope: null, isWrapperVazio: true };
+ *  ou já a própria proposta. Também extrai a letra do tipo de endosso (A/B/C). */
+export function unwrapProposta(input: unknown): {
+  proposta: Obj;
+  envelope: Obj | null;
+  isWrapperVazio: boolean;
+  tipoEndosso: TipoEndosso | null;
+} {
+  if (!isObj(input))
+    return { proposta: {}, envelope: null, isWrapperVazio: true, tipoEndosso: null };
   // Caso 1: proposta direta (apólice 000000)
   if (Array.isArray(input.itens) || Array.isArray(input.partes) || input.datas) {
-    return { proposta: input, envelope: null, isWrapperVazio: false };
+    return { proposta: input, envelope: null, isWrapperVazio: false, tipoEndosso: null };
   }
   // Caso 2: envelope { endosso_X: { proposta_endosso_X: { proposta: {...} } } }
   for (const k of Object.keys(input)) {
     if (!k.startsWith("endosso_")) continue;
+    const letra = k.slice("endosso_".length).toUpperCase();
+    const tipoEndosso: TipoEndosso | null =
+      letra === "A" || letra === "B" || letra === "C" ? (letra as TipoEndosso) : null;
     const env = input[k];
     if (!isObj(env)) continue;
     // procura proposta_endosso_X dentro
     for (const k2 of Object.keys(env)) {
       if (!k2.startsWith("proposta_endosso_")) continue;
       const wrap = env[k2];
-      if (isObj(wrap) && isObj(wrap.proposta)) {
-        const p = wrap.proposta as Obj;
-        const vazio = !(Array.isArray(p.itens) || Array.isArray(p.partes));
-        return { proposta: p, envelope: env, isWrapperVazio: vazio };
+      // Em endossos B/C a própria "proposta_endosso_X" já é o objeto com motivo etc.
+      // Em endossos A vem como { proposta: {...} }.
+      if (isObj(wrap)) {
+        const inner = isObj(wrap.proposta) ? (wrap.proposta as Obj) : wrap;
+        const vazio = !(Array.isArray(inner.itens) || Array.isArray(inner.partes));
+        return { proposta: inner, envelope: env, isWrapperVazio: vazio, tipoEndosso };
       }
     }
-    return { proposta: {}, envelope: env, isWrapperVazio: true };
+    return { proposta: {}, envelope: env, isWrapperVazio: true, tipoEndosso };
   }
-  return { proposta: input, envelope: null, isWrapperVazio: true };
+  return { proposta: input, envelope: null, isWrapperVazio: true, tipoEndosso: null };
 }
 
 /** Apólice termina em 000000; endosso tem sequencial > 0 nos últimos 6 dígitos. */
-export function parseDocumento(numero: string): DocumentoInfo {
+export function parseDocumento(numero: string, tipoEndosso: TipoEndosso | null = null): DocumentoInfo {
   const seq = numero.slice(-6);
   const base = numero.slice(0, -6) + "000000";
   const tipo: "APOLICE" | "ENDOSSO" = seq === "000000" ? "APOLICE" : "ENDOSSO";
-  return { tipo, sequencial: seq, numeroApolice: base, numeroCompleto: numero };
+  return {
+    tipo,
+    tipoEndosso: tipo === "ENDOSSO" ? tipoEndosso : null,
+    sequencial: seq,
+    numeroApolice: base,
+    numeroCompleto: numero,
+  };
 }
+
 
 /** Normaliza o numero_endosso que pode vir como "0", "2" ou "000002". */
 export function normalizeEndossoNum(raw: string): string {
