@@ -1,50 +1,104 @@
 ## Objetivo
 
-Elevar a plataforma a um padrão visual executivo/corporativo — denso em informação, hierárquico e intuitivo — mantendo o dashboard principal (`/`) alimentado pelos resultados reais das auditorias n8n. Demais abas continuam com mocks. Ajustes pontuais de identidade: usuário, nome do assistente de IA e nova aba "Ferramentas".
+Ligar a página de **Apólices** ao MOTOR OLÉ (n8n) seguindo o mesmo padrão da auditoria: serverFn dispara o webhook → n8n processa apólices + endossos → callback persiste no backend → UI lê do banco. Endossos deixam de ter aba própria (vira só um redirect) e passam a viver dentro da apólice (`/apolices/$id/endossos/$num`).
 
-## Mudanças de navegação e identidade (rápidas)
+## Contrato do MOTOR OLÉ (do JSON anexado)
 
-- **Sidebar (`src/components/layout/sidebar.tsx`)**
-  - Renomear "OLÉ Intelligence" → **Oléver** (manter ícone Sparkles, rota `/intelligence`).
-  - Adicionar item **Ferramentas** logo abaixo de Oléver (ícone `Wrench`, rota `/ferramentas`).
-  - Trocar bloco do usuário rodapé: iniciais `LM`, nome **Luca Monteiro**, cargo "Operações · Admin".
-- **Header / Command palette**: se exibirem o nome do usuário, atualizar para Luca Monteiro.
-- **Nova rota** `src/routes/ferramentas.tsx`: placeholder executivo ("Em construção") com título, descrição curta, ícone e cartão indicando que ferramentas operacionais serão lançadas em breve. Sem lógica.
-- **Rota `/intelligence`**: atualizar `head.title` e H1 para "Oléver" (subtítulo: "Assistente de IA da operação OLÉ"). Conteúdo permanece mock.
+O fluxo recebe `POST { callback_url }` e devolve no callback:
 
-## Redesign executivo da Visão Geral (`/`)
+```json
+{
+  "origem": "MOTOR OLÉ",
+  "total_apolices": 42,
+  "dados": [
+    {
+      "numero_apolice_seguradora": "...",
+      "numero_endosso_seguradora": "...",
+      "premio_liquido": 0,
+      "proposta": { /* objeto da apólice — schema assumido fixo, com fallback */ },
+      "historico_endossos": [
+        { "numero_apolice_seguradora": "...", "numero_endosso_seguradora": "...", "premio_liquido": 0, "proposta": {...} }
+      ]
+    }
+  ]
+}
+```
 
-A página atual já tem todos os blocos certos; o trabalho é **elevar a apresentação** para um padrão de cockpit corporativo, sem mexer na lógica de dados (continuamos usando `useLatestAudit`, `useAuditHistory`, `deriveKpis`, etc.).
+## Backend (Lovable Cloud)
 
-### Diretrizes visuais
+### Migration — 3 tabelas + 1 enum de status de sync
 
-- **Hero executivo**: faixa superior com saudação contextual ("Bom dia, Luca"), data/hora, badge de status do sistema, badge da última auditoria, e ações principais (Ver lista, Exportar PDF, Rodar auditoria) alinhadas à direita em um cluster coeso.
-- **Tipografia hierárquica**: títulos de seção com kicker em maiúsculas + número grande tabular + subtítulo curto. Reforçar uso de `tabular-nums` em todos os KPIs.
-- **Cartões KPI premium**: refinar `KpiCard` para incluir ícone, delta colorido com seta, sparkline mais limpa e divisor sutil. Adicionar 2 KPIs executivos adicionais na linha principal (total: 6): **Tempo desde última auditoria** e **Score de saúde operacional** (derivado de aprovação - risco).
-- **Banner consolidado**: transformar em "Sumário Executivo" — 3 colunas (Status geral · Mensagem · Próxima ação recomendada), com borda colorida conforme severidade.
-- **Layout em bento**: reorganizar blocos abaixo dos KPIs em grid bento (12 colunas) que combina:
-  - Pulso Operacional (tendência) — 8 col
-  - Severidade + mini-stats empilhados — 4 col
-  - Heatmap de risco — 12 col (largura total, com legenda de intensidade)
-  - Top apólices afetadas — 6 col / Ranking de regras — 6 col
-  - Linha do tempo por mês — 12 col
-- **Acabamento**: bordas mais sutis (`border-border/60`), sombras `shadow-elevated`, fundos com leve gradiente (`from-surface to-surface-2`), divisores `bg-border` em grids bento, hover states discretos, animações `pulse-dot` reservadas para indicadores ao vivo.
-- **Densidade**: padding consistente (`p-5`), spacing `gap-3` em KPIs e `gap-6` entre seções, max-width já configurado em `app-shell`.
-- **Microcopy executiva**: substituir labels técnicos por linguagem de negócio ("Conformidade da carteira", "Apólices em risco", "Regras críticas acionadas", "Velocidade operacional").
+- `policy_sync_runs` — `id`, `created_at`, `status` (`pending|success|error`), `total_apolices`, `duration_ms`, `error_message`, `raw` (jsonb do payload bruto)
+- `policies` — `id` (uuid), `numero_apolice` (text, unique), `numero_endosso_atual` (text), `premio_liquido` (numeric), `proposta` (jsonb), `last_sync_run_id`, `updated_at`, `created_at`. Index em `numero_apolice`.
+- `endorsements` — `id`, `policy_id` (fk), `numero_endosso` (text), `numero_apolice` (text), `premio_liquido` (numeric), `proposta` (jsonb), `ordem` (int), `created_at`. Unique `(policy_id, numero_endosso)`.
 
-### Arquivos tocados no redesign
+RLS pública de leitura (igual ao padrão atual de `audit_runs`/`audit_findings`); writes só via `service_role`. GRANTs explícitos `SELECT` para `anon`/`authenticated`, `ALL` para `service_role`.
 
-- `src/routes/index.tsx` — reorganização de layout, novo hero, grid bento, novos KPIs derivados.
-- `src/components/kpi/kpi-card.tsx` — variante visual mais refinada (ícone opcional, delta com seta, sparkline polida). Manter API retrocompatível.
-- `src/components/layout/header.tsx` — saudação personalizada com nome Luca (se ainda não houver).
-- `src/styles.css` — adicionar (se faltar) tokens para gradientes sutis e sombras executivas; sem mudar paleta base.
+### Server functions (`src/lib/policies.functions.ts`)
 
-## Escopo explicitamente fora
+- `runPolicySync()` — cria `policy_sync_runs` pending, faz `POST` ao `N8N_MOTOR_POLICIES_URL` com `{ callback_url, runId }`, retorna `runId`.
+- `getPolicySyncStatus({ runId })` — polling pelo status.
+- `getPolicies()` — lista resumida (numero, premio, qtd endossos, updated_at).
+- `getPolicyByNumero({ numero })` — apólice + endossos ordenados.
+- `getEndorsement({ numero, endosso })` — payload completo de um endosso.
 
-- Sem alterar `src/lib/audit/*` (lógica de derivação permanece).
-- Sem mexer nas demais rotas (`/apolices`, `/endossos`, `/alertas`, `/analytics`, `/operacao`, `/configuracoes`) além de ajustes triviais se o nome do usuário aparecer.
-- Sem novo backend, sem migrações.
+### Callback público (`src/routes/api/public/policy-sync-callback.ts`)
 
-## Resultado esperado
+Recebe o payload final, valida header `x-callback-secret` (reaproveita `AUDIT_CALLBACK_SECRET` ou cria `POLICY_CALLBACK_SECRET` — uso o mesmo já existente pra não pedir secret novo), faz upsert em `policies` + replace dos `endorsements` da apólice, atualiza `policy_sync_runs` para `success`.
 
-Dashboard com cara de cockpit C-level: hero claro, 6 KPIs executivos com sparklines, bento layout coeso, heatmap em destaque, microcopy de negócio. Sidebar com Luca Monteiro, Oléver e nova aba Ferramentas (placeholder).
+### Cron de sincronização automática
+
+`/api/public/hooks/policy-sync` (POST) chama `runPolicySync` via serverFn equivalente server-side. Agendado via `pg_cron` + `pg_net` (1× por hora — ajustável). SQL com `apikey` anon, sem secret novo.
+
+### Secret necessário
+
+- `N8N_MOTOR_POLICIES_URL` — URL do webhook do fluxo no n8n (você cola após aprovar). Se não estiver pronta, mantenho TODO e o botão exibe erro amigável (mesmo padrão da auditoria).
+
+## Frontend
+
+### Hooks (`src/hooks/use-policies.ts`)
+
+`usePolicies()`, `usePolicy(numero)`, `useEndorsement(numero, endosso)`, `useRunPolicySync()` (polling igual `useRunAudit`).
+
+### Página `/apolices` (substitui mock)
+
+- Cabeçalho com botão **"Sincronizar carteira"** (estado loading/última sync).
+- Tabela alimentada por `usePolicies()`: numero, prêmio líquido, qtd endossos, última atualização.
+- Busca por número.
+- Empty state quando ainda não houve sync.
+
+### Página `/apolices/$id` (refatorada)
+
+`$id` = `numero_apolice_seguradora`. Carrega `usePolicy(id)`.
+
+- **Header**: número, prêmio, qtd endossos, último sync.
+- **Card "Dados da apólice"**: renderiza `proposta` da apólice. **Schema fixo presumido** (segurado, vigência, corretor, produto, coberturas) — para cada campo conhecido, render dedicado.
+- **Fallback Plano B**: componente `<JsonExplorer data={proposta} />` que mostra os campos não-mapeados em árvore colapsável (key→value, com badge "extra"). Garante que nada se perde se o schema variar.
+- **Lista de endossos** (`historico_endossos`): tabela com `numero_endosso`, prêmio, link → `/apolices/$id/endossos/$num`.
+
+### Página filha `/apolices/$id/endossos/$num`
+
+Mesma estrutura: campos conhecidos renderizados + `<JsonExplorer>` para o resto. Breadcrumb voltando para a apólice.
+
+### Aba **Endossos** (sidebar)
+
+Mantida no menu. A rota `/endossos` vira uma página **informativa**: card explicando "Endossos agora vivem dentro de cada apólice" + botão "Ir para Apólices". Sem mock data.
+
+### Limpeza
+
+- Remover `POLICIES` mock de `src/lib/mock/data.ts` (ou manter só para `/alertas` / `/analytics` enquanto não migram — a definir nas próximas iterações). Para esta entrega: manter o arquivo mock, mas `/apolices` deixa de importá-lo.
+- `ValidityTimeline`, `EndorsementTimeline`, `AuditTable` da página antiga ficam para reuso futuro; o detalhe da apólice é reescrito do zero baseado nos campos reais.
+
+## Fora de escopo
+
+- `/`, `/alertas`, `/analytics`, `/operacao`, `/configuracoes`, `/intelligence`, `/ferramentas` — não alterados.
+- Lógica de auditoria — intocada.
+- Schema "final" do `proposta` — começamos com mapeamento provável (segurado/vigência/corretor/produto/coberturas) + fallback JsonExplorer. Após primeiro sync real, refinamos com o payload de verdade.
+
+## Detalhes técnicos
+
+- Server fns usam `supabaseAdmin` (sem auth) — leitura pública via RLS, igual auditoria.
+- Callback é idempotente: `delete from endorsements where policy_id = X` + `insert` em bloco.
+- Polling do botão: 3s, timeout 15min (mesmo `useRunAudit`).
+- Cron: `0 * * * *` (hora cheia), configurável.
+- Após criar a migration e a infra, peço o secret `N8N_MOTOR_POLICIES_URL`.
