@@ -4,7 +4,6 @@ import {
   AlertTriangle,
   BarChart3,
   FileText,
-  GitBranch,
   LayoutDashboard,
   Settings,
   Sparkles,
