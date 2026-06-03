@@ -365,14 +365,14 @@ export const Route = createFileRoute("/api/oliver-chat")({
           await sb.from("oliver_messages").insert({
             thread_id: threadId,
             role: "user",
-            parts: lastMsg.parts as unknown as object,
+            parts: lastMsg.parts as never,
           });
         }
 
         const result = streamText({
           model,
           system: buildSystemPrompt(memory),
-          messages: convertToModelMessages(messages),
+          messages: await convertToModelMessages(messages),
           tools,
           stopWhen: stepCountIs(50),
         });
@@ -387,7 +387,7 @@ export const Route = createFileRoute("/api/oliver-chat")({
                 await sb.from("oliver_messages").insert({
                   thread_id: threadId,
                   role: "assistant",
-                  parts: newAssistant.parts as unknown as object,
+                  parts: newAssistant.parts as never,
                 });
                 // touch thread updated_at + auto-title if still default
                 const { data: t } = await sb
