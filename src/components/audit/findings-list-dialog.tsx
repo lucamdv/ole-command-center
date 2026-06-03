@@ -213,7 +213,7 @@ export function FindingsListDialog({
           <Button size="sm" variant="outline" className="gap-1.5" onClick={copyAll}>
             <Copy className="h-3.5 w-3.5" /> Copiar tudo
           </Button>
-          <Button size="sm" variant="outline" onClick={() => exportAuditPdf(latest)} className="gap-1.5">
+          <Button size="sm" variant="outline" onClick={() => exportAuditPdf(latest, history)} className="gap-1.5">
             <FileDown className="h-4 w-4" /> Exportar PDF
           </Button>
         </div>
