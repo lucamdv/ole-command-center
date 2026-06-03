@@ -155,7 +155,7 @@ export const getLatestPolicySync = createServerFn({ method: "GET" }).handler(asy
 
 export const getPolicies = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { findSeguradoNome } = await import("@/lib/excelsior/translate");
+  const { findSeguradoNome, computePremioLiquidoBRL } = await import("@/lib/excelsior/translate");
   const { data, error } = await supabaseAdmin
     .from("policies")
     .select(
@@ -171,15 +171,19 @@ export const getPolicies = createServerFn({ method: "GET" }).handler(async () =>
     proposta: JsonObject | null;
     updated_at: string;
     endorsements: Array<{ id: string }>;
-  }>).map((p) => ({
-    id: p.id,
-    numero_apolice: p.numero_apolice,
-    numero_endosso_atual: p.numero_endosso_atual,
-    premio_liquido: Number(p.premio_liquido ?? 0),
-    endorsements_count: p.endorsements?.length ?? 0,
-    updated_at: p.updated_at,
-    segurado_nome: findSeguradoNome(p.proposta ?? {}),
-  })) as PolicyListItem[];
+  }>).map((p) => {
+    const stored = Number(p.premio_liquido ?? 0);
+    const computed = stored > 0 ? stored : computePremioLiquidoBRL(p.proposta ?? {});
+    return {
+      id: p.id,
+      numero_apolice: p.numero_apolice,
+      numero_endosso_atual: p.numero_endosso_atual,
+      premio_liquido: computed,
+      endorsements_count: p.endorsements?.length ?? 0,
+      updated_at: p.updated_at,
+      segurado_nome: findSeguradoNome(p.proposta ?? {}),
+    };
+  }) as PolicyListItem[];
 });
 
 export const getPolicyByNumero = createServerFn({ method: "GET" })
