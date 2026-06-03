@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { useEndorsementDetail } from "@/hooks/use-policies";
 import { JsonExplorer } from "@/components/json-explorer";
 import {
+  CancelamentoCard,
   CotacaoCard,
   DadosGeraisCard,
   DatasCard,
