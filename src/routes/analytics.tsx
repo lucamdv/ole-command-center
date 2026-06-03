@@ -71,28 +71,6 @@ function AnalyticsPage() {
   const totalUsd = useMemo(() => revenue.reduce((s, r) => s + r.usd, 0), [revenue]);
   const heatmap = useMemo(() => buildHeatmap(latest, history, 12), [latest, history]);
 
-  // Distribuição da carteira por faixa de prêmio líquido (USD)
-  const premiumBuckets = useMemo(() => {
-    const buckets = [
-      { label: "Sem prêmio", min: 0, max: 0, count: 0, total: 0 },
-      { label: "≤ US$ 1k", min: 0.01, max: 1_000, count: 0, total: 0 },
-      { label: "1k – 10k", min: 1_000, max: 10_000, count: 0, total: 0 },
-      { label: "10k – 50k", min: 10_000, max: 50_000, count: 0, total: 0 },
-      { label: "50k – 250k", min: 50_000, max: 250_000, count: 0, total: 0 },
-      { label: "> 250k", min: 250_000, max: Infinity, count: 0, total: 0 },
-    ];
-    for (const p of aggregates.policyPremiums) {
-      const v = Number(p.usd) || 0;
-      const b =
-        v === 0
-          ? buckets[0]
-          : buckets.find((x) => v > x.min && v <= x.max) ?? buckets[buckets.length - 1];
-      b.count++;
-      b.total += v;
-    }
-    return buckets.filter((b) => b.count > 0);
-  }, [aggregates.policyPremiums]);
-
 
   // Distribuição por nº de endossos
   const endorsementsDist = useMemo(() => {
@@ -111,10 +89,6 @@ function AnalyticsPage() {
     return buckets.filter((b) => b.count > 0);
   }, [policies]);
 
-  const totalPremium = useMemo(
-    () => policies.reduce((s, p) => s + (Number(p.premio_liquido) || 0), 0),
-    [policies],
-  );
 
   const chartsRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState<"none" | "report" | "charts">("none");
@@ -210,7 +184,7 @@ function AnalyticsPage() {
         <>
           {/* KPI grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Kpi label="Apólices na carteira" value={formatInt(policies.length)} hint={`${formatBRL(totalPremium)} em prêmio`} />
+            <Kpi label="Apólices na carteira" value={formatInt(policies.length)} />
             <Kpi
               label="Auditadas (última run)"
               value={formatInt(kpis?.audited ?? 0)}
@@ -540,33 +514,6 @@ function AnalyticsPage() {
             </div>
 
             <div className="grid lg:grid-cols-2 gap-6">
-              <ChartCard
-                title="Carteira por faixa de prêmio líquido (USD)"
-                subtitle={`${formatInt(policies.length)} apólices · ${formatUSD(totalUsd)}`}
-              >
-                {premiumBuckets.length === 0 ? (
-                  <EmptyMsg text="Sem apólices na carteira." />
-                ) : (
-                  <div className="h-[260px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={premiumBuckets}>
-                        <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={10} />
-                        <YAxis stroke="var(--muted-foreground)" fontSize={11} />
-                        <Tooltip
-                          {...tooltipProps}
-                          formatter={(v, k) =>
-                            k === "total" ? formatUSD(Number(v)) : formatInt(Number(v))
-                          }
-                        />
-                        <Bar dataKey="count" fill="var(--primary)" radius={[4, 4, 0, 0]} name="Apólices" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </ChartCard>
-
-
               <ChartCard
                 title="Carteira por nº de endossos"
                 subtitle="Quantas alterações cada apólice acumulou"
