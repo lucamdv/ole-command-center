@@ -481,7 +481,8 @@ function parseCancelamento(proposta: Obj, tipoEndosso: TipoEndosso | null): Canc
 }
 
 export function translateProposta(input: unknown): PropostaTraduzida {
-  const { proposta, envelope, isWrapperVazio, tipoEndosso } = unwrapProposta(input);
+  const { proposta, envelope, isWrapperVazio, tipoEndosso, numeroDocumento } =
+    unwrapProposta(input);
   return {
     dadosGerais: parseDados(proposta, envelope),
     datas: parseDatas(proposta, envelope),
@@ -492,6 +493,7 @@ export function translateProposta(input: unknown): PropostaTraduzida {
     limiteApolice: parseLimiteApolice(proposta),
     cancelamento: parseCancelamento(proposta, tipoEndosso),
     tipoEndosso,
+    numeroDocumento,
     raw: proposta,
     isWrapperVazio,
   };
