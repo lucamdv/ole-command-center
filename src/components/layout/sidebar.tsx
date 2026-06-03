@@ -1,4 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
   AlertTriangle,
@@ -11,6 +13,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getSystemStatus } from "@/lib/audit.functions";
 
 const NAV = [
   { to: "/", label: "Visão Geral", icon: LayoutDashboard },
@@ -25,6 +28,27 @@ const NAV = [
 
 export function Sidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const fetchStatus = useServerFn(getSystemStatus);
+  const { data: status } = useQuery({
+    queryKey: ["system-status"],
+    queryFn: () => fetchStatus(),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+
+  const state = status?.state ?? "operational";
+  const tone =
+    state === "operational" ? "success" : state === "degraded" ? "warning" : "destructive";
+  const label =
+    state === "operational"
+      ? "Sistema Operacional"
+      : state === "degraded"
+        ? "Sistema Degradado"
+        : "Sistema Instável";
+  const metric =
+    status?.approvalRate != null
+      ? `${status.approvalRate.toFixed(status.approvalRate >= 99.95 ? 2 : 1)}%`
+      : "—";
 
   return (
     <aside className="hidden md:flex w-[248px] shrink-0 flex-col border-r border-border bg-sidebar/80 backdrop-blur-xl">
@@ -84,13 +108,57 @@ export function Sidebar() {
             <div className="text-[10.5px] text-muted-foreground truncate">Operações · Admin</div>
           </div>
         </div>
-        <div className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-success/10 border border-success/20">
+        <div
+          title={
+            status?.approvalRate != null
+              ? `Taxa de aprovação da última auditoria: ${status.approvalRate.toFixed(2)}%`
+              : "Sem auditorias registradas"
+          }
+          className={cn(
+            "flex items-center gap-2 px-2 py-1.5 rounded-md border",
+            tone === "success" && "bg-success/10 border-success/20",
+            tone === "warning" && "bg-warning/10 border-warning/20",
+            tone === "destructive" && "bg-destructive/10 border-destructive/20",
+          )}
+        >
           <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-success opacity-60 animate-pulse-dot" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
+            <span
+              className={cn(
+                "absolute inline-flex h-full w-full rounded-full opacity-60 animate-pulse-dot",
+                tone === "success" && "bg-success",
+                tone === "warning" && "bg-warning",
+                tone === "destructive" && "bg-destructive",
+              )}
+            />
+            <span
+              className={cn(
+                "relative inline-flex rounded-full h-2 w-2",
+                tone === "success" && "bg-success",
+                tone === "warning" && "bg-warning",
+                tone === "destructive" && "bg-destructive",
+              )}
+            />
           </span>
-          <div className="text-[11px] font-medium text-success">Sistema Operacional</div>
-          <div className="ml-auto text-[10px] font-mono text-success/70">99.98%</div>
+          <div
+            className={cn(
+              "text-[11px] font-medium",
+              tone === "success" && "text-success",
+              tone === "warning" && "text-warning",
+              tone === "destructive" && "text-destructive",
+            )}
+          >
+            {label}
+          </div>
+          <div
+            className={cn(
+              "ml-auto text-[10px] font-mono",
+              tone === "success" && "text-success/70",
+              tone === "warning" && "text-warning/70",
+              tone === "destructive" && "text-destructive/70",
+            )}
+          >
+            {metric}
+          </div>
         </div>
       </div>
     </aside>
