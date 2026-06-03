@@ -421,8 +421,9 @@ export function findSeguradoNome(input: unknown): string | null {
   return partes.find((p) => p.papel === "SEGURADO")?.nome ?? null;
 }
 
-/** Prêmio total na moeda original = soma de TODAS as linhas DIRETO
- *  (PREMIO + IOF + INTERMEDIACAO + CUSTOS + …) em todas as parcelas. */
+/** Prêmio total na moeda original = soma de TODAS as linhas de
+ *  composicao_premio_parcela em todas as parcelas (mesmo conjunto que
+ *  o card de Pagamento exibe como total da parcela). */
 export function computePremioTotal(input: unknown): { valor: number; moeda: string } {
   const { proposta } = unwrapProposta(input);
   const pg = isObj(proposta.pagamento) ? (proposta.pagamento as Obj) : {};
@@ -430,13 +431,13 @@ export function computePremioTotal(input: unknown): { valor: number; moeda: stri
   let moeda: string | null = null;
   for (const parc of asArr(pg.parcelas).filter(isObj)) {
     for (const l of asArr(parc.composicao_premio_parcela).filter(isObj)) {
-      if (asStr(l.tipo_premio) !== "DIRETO") continue;
       total += asNum(l.valor_premio) ?? 0;
       if (!moeda) moeda = asStr(l.moeda_premio);
     }
   }
   return { valor: total, moeda: moeda ?? "BRL" };
 }
+
 
 /** Compat. */
 export const computePremioLiquido = computePremioTotal;
