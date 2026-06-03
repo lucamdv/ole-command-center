@@ -289,13 +289,14 @@ export const getEndorsement = createServerFn({ method: "GET" })
       proposta: Record<string, unknown>;
       created_at: string;
     };
-    const { computePremioLiquidoBRL } = await import("@/lib/excelsior/translate");
-    const stored = Number(row.premio_liquido ?? 0);
+    const { computePremioLiquido } = await import("@/lib/excelsior/translate");
+    const pl = computePremioLiquido(row.proposta ?? {});
     return {
       numero_apolice: policy.numero_apolice,
       id: row.id,
       numero_endosso: row.numero_endosso,
-      premio_liquido: stored > 0 ? stored : computePremioLiquidoBRL(row.proposta ?? {}),
+      premio_liquido: pl.valor,
+      premio_moeda: pl.moeda,
       ordem: row.ordem,
       proposta: row.proposta ?? {},
       created_at: row.created_at,
@@ -307,6 +308,7 @@ export interface EndorsementDetail {
   id: string;
   numero_endosso: string;
   premio_liquido: number;
+  premio_moeda: string;
   ordem: number;
   proposta: JsonObject;
   created_at: string;
