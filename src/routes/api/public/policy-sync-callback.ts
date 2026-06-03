@@ -34,19 +34,55 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
         } catch {
           return json({ error: "Invalid JSON" }, 400);
         }
-        const root = Array.isArray(raw) ? raw[0] : raw;
-        // Desembrulha possível wrapper { payload: {...} }
-        const candidate =
-          root &&
-          typeof root === "object" &&
-          "payload" in (root as Record<string, unknown>) &&
-          (root as Record<string, unknown>).payload &&
-          typeof (root as Record<string, unknown>).payload === "object"
-            ? (root as { payload: Record<string, unknown> }).payload
-            : root;
+        // Normaliza várias formas possíveis vindas do n8n:
+        // 1) array cru no topo → trata como `dados`
+        // 2) { payload: {...} } ou { body: {...} } → desembrulha
+        // 3) { dados | apolices | policies | items | data: [...] } → renomeia para `dados`
+        // 4) objeto único de apólice → embrulha em array
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const unwrap = (v: any): any => {
+          if (!v || typeof v !== "object" || Array.isArray(v)) return v;
+          if (v.payload && typeof v.payload === "object") return unwrap(v.payload);
+          if (v.body && typeof v.body === "object") return unwrap(v.body);
+          if (v.json && typeof v.json === "object") return unwrap(v.json);
+          return v;
+        };
+        let candidate: unknown = unwrap(raw);
+        if (Array.isArray(candidate)) {
+          candidate = { dados: candidate };
+        } else if (candidate && typeof candidate === "object") {
+          const obj = candidate as Record<string, unknown>;
+          if (!Array.isArray(obj.dados)) {
+            const altKey = ["apolices", "policies", "items", "data", "results"].find(
+              (k) => Array.isArray(obj[k]),
+            );
+            if (altKey) {
+              obj.dados = obj[altKey];
+            } else if (obj.numero_apolice_seguradora || obj.historico_endossos) {
+              // Único objeto-apólice; embrulha em array
+              candidate = { dados: [obj] };
+            }
+          }
+        }
 
         const parsed = PolicySyncCallbackSchema.safeParse(candidate);
         if (!parsed.success) {
+          // Persiste o raw para debug antes de falhar
+          const { supabaseAdmin: sa } = await import("@/integrations/supabase/client.server");
+          const urlEarly = new URL(request.url);
+          const runIdEarly = urlEarly.searchParams.get("run_id");
+          if (runIdEarly) {
+            await sa
+              .from("policy_sync_runs")
+              .update({
+                status: "error",
+                error_message:
+                  "Payload inválido: " + JSON.stringify(parsed.error.issues).slice(0, 500),
+                raw: (raw ?? {}) as unknown as Record<string, unknown>,
+                finished_at: new Date().toISOString(),
+              } as never)
+              .eq("id", runIdEarly);
+          }
           return json({ error: "Payload inválido", issues: parsed.error.issues }, 400);
         }
         const payload = parsed.data;
