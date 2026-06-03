@@ -14,10 +14,18 @@ export interface RevenueBucket {
   policies: number;
 }
 
+export interface PolicyPremium {
+  numero_apolice: string;
+  usd: number;
+  brl: number;
+}
+
 export interface AnalyticsAggregates {
   findingsByVigencia: MonthBucket[];
   revenueByMonth: RevenueBucket[];
+  policyPremiums: PolicyPremium[];
 }
+
 
 function monthLabel(month: string): string {
   const [y, m] = month.split("-").map(Number);
