@@ -392,6 +392,52 @@ function AnalyticsPage() {
               </ChartCard>
             </div>
 
+            <ChartCard
+              title="Receita OLÉ (USD) por mês de vigência"
+              subtitle={`Prêmio direto faturado · ${formatUSD(totalUsd)} acumulado em ${revenue.length} meses`}
+            >
+              {revenue.length === 0 ? (
+                <EmptyMsg text="Sem dados de prêmio em USD." />
+              ) : (
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={revenue}>
+                      <defs>
+                        <linearGradient id="gUsd" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--success)" stopOpacity={0.5} />
+                          <stop offset="100%" stopColor="var(--success)" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={11} />
+                      <YAxis
+                        stroke="var(--muted-foreground)"
+                        fontSize={11}
+                        tickFormatter={(v) => `$${formatCompact(Number(v))}`}
+                      />
+                      <Tooltip
+                        {...tooltipProps}
+                        formatter={(v, k) =>
+                          k === "usd"
+                            ? formatUSD(Number(v), { maximumFractionDigits: 2 })
+                            : k === "policies"
+                              ? `${formatInt(Number(v))} apólices`
+                              : String(v)
+                        }
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="usd"
+                        name="USD"
+                        stroke="var(--success)"
+                        strokeWidth={2}
+                        fill="url(#gUsd)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </ChartCard>
 
 
             <ChartCard
