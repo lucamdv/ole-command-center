@@ -10,6 +10,7 @@ import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { NATUREZA_PREMIO_LABEL, TIPO_PESSOA_LABEL } from "@/lib/excelsior/codes";
 import type {
+  CancelamentoInfo,
   CoberturaInfo,
   CotacaoInfo,
   DadosGerais,
@@ -19,6 +20,7 @@ import type {
   LimiteApoliceInfo,
   PagamentoInfo,
   ParteInfo,
+  TipoEndosso,
 } from "@/lib/excelsior/translate";
 
 // ============ Utilitários visuais ============
