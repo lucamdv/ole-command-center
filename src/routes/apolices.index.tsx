@@ -103,7 +103,14 @@ function ApolicesPage() {
               className="grid grid-cols-12 items-center px-4 py-2.5 border-b border-border/40 last:border-0 hover:bg-surface-2/50 transition"
             >
               <div className="col-span-5 min-w-0">
-                <span className="font-mono text-[12.5px] text-foreground">{p.numero_apolice}</span>
+                <div className="font-mono text-[12.5px] text-foreground truncate">
+                  {p.numero_apolice}
+                </div>
+                {p.segurado_nome && (
+                  <div className="text-[11px] text-muted-foreground truncate">
+                    {p.segurado_nome}
+                  </div>
+                )}
               </div>
               <div className="col-span-2 text-center font-mono text-[11.5px] text-muted-foreground">
                 {p.numero_endosso_atual ?? "—"}

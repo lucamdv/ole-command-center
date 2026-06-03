@@ -1,8 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, GitBranch } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useEndorsementDetail } from "@/hooks/use-policies";
-import { formatBRL, formatDateTime } from "@/lib/format";
 import { JsonExplorer } from "@/components/json-explorer";
+import {
+  CotacaoCard,
+  DadosGeraisCard,
+  DatasCard,
+  DocumentoHeader,
+  EndossoSemDadosAviso,
+  ItensCoberturas,
+  LimiteApoliceCard,
+  PagamentoCard,
+  PartesList,
+  Section,
+} from "@/components/apolice/cards";
+import { parseDocumento, translateProposta } from "@/lib/excelsior/translate";
 
 export const Route = createFileRoute("/apolices/$id/endossos/$num")({
   head: ({ params }) => ({
@@ -39,6 +51,10 @@ function EndossoDetail() {
     );
   }
 
+  const t = translateProposta(endo.proposta);
+  const documento = parseDocumento(endo.numero_apolice);
+  const seguradoNome = t.partes.find((p) => p.papel === "SEGURADO")?.nome ?? null;
+
   return (
     <div className="space-y-6">
       <nav className="text-[12px] text-muted-foreground flex items-center gap-1.5 flex-wrap">
@@ -46,50 +62,73 @@ function EndossoDetail() {
           Apólices
         </Link>
         <span>/</span>
-        <Link to="/apolices/$id" params={{ id }} className="hover:text-foreground transition font-mono">
+        <Link
+          to="/apolices/$id"
+          params={{ id }}
+          className="hover:text-foreground transition font-mono"
+        >
           {id}
         </Link>
         <span>/</span>
-        <span className="text-foreground font-mono">Endosso {num}</span>
+        <span className="text-foreground font-mono">Endosso {documento.sequencial}</span>
       </nav>
 
-      <div className="rounded-2xl border border-border bg-gradient-surface p-6">
-        <div className="flex items-start justify-between gap-6 flex-wrap">
-          <div>
-            <div className="flex items-center gap-2 text-[12.5px] text-muted-foreground mb-1">
-              <GitBranch className="h-3.5 w-3.5" />
-              <span className="font-mono">ENDOSSO #{endo.ordem}</span>
-            </div>
-            <div className="font-mono text-[22px] font-semibold tracking-tight">
-              {endo.numero_endosso}
-            </div>
-            <div className="text-[12px] text-muted-foreground mt-1">
-              Da apólice <span className="font-mono">{endo.numero_apolice}</span>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground">
-              Prêmio líquido
-            </div>
-            <div className="text-[20px] font-semibold text-foreground font-mono">
-              {formatBRL(endo.premio_liquido)}
-            </div>
-            <div className="text-[10.5px] text-muted-foreground mt-1">
-              {formatDateTime(endo.created_at)}
-            </div>
-          </div>
-        </div>
-      </div>
+      <DocumentoHeader
+        documento={documento}
+        premioBRL={endo.premio_liquido}
+        seguradoNome={seguradoNome}
+      />
 
-      <div>
-        <div className="mb-3">
-          <div className="text-[14px] font-semibold">Conteúdo do endosso</div>
-          <div className="text-[11px] text-muted-foreground">
-            Dados completos retornados pelo MOTOR OLÉ
-          </div>
-        </div>
-        <JsonExplorer data={endo.proposta} title="Proposta do endosso" defaultDepth={2} />
-      </div>
+      {t.isWrapperVazio && <EndossoSemDadosAviso numeroApolice={documento.numeroApolice} />}
+
+      {!t.isWrapperVazio && (
+        <>
+          <Section title="Dados gerais">
+            <DadosGeraisCard dados={t.dadosGerais} />
+          </Section>
+
+          <Section title="Datas">
+            <DatasCard datas={t.datas} />
+          </Section>
+
+          {t.limiteApolice && (
+            <Section title="Limite & Cotação">
+              <LimiteApoliceCard limite={t.limiteApolice} />
+              <CotacaoCard cotacoes={t.cotacoes} />
+            </Section>
+          )}
+
+          {t.partes.length > 0 && (
+            <Section title="Partes">
+              <PartesList partes={t.partes} />
+            </Section>
+          )}
+
+          {t.itens.length > 0 && (
+            <Section title="Itens & coberturas">
+              <ItensCoberturas itens={t.itens} />
+            </Section>
+          )}
+
+          {t.pagamento.parcelas.length > 0 && (
+            <Section title="Pagamento">
+              <PagamentoCard pagamento={t.pagamento} />
+            </Section>
+          )}
+        </>
+      )}
+
+      {/* Datas sempre úteis no endosso A (delta) */}
+      {t.isWrapperVazio &&
+        (t.datas.inicioVigencia || t.datas.fimVigencia || t.datas.assinatura) && (
+          <Section title="Datas do endosso">
+            <DatasCard datas={t.datas} />
+          </Section>
+        )}
+
+      <Section title="Dados brutos" subtitle="Payload completo retornado pelo MOTOR OLÉ">
+        <JsonExplorer data={endo.proposta} title="Endosso (raw)" defaultDepth={1} />
+      </Section>
     </div>
   );
 }

@@ -16,6 +16,7 @@ export interface PolicyListItem {
   premio_liquido: number;
   endorsements_count: number;
   updated_at: string;
+  segurado_nome: string | null;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -154,9 +155,12 @@ export const getLatestPolicySync = createServerFn({ method: "GET" }).handler(asy
 
 export const getPolicies = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { findSeguradoNome } = await import("@/lib/excelsior/translate");
   const { data, error } = await supabaseAdmin
     .from("policies")
-    .select("id, numero_apolice, numero_endosso_atual, premio_liquido, updated_at, endorsements(id)")
+    .select(
+      "id, numero_apolice, numero_endosso_atual, premio_liquido, proposta, updated_at, endorsements(id)",
+    )
     .order("updated_at", { ascending: false });
   if (error) throw new Error(error.message);
   return ((data ?? []) as Array<{
@@ -164,6 +168,7 @@ export const getPolicies = createServerFn({ method: "GET" }).handler(async () =>
     numero_apolice: string;
     numero_endosso_atual: string | null;
     premio_liquido: number | string;
+    proposta: JsonObject | null;
     updated_at: string;
     endorsements: Array<{ id: string }>;
   }>).map((p) => ({
@@ -173,6 +178,7 @@ export const getPolicies = createServerFn({ method: "GET" }).handler(async () =>
     premio_liquido: Number(p.premio_liquido ?? 0),
     endorsements_count: p.endorsements?.length ?? 0,
     updated_at: p.updated_at,
+    segurado_nome: findSeguradoNome(p.proposta ?? {}),
   })) as PolicyListItem[];
 });
 
