@@ -244,7 +244,14 @@ function AnalyticsPage() {
               }
               tone="destructive"
             />
+            <Kpi
+              label="Receita acumulada (USD)"
+              value={formatUSD(totalUsd)}
+              hint={`${revenue.length} meses · ${formatInt(policies.length)} apólices`}
+              tone="success"
+            />
           </div>
+
 
           <div ref={chartsRef} className="space-y-6">
             <div className="grid lg:grid-cols-3 gap-6">
