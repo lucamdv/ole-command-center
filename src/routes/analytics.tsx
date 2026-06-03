@@ -20,8 +20,8 @@ import { BarChart3, Download, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuditHistory, useLatestAudit } from "@/hooks/use-audit";
 import { usePolicies } from "@/hooks/use-policies";
+import { useAnalyticsAggregates } from "@/hooks/use-analytics";
 import {
-  bucketByMonth,
   buildHeatmap,
   countBySeverity,
   deriveKpis,
@@ -32,7 +32,7 @@ import {
 } from "@/lib/audit/derive";
 import { exportAuditPdf } from "@/lib/audit/export-pdf";
 import { exportChartsPdf } from "@/lib/analytics/export-charts";
-import { formatBRL, formatCompact, formatInt, formatPct, relativeTime } from "@/lib/format";
+import { formatBRL, formatCompact, formatInt, formatPct, formatUSD, relativeTime } from "@/lib/format";
 
 export const Route = createFileRoute("/analytics")({
   head: () => ({
