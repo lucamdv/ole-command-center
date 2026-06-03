@@ -197,12 +197,25 @@ export function unwrapProposta(input: unknown): {
   envelope: Obj | null;
   isWrapperVazio: boolean;
   tipoEndosso: TipoEndosso | null;
+  numeroDocumento: string | null;
 } {
   if (!isObj(input))
-    return { proposta: {}, envelope: null, isWrapperVazio: true, tipoEndosso: null };
+    return {
+      proposta: {},
+      envelope: null,
+      isWrapperVazio: true,
+      tipoEndosso: null,
+      numeroDocumento: null,
+    };
   // Caso 1: proposta direta (apólice 000000)
   if (Array.isArray(input.itens) || Array.isArray(input.partes) || input.datas) {
-    return { proposta: input, envelope: null, isWrapperVazio: false, tipoEndosso: null };
+    return {
+      proposta: input,
+      envelope: null,
+      isWrapperVazio: false,
+      tipoEndosso: null,
+      numeroDocumento: null,
+    };
   }
   // Caso 2: envelope { endosso_X: { proposta_endosso_X: { proposta: {...} } } }
   for (const k of Object.keys(input)) {
@@ -212,6 +225,8 @@ export function unwrapProposta(input: unknown): {
       letra === "A" || letra === "B" || letra === "C" ? (letra as TipoEndosso) : null;
     const env = input[k];
     if (!isObj(env)) continue;
+    const numeroDocumento =
+      asStr(env.numero_documento_seguradora) ?? asStr(env.numero_apolice_seguradora);
     // procura proposta_endosso_X dentro
     for (const k2 of Object.keys(env)) {
       if (!k2.startsWith("proposta_endosso_")) continue;
@@ -221,12 +236,30 @@ export function unwrapProposta(input: unknown): {
       if (isObj(wrap)) {
         const inner = isObj(wrap.proposta) ? (wrap.proposta as Obj) : wrap;
         const vazio = !(Array.isArray(inner.itens) || Array.isArray(inner.partes));
-        return { proposta: inner, envelope: env, isWrapperVazio: vazio, tipoEndosso };
+        return {
+          proposta: inner,
+          envelope: env,
+          isWrapperVazio: vazio,
+          tipoEndosso,
+          numeroDocumento,
+        };
       }
     }
-    return { proposta: {}, envelope: env, isWrapperVazio: true, tipoEndosso };
+    return {
+      proposta: {},
+      envelope: env,
+      isWrapperVazio: true,
+      tipoEndosso,
+      numeroDocumento,
+    };
   }
-  return { proposta: input, envelope: null, isWrapperVazio: true, tipoEndosso: null };
+  return {
+    proposta: input,
+    envelope: null,
+    isWrapperVazio: true,
+    tipoEndosso: null,
+    numeroDocumento: null,
+  };
 }
 
 /** Apólice termina em 000000; endosso tem sequencial > 0 nos últimos 6 dígitos. */
