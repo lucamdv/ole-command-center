@@ -138,7 +138,7 @@ export default function ApoliceDetail() {
           <div className="grid grid-cols-12 px-4 py-2.5 text-[10.5px] uppercase tracking-wider text-muted-foreground bg-surface-2/60 border-b border-border">
             <div className="col-span-2">#</div>
             <div className="col-span-7">Identificador</div>
-            <div className="col-span-2 text-right">Prêmio líquido</div>
+            <div className="col-span-2 text-right">Prêmio total</div>
             <div className="col-span-1 text-right">→</div>
           </div>
           {policy.endorsements.length === 0 && (

@@ -72,7 +72,7 @@ function ApolicesPage() {
           <div className="col-span-5">Apólice</div>
           <div className="col-span-2 text-center">Endosso atual</div>
           <div className="col-span-2 text-center">Endossos</div>
-          <div className="col-span-2 text-right">Prêmio líquido</div>
+          <div className="col-span-2 text-right">Prêmio total</div>
           <div className="col-span-1 text-right">Atualizado</div>
         </div>
         <div className="max-h-[640px] overflow-y-auto">
