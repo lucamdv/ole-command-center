@@ -284,11 +284,13 @@ export const getEndorsement = createServerFn({ method: "GET" })
       proposta: Record<string, unknown>;
       created_at: string;
     };
+    const { computePremioLiquidoBRL } = await import("@/lib/excelsior/translate");
+    const stored = Number(row.premio_liquido ?? 0);
     return {
       numero_apolice: policy.numero_apolice,
       id: row.id,
       numero_endosso: row.numero_endosso,
-      premio_liquido: Number(row.premio_liquido ?? 0),
+      premio_liquido: stored > 0 ? stored : computePremioLiquidoBRL(row.proposta ?? {}),
       ordem: row.ordem,
       proposta: row.proposta ?? {},
       created_at: row.created_at,
