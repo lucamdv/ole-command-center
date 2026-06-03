@@ -1,58 +1,42 @@
-# Analytics — dados reais, mais KPIs/gráficos e exportar PDF
+# Analytics — corrigir vigência e adicionar receita USD × tempo
 
-Hoje `src/routes/analytics.tsx` usa mock (`POLICIES`, `WEEKLY_TREND`, `AUDIT_RULES`). Vamos remover 100% do mock e ligar nas mesmas fontes reais já usadas em Operação e Alertas: `useLatestAudit()` + `usePolicies()`, com derivações de `src/lib/audit/derive.ts`.
+## Diagnóstico
 
-## Escopo
-Frontend apenas. Sem mudanças em backend, schema ou server functions.
+1. **"Findings por mês de vigência" está vazio** porque `audit_findings.data_inicio` / `data_fim` são sempre `NULL`. A vigência real está em `policies.proposta -> 'datas' -> 'inicio_vigencia'`. Precisamos juntar `findings.apolice → policies.numero_apolice` para extrair.
 
-## Arquivos
-- `src/routes/analytics.tsx` — reescrita completa, sem mock.
-- (sem novo helper) reuso de `exportAuditPdf` em `src/lib/audit/export-pdf.ts` para o PDF geral. Para "exportar gráficos" individualmente, usar `html-to-image` (toPng) + `jsPDF` já instalado, encapsulado em um util curto inline no arquivo da rota (ou em `src/lib/analytics/export-charts.ts` novo).
+2. **Receita USD da OLÉ** não existe como coluna — `policies.premio_liquido` é 0. O dado real está em `proposta -> 'itens' -> 'coberturas' -> 'composicao_premio_cobertura'`, filtrando `tipo_premio='DIRETO'` e `natureza_premio='PREMIO'`, somando `valor_premio` (USD) e `valor_premio_brl` (BRL).
 
-## Layout
+## Solução
 
-1. **Header**: "Analytics" + chip "BI · LIVE", contador de auditorias no histórico, última run, e dois botões:
-   - "Exportar relatório completo (PDF)" → chama `exportAuditPdf(latest, history)`.
-   - "Exportar gráficos (PDF)" → captura cada card marcado com `data-export="chart"` via `html-to-image` e monta um PDF A4 paisagem multipage.
+### Backend — novo server function
 
-2. **Faixa de KPIs (8 tiles, grid 4×2)** — todos derivados do real:
-   - Apólices na carteira (`policies.length`)
-   - Auditadas última run (`audited`) com delta vs run anterior
-   - Taxa de conformidade (`approvedRate`) com delta pp
-   - Risco operacional (`operationalRisk`) com delta pp
-   - Erros críticos (`countBySeverity.erros`)
-   - Alertas (`countBySeverity.alertas`)
-   - Tipos de erro únicos (`uniqueErrorTypes`)
-   - Apólices impactadas (`affectedPolicies`) + % sobre carteira
+Criar `src/lib/analytics.functions.ts` com `getAnalyticsAggregates()` (POST, sem auth — usa cliente público de leitura, igual aos outros queries da app).
 
-3. **Gráficos** (todos com `data-export="chart"` para captura):
-   - **Tendência de runs (12 últimas)** — `AreaChart` com `runSeries(history)`: aprovados (success) e reprovados (destructive) empilhados.
-   - **Conformidade ao longo do tempo** — `LineChart` com `approvedRate` por run.
-   - **Volume processado por run** — `BarChart` com `total` por run.
-   - **Distribuição por severidade** — `PieChart` (erro/alerta/info) com legenda.
-   - **Top 10 tipos de erro** — `BarChart` horizontal de `errorTypeBreakdown(findings)`.
-   - **Heatmap tipo × run** — usa `buildHeatmap(latest, history, 12)`, células coloridas por intensidade (mantém padrão visual de Operação).
-   - **Findings por mês de vigência** — `BarChart` com `bucketByMonth(findings)`.
-   - **Top endossos com inconsistências** — lista/bar usando `groupByEndosso(findings)` (top 8).
-   - **Ranking de apólices mais problemáticas** — `groupByApolice(findings)` top 10, barra horizontal + chips erro/alerta + link para `/apolices/$id`.
-   - **Distribuição da carteira por produto** — derivado de `policies` (agrupar por `produto`/`modalidade`), barra horizontal top 8.
-   - **Distribuição da carteira por seguradora/corretor** — derivado de `policies` (campo disponível, ex.: `seguradora` ou `corretor` — usar o primeiro presente no tipo), top 8.
+Retorna:
+```ts
+{
+  findingsByVigencia: { month: string; label: string; count: number }[];
+  revenueByMonth:     { month: string; label: string; usd: number; brl: number; policies: number }[];
+}
+```
 
-4. **Estados**:
-   - Loading → skeletons nos tiles e nos cards de gráfico.
-   - Sem dados (`!latest`) → empty state com `BarChart3` e CTA para `/operacao`.
+Implementação:
+- `findingsByVigencia`: SQL agregado via `supabase.rpc` ou query — buscar `audit_findings` da última run + join com `policies` por `numero_apolice`, bucketar por `to_char(inicio_vigencia, 'YYYY-MM')`. Como Supabase JS não faz join arbitrário em jsonb, faço em duas etapas: (a) busca `policies (numero_apolice, proposta->datas->>inicio_vigencia)`, monta map; (b) busca findings da última run, agrupa pelo mês do map. Tudo dentro da server function (não pesa no cliente).
+- `revenueByMonth`: busca todas as `policies(numero_apolice, proposta)`, percorre `proposta.itens[].coberturas[].composicao_premio_cobertura[]` filtrando `tipo_premio='DIRETO' AND natureza_premio='PREMIO'`, soma USD/BRL, bucketa pelo mês de `proposta.datas.inicio_vigencia`. Ordenado cronologicamente.
 
-## Export PDF dos gráficos
-- Adicionar dependência `html-to-image` (apenas se ainda não presente; `jspdf` já está).
-- Função `exportChartsPdf(nodes: HTMLElement[])`:
-  1. `jsPDF({ orientation: "landscape", unit: "pt", format: "a4" })`
-  2. Para cada nó: `htmlToImage.toPng(node, { pixelRatio: 2, backgroundColor: '#0b0f1a' })`
-  3. Adiciona página, título do card (lê `data-title`), imagem ajustada à largura útil.
-  4. Rodapé com data + "OLE COPILOT — Gráficos Analytics".
-  5. `doc.save('analytics-graficos-YYYY-MM-DD-HHMM.pdf')`.
-- Botão "Exportar relatório completo" reusa a função já existente `exportAuditPdf`, sem alterações.
+Hook React Query `useAnalyticsAggregates()` em `src/hooks/use-analytics.ts`, `staleTime: 60_000`.
 
-## Não faremos
-- Não alteramos `mock/data.ts`, server functions, ou outras páginas.
-- Sem novos endpoints/edge functions.
-- Sem mudar tokens de design.
+### Frontend — `src/routes/analytics.tsx`
+
+- **Trocar** o gráfico atual "Findings por mês de vigência" pelo retorno de `findingsByVigencia` (mesmo `BarChart`, agora com dados reais).
+- **Adicionar** novo `ChartCard` "Receita OLÉ (USD) por mês de vigência" com `AreaChart` mostrando `usd` ao longo do tempo, tooltip formatando como USD (`Intl.NumberFormat('en-US', {style:'currency', currency:'USD'})`) e linha secundária opcional em BRL desabilitada (mantém só USD para clareza). Eixo X = `label` (mmm/aa pt-BR).
+- **KPI extra**: adicionar tile "Receita acumulada (USD)" na faixa de KPIs, somando `revenueByMonth.usd`.
+- Manter `data-export="chart"` nos dois cards para o exportador PDF continuar pegando.
+- Tratar `loading`/`empty` com os helpers `EmptyMsg` já existentes.
+
+Adicionar formatter `formatUSD` em `src/lib/format.ts`.
+
+## Fora de escopo
+- Não alterar schema (não preencher `data_inicio/data_fim` retroativamente).
+- Não mexer no n8n / motor de auditoria.
+- Não criar tabela materializada — agregação on-demand basta para o volume atual (31 apólices, 21 findings).
