@@ -70,9 +70,9 @@ const ApolicesIndexRoute = ApolicesIndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApolicesIdRoute = ApolicesIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => ApolicesRoute,
+  id: '/apolices/$id',
+  path: '/apolices/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicPolicySyncCallbackRoute =
   ApiPublicPolicySyncCallbackRouteImport.update({
@@ -206,6 +206,7 @@ export interface RootRouteChildren {
   FerramentasRoute: typeof FerramentasRoute
   IntelligenceRoute: typeof IntelligenceRoute
   OperacaoRoute: typeof OperacaoRoute
+  ApolicesIdRoute: typeof ApolicesIdRouteWithChildren
   ApolicesIndexRoute: typeof ApolicesIndexRoute
   ApiPublicAuditCallbackRoute: typeof ApiPublicAuditCallbackRoute
   ApiPublicPolicySyncCallbackRoute: typeof ApiPublicPolicySyncCallbackRoute
@@ -279,10 +280,10 @@ declare module '@tanstack/react-router' {
     }
     '/apolices/$id': {
       id: '/apolices/$id'
-      path: '/$id'
+      path: '/apolices/$id'
       fullPath: '/apolices/$id'
       preLoaderRoute: typeof ApolicesIdRouteImport
-      parentRoute: typeof ApolicesRoute
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/policy-sync-callback': {
       id: '/api/public/policy-sync-callback'
@@ -315,6 +316,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ApolicesIdRouteChildren {
+  ApolicesIdEndossosNumRoute: typeof ApolicesIdEndossosNumRoute
+}
+
+const ApolicesIdRouteChildren: ApolicesIdRouteChildren = {
+  ApolicesIdEndossosNumRoute: ApolicesIdEndossosNumRoute,
+}
+
+const ApolicesIdRouteWithChildren = ApolicesIdRoute._addFileChildren(
+  ApolicesIdRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlertasRoute: AlertasRoute,
@@ -324,6 +337,7 @@ const rootRouteChildren: RootRouteChildren = {
   FerramentasRoute: FerramentasRoute,
   IntelligenceRoute: IntelligenceRoute,
   OperacaoRoute: OperacaoRoute,
+  ApolicesIdRoute: ApolicesIdRouteWithChildren,
   ApolicesIndexRoute: ApolicesIndexRoute,
   ApiPublicAuditCallbackRoute: ApiPublicAuditCallbackRoute,
   ApiPublicPolicySyncCallbackRoute: ApiPublicPolicySyncCallbackRoute,
