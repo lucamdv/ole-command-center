@@ -420,3 +420,20 @@ export function findSeguradoNome(input: unknown): string | null {
   const partes = parsePartes(proposta);
   return partes.find((p) => p.papel === "SEGURADO")?.nome ?? null;
 }
+
+/** Calcula o prêmio líquido (BRL) somando parcelas.composicao_premio_parcela
+ *  onde natureza_premio = "PREMIO" e tipo_premio = "DIRETO". */
+export function computePremioLiquidoBRL(input: unknown): number {
+  const { proposta } = unwrapProposta(input);
+  const pg = isObj(proposta.pagamento) ? (proposta.pagamento as Obj) : {};
+  let total = 0;
+  for (const parc of asArr(pg.parcelas).filter(isObj)) {
+    for (const l of asArr(parc.composicao_premio_parcela).filter(isObj)) {
+      if (asStr(l.natureza_premio) === "PREMIO" && asStr(l.tipo_premio) === "DIRETO") {
+        total += asNum(l.valor_premio_brl) ?? 0;
+      }
+    }
+  }
+  return total;
+}
+
