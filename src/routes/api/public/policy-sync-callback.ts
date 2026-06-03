@@ -143,6 +143,7 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
           const policyId = (up as { id: string }).id;
 
           await supabaseAdmin.from("endorsements").delete().eq("policy_id", policyId);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const endos = ((apolice.historico_endossos ?? []) as Array<Record<string, any>>).map((e, idx) => ({
             policy_id: policyId,
             numero_apolice: pickNum(e) ?? numero,
