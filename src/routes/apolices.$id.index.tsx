@@ -8,6 +8,7 @@ import {
   DadosGeraisCard,
   DatasCard,
   DocumentoHeader,
+  EndossoBadge,
   fmtNum,
   ItensCoberturas,
   LimiteApoliceCard,
@@ -19,6 +20,7 @@ import {
   normalizeEndossoNum,
   parseDocumento,
   translateProposta,
+  unwrapProposta,
 } from "@/lib/excelsior/translate";
 
 export const Route = createFileRoute("/apolices/$id/")({
