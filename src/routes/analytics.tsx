@@ -71,18 +71,18 @@ function AnalyticsPage() {
   const totalUsd = useMemo(() => revenue.reduce((s, r) => s + r.usd, 0), [revenue]);
   const heatmap = useMemo(() => buildHeatmap(latest, history, 12), [latest, history]);
 
-  // Distribuição da carteira por faixa de prêmio líquido
+  // Distribuição da carteira por faixa de prêmio líquido (USD)
   const premiumBuckets = useMemo(() => {
     const buckets = [
       { label: "Sem prêmio", min: 0, max: 0, count: 0, total: 0 },
-      { label: "≤ R$ 1k", min: 0.01, max: 1_000, count: 0, total: 0 },
+      { label: "≤ US$ 1k", min: 0.01, max: 1_000, count: 0, total: 0 },
       { label: "1k – 10k", min: 1_000, max: 10_000, count: 0, total: 0 },
       { label: "10k – 50k", min: 10_000, max: 50_000, count: 0, total: 0 },
       { label: "50k – 250k", min: 50_000, max: 250_000, count: 0, total: 0 },
       { label: "> 250k", min: 250_000, max: Infinity, count: 0, total: 0 },
     ];
-    for (const p of policies) {
-      const v = Number(p.premio_liquido) || 0;
+    for (const p of aggregates.policyPremiums) {
+      const v = Number(p.usd) || 0;
       const b =
         v === 0
           ? buckets[0]
@@ -91,7 +91,8 @@ function AnalyticsPage() {
       b.total += v;
     }
     return buckets.filter((b) => b.count > 0);
-  }, [policies]);
+  }, [aggregates.policyPremiums]);
+
 
   // Distribuição por nº de endossos
   const endorsementsDist = useMemo(() => {
