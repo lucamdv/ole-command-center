@@ -121,14 +121,27 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
           const numero = pickNum(apolice);
           if (!numero) continue;
 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const historico = (apolice.historico_endossos ?? []) as Array<Record<string, any>>;
+          // O n8n envia a apólice "casca" (sem proposta/prêmio); os dados reais
+          // vivem em cada item de historico_endossos. Pegamos o endosso "atual"
+          // (numero_endosso do topo) ou, na falta, o de maior ordem.
+          const currentEndNum = pickEnd(apolice);
+          const currentEndo =
+            historico.find((e) => pickEnd(e) === currentEndNum) ??
+            historico[historico.length - 1] ??
+            null;
+          const proposta = currentEndo?.proposta ?? apolice.proposta ?? {};
+          const premio = currentEndo?.premio_liquido ?? apolice.premio_liquido ?? 0;
+
           const { data: up, error: upErr } = await supabaseAdmin
             .from("policies")
             .upsert(
               {
                 numero_apolice: numero,
-                numero_endosso_atual: pickEnd(apolice),
-                premio_liquido: apolice.premio_liquido ?? 0,
-                proposta: apolice.proposta ?? {},
+                numero_endosso_atual: currentEndNum,
+                premio_liquido: premio,
+                proposta,
                 last_sync_run_id: runId,
                 updated_at: new Date().toISOString(),
               } as never,
@@ -143,8 +156,7 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
           const policyId = (up as { id: string }).id;
 
           await supabaseAdmin.from("endorsements").delete().eq("policy_id", policyId);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const endos = ((apolice.historico_endossos ?? []) as Array<Record<string, any>>).map((e, idx) => ({
+          const endos = historico.map((e, idx) => ({
             policy_id: policyId,
             numero_apolice: pickNum(e) ?? numero,
             numero_endosso: pickEnd(e) ?? String(idx),
@@ -160,6 +172,7 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
           }
           processed++;
         }
+
 
         const { error: updErr } = await supabaseAdmin
           .from("policy_sync_runs")
