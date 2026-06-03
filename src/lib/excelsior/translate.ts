@@ -1,14 +1,25 @@
 import { sistemaOrigemLabel } from "./codes";
 
 // ====== Tipos do retorno do parser (o que os componentes consomem) ======
+export type TipoEndosso = "A" | "B" | "C";
+
 export interface DocumentoInfo {
   tipo: "APOLICE" | "ENDOSSO";
+  /** Quando tipo = "ENDOSSO", letra do tipo (A/B/C). */
+  tipoEndosso: TipoEndosso | null;
   /** Sequencial de 6 dígitos (000000 para apólice, 000001+ para endossos). */
   sequencial: string;
   /** Número completo da apólice base (substitui últimos 6 dígitos por 000000). */
   numeroApolice: string;
   /** Número completo original. */
   numeroCompleto: string;
+}
+
+export interface CancelamentoInfo {
+  motivo: string | null;
+  descricaoMotivo: string | null;
+  numeroEndossoCancelado: string | null;
+  pagamento: string | null;
 }
 
 export interface DadosGerais {
