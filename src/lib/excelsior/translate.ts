@@ -1,14 +1,25 @@
 import { sistemaOrigemLabel } from "./codes";
 
 // ====== Tipos do retorno do parser (o que os componentes consomem) ======
+export type TipoEndosso = "A" | "B" | "C";
+
 export interface DocumentoInfo {
   tipo: "APOLICE" | "ENDOSSO";
+  /** Quando tipo = "ENDOSSO", letra do tipo (A/B/C). */
+  tipoEndosso: TipoEndosso | null;
   /** Sequencial de 6 dígitos (000000 para apólice, 000001+ para endossos). */
   sequencial: string;
   /** Número completo da apólice base (substitui últimos 6 dígitos por 000000). */
   numeroApolice: string;
   /** Número completo original. */
   numeroCompleto: string;
+}
+
+export interface CancelamentoInfo {
+  motivo: string | null;
+  descricaoMotivo: string | null;
+  numeroEndossoCancelado: string | null;
+  pagamento: string | null;
 }
 
 export interface DadosGerais {
@@ -154,6 +165,8 @@ export interface PropostaTraduzida {
   pagamento: PagamentoInfo;
   cotacoes: CotacaoInfo[];
   limiteApolice: LimiteApoliceInfo | null;
+  cancelamento: CancelamentoInfo | null;
+  tipoEndosso: TipoEndosso | null;
   /** O objeto "proposta" desembrulhado — para o JsonExplorer fallback. */
   raw: Record<string, unknown>;
   /** Indicador se a proposta veio vazia/wrapper (caso típico de endosso A). */
@@ -178,40 +191,58 @@ const asNum = (v: unknown): number | null => {
 };
 
 /** Aceita o "envelope" do endosso ({ endosso_A: { proposta_endosso_A: { proposta } } })
- *  ou já a própria proposta. */
-export function unwrapProposta(input: unknown): { proposta: Obj; envelope: Obj | null; isWrapperVazio: boolean } {
-  if (!isObj(input)) return { proposta: {}, envelope: null, isWrapperVazio: true };
+ *  ou já a própria proposta. Também extrai a letra do tipo de endosso (A/B/C). */
+export function unwrapProposta(input: unknown): {
+  proposta: Obj;
+  envelope: Obj | null;
+  isWrapperVazio: boolean;
+  tipoEndosso: TipoEndosso | null;
+} {
+  if (!isObj(input))
+    return { proposta: {}, envelope: null, isWrapperVazio: true, tipoEndosso: null };
   // Caso 1: proposta direta (apólice 000000)
   if (Array.isArray(input.itens) || Array.isArray(input.partes) || input.datas) {
-    return { proposta: input, envelope: null, isWrapperVazio: false };
+    return { proposta: input, envelope: null, isWrapperVazio: false, tipoEndosso: null };
   }
   // Caso 2: envelope { endosso_X: { proposta_endosso_X: { proposta: {...} } } }
   for (const k of Object.keys(input)) {
     if (!k.startsWith("endosso_")) continue;
+    const letra = k.slice("endosso_".length).toUpperCase();
+    const tipoEndosso: TipoEndosso | null =
+      letra === "A" || letra === "B" || letra === "C" ? (letra as TipoEndosso) : null;
     const env = input[k];
     if (!isObj(env)) continue;
     // procura proposta_endosso_X dentro
     for (const k2 of Object.keys(env)) {
       if (!k2.startsWith("proposta_endosso_")) continue;
       const wrap = env[k2];
-      if (isObj(wrap) && isObj(wrap.proposta)) {
-        const p = wrap.proposta as Obj;
-        const vazio = !(Array.isArray(p.itens) || Array.isArray(p.partes));
-        return { proposta: p, envelope: env, isWrapperVazio: vazio };
+      // Em endossos B/C a própria "proposta_endosso_X" já é o objeto com motivo etc.
+      // Em endossos A vem como { proposta: {...} }.
+      if (isObj(wrap)) {
+        const inner = isObj(wrap.proposta) ? (wrap.proposta as Obj) : wrap;
+        const vazio = !(Array.isArray(inner.itens) || Array.isArray(inner.partes));
+        return { proposta: inner, envelope: env, isWrapperVazio: vazio, tipoEndosso };
       }
     }
-    return { proposta: {}, envelope: env, isWrapperVazio: true };
+    return { proposta: {}, envelope: env, isWrapperVazio: true, tipoEndosso };
   }
-  return { proposta: input, envelope: null, isWrapperVazio: true };
+  return { proposta: input, envelope: null, isWrapperVazio: true, tipoEndosso: null };
 }
 
 /** Apólice termina em 000000; endosso tem sequencial > 0 nos últimos 6 dígitos. */
-export function parseDocumento(numero: string): DocumentoInfo {
+export function parseDocumento(numero: string, tipoEndosso: TipoEndosso | null = null): DocumentoInfo {
   const seq = numero.slice(-6);
   const base = numero.slice(0, -6) + "000000";
   const tipo: "APOLICE" | "ENDOSSO" = seq === "000000" ? "APOLICE" : "ENDOSSO";
-  return { tipo, sequencial: seq, numeroApolice: base, numeroCompleto: numero };
+  return {
+    tipo,
+    tipoEndosso: tipo === "ENDOSSO" ? tipoEndosso : null,
+    sequencial: seq,
+    numeroApolice: base,
+    numeroCompleto: numero,
+  };
 }
+
 
 /** Normaliza o numero_endosso que pode vir como "0", "2" ou "000002". */
 export function normalizeEndossoNum(raw: string): string {
@@ -399,8 +430,23 @@ function parseLimiteApolice(p: Obj): LimiteApoliceInfo | null {
   };
 }
 
+function parseCancelamento(proposta: Obj, tipoEndosso: TipoEndosso | null): CancelamentoInfo | null {
+  if (tipoEndosso !== "B" && tipoEndosso !== "C") return null;
+  const motivo = asStr(proposta.motivo_endosso);
+  const descricao = asStr(proposta.descricao_motivo_endosso);
+  const cancelado = asStr(proposta.numero_endosso_cancelado);
+  const pagamento = asStr(proposta.pagamento);
+  if (!motivo && !descricao && !cancelado && !pagamento) return null;
+  return {
+    motivo,
+    descricaoMotivo: descricao,
+    numeroEndossoCancelado: cancelado,
+    pagamento,
+  };
+}
+
 export function translateProposta(input: unknown): PropostaTraduzida {
-  const { proposta, envelope, isWrapperVazio } = unwrapProposta(input);
+  const { proposta, envelope, isWrapperVazio, tipoEndosso } = unwrapProposta(input);
   return {
     dadosGerais: parseDados(proposta, envelope),
     datas: parseDatas(proposta, envelope),
@@ -409,6 +455,8 @@ export function translateProposta(input: unknown): PropostaTraduzida {
     pagamento: parsePagamento(proposta),
     cotacoes: parseCotacoes(proposta),
     limiteApolice: parseLimiteApolice(proposta),
+    cancelamento: parseCancelamento(proposta, tipoEndosso),
+    tipoEndosso,
     raw: proposta,
     isWrapperVazio,
   };

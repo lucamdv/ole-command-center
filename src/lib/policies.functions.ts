@@ -158,11 +158,13 @@ export const getLatestPolicySync = createServerFn({ method: "GET" }).handler(asy
 
 export const getPolicies = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { findSeguradoNome, computePremioLiquido } = await import("@/lib/excelsior/translate");
+  const { findSeguradoNome, computePremioLiquido, normalizeEndossoNum } = await import(
+    "@/lib/excelsior/translate"
+  );
   const { data, error } = await supabaseAdmin
     .from("policies")
     .select(
-      "id, numero_apolice, numero_endosso_atual, premio_liquido, proposta, updated_at, endorsements(id)",
+      "id, numero_apolice, numero_endosso_atual, premio_liquido, proposta, updated_at, endorsements(numero_endosso, ordem)",
     )
     .order("updated_at", { ascending: false });
   if (error) throw new Error(error.message);
@@ -173,16 +175,23 @@ export const getPolicies = createServerFn({ method: "GET" }).handler(async () =>
     premio_liquido: number | string;
     proposta: JsonObject | null;
     updated_at: string;
-    endorsements: Array<{ id: string }>;
+    endorsements: Array<{ numero_endosso: string; ordem: number }>;
   }>).map((p) => {
     const { valor, moeda } = computePremioLiquido(p.proposta ?? {});
+    const endos = p.endorsements ?? [];
+    // Último endosso = maior ordem (a apólice base tem ordem 0).
+    const ultimo = endos.reduce<{ numero_endosso: string; ordem: number } | null>(
+      (acc, e) => (acc && acc.ordem >= e.ordem ? acc : e),
+      null,
+    );
+    const ultimoNum = ultimo ? normalizeEndossoNum(ultimo.numero_endosso) : null;
     return {
       id: p.id,
       numero_apolice: p.numero_apolice,
-      numero_endosso_atual: p.numero_endosso_atual,
+      numero_endosso_atual: ultimoNum ?? p.numero_endosso_atual,
       premio_liquido: valor,
       premio_moeda: moeda,
-      endorsements_count: p.endorsements?.length ?? 0,
+      endorsements_count: endos.length,
       updated_at: p.updated_at,
       segurado_nome: findSeguradoNome(p.proposta ?? {}),
     };

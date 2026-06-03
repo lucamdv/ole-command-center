@@ -8,6 +8,7 @@ import {
   DadosGeraisCard,
   DatasCard,
   DocumentoHeader,
+  EndossoBadge,
   fmtNum,
   ItensCoberturas,
   LimiteApoliceCard,
@@ -19,6 +20,7 @@ import {
   normalizeEndossoNum,
   parseDocumento,
   translateProposta,
+  unwrapProposta,
 } from "@/lib/excelsior/translate";
 
 export const Route = createFileRoute("/apolices/$id/")({
@@ -61,7 +63,7 @@ export default function ApoliceDetail() {
 
   const proposta = policy.proposta ?? {};
   const t = translateProposta(proposta);
-  const documento = parseDocumento(policy.numero_apolice);
+  const documento = parseDocumento(policy.numero_apolice, t.tipoEndosso);
   const seguradoNome = t.partes.find((p) => p.papel === "SEGURADO")?.nome ?? null;
 
   return (
@@ -149,6 +151,7 @@ export default function ApoliceDetail() {
           {policy.endorsements.map((e) => {
             const seq = normalizeEndossoNum(e.numero_endosso);
             const isApolice = seq === "000000";
+            const { tipoEndosso } = unwrapProposta(e.proposta);
             return (
               <Link
                 key={e.id}
@@ -159,16 +162,12 @@ export default function ApoliceDetail() {
                 <div className="col-span-2 font-mono text-[11.5px] text-muted-foreground flex items-center gap-1.5">
                   <GitBranch className="h-3 w-3" /> {e.ordem}
                 </div>
-                <div className="col-span-7 flex items-center gap-2">
-                  <span
-                    className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${
-                      isApolice
-                        ? "bg-primary/10 text-primary"
-                        : "bg-warning/10 text-warning"
-                    }`}
-                  >
-                    {isApolice ? "APÓLICE" : `ENDOSSO ${seq}`}
-                  </span>
+                <div className="col-span-7 flex items-center gap-2 min-w-0">
+                  <EndossoBadge
+                    tipo={isApolice ? "APOLICE" : "ENDOSSO"}
+                    tipoEndosso={tipoEndosso}
+                    size="sm"
+                  />
                   <span className="font-mono text-[11.5px] text-muted-foreground truncate">
                     {policy.numero_apolice.slice(0, -6) + seq}
                   </span>

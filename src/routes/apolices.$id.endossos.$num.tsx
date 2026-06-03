@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { useEndorsementDetail } from "@/hooks/use-policies";
 import { JsonExplorer } from "@/components/json-explorer";
 import {
+  CancelamentoCard,
   CotacaoCard,
   DadosGeraisCard,
   DatasCard,
@@ -52,8 +53,9 @@ function EndossoDetail() {
   }
 
   const t = translateProposta(endo.proposta);
-  const documento = parseDocumento(endo.numero_apolice);
+  const documento = parseDocumento(endo.numero_apolice, t.tipoEndosso);
   const seguradoNome = t.partes.find((p) => p.papel === "SEGURADO")?.nome ?? null;
+  const isCancelamento = t.tipoEndosso === "B" || t.tipoEndosso === "C";
 
   return (
     <div className="space-y-6">
@@ -75,57 +77,85 @@ function EndossoDetail() {
 
       <DocumentoHeader
         documento={documento}
-        premioValor={endo.premio_liquido}
+        premioValor={isCancelamento ? undefined : endo.premio_liquido}
         premioMoeda={endo.premio_moeda}
         seguradoNome={seguradoNome}
       />
 
-      {t.isWrapperVazio && <EndossoSemDadosAviso numeroApolice={documento.numeroApolice} />}
-
-      {!t.isWrapperVazio && (
+      {/* Endossos B/C: visualização de cancelamento/alteração */}
+      {isCancelamento ? (
         <>
           <Section title="Dados gerais">
             <DadosGeraisCard dados={t.dadosGerais} />
           </Section>
 
+          {t.cancelamento && (
+            <Section
+              title={t.tipoEndosso === "C" ? "Cancelamento" : "Alteração"}
+              subtitle={
+                t.tipoEndosso === "C"
+                  ? "Este endosso cancela um documento da apólice"
+                  : "Este endosso altera um documento da apólice"
+              }
+            >
+              <CancelamentoCard cancelamento={t.cancelamento} tipoEndosso={t.tipoEndosso} />
+            </Section>
+          )}
+
           <Section title="Datas">
             <DatasCard datas={t.datas} />
           </Section>
+        </>
+      ) : (
+        <>
+          {t.isWrapperVazio && <EndossoSemDadosAviso numeroApolice={documento.numeroApolice} />}
 
-          {t.limiteApolice && (
-            <Section title="Limite & Cotação">
-              <LimiteApoliceCard limite={t.limiteApolice} />
-              <CotacaoCard cotacoes={t.cotacoes} />
-            </Section>
+          {!t.isWrapperVazio && (
+            <>
+              <Section title="Dados gerais">
+                <DadosGeraisCard dados={t.dadosGerais} />
+              </Section>
+
+              <Section title="Datas">
+                <DatasCard datas={t.datas} />
+              </Section>
+
+              {t.limiteApolice && (
+                <Section title="Limite & Cotação">
+                  <LimiteApoliceCard limite={t.limiteApolice} />
+                  <CotacaoCard cotacoes={t.cotacoes} />
+                </Section>
+              )}
+
+              {t.partes.length > 0 && (
+                <Section title="Partes">
+                  <PartesList partes={t.partes} />
+                </Section>
+              )}
+
+              {t.itens.length > 0 && (
+                <Section title="Itens & coberturas">
+                  <ItensCoberturas itens={t.itens} />
+                </Section>
+              )}
+
+              {t.pagamento.parcelas.length > 0 && (
+                <Section title="Pagamento">
+                  <PagamentoCard pagamento={t.pagamento} />
+                </Section>
+              )}
+            </>
           )}
 
-          {t.partes.length > 0 && (
-            <Section title="Partes">
-              <PartesList partes={t.partes} />
-            </Section>
-          )}
-
-          {t.itens.length > 0 && (
-            <Section title="Itens & coberturas">
-              <ItensCoberturas itens={t.itens} />
-            </Section>
-          )}
-
-          {t.pagamento.parcelas.length > 0 && (
-            <Section title="Pagamento">
-              <PagamentoCard pagamento={t.pagamento} />
-            </Section>
-          )}
+          {/* Datas sempre úteis no endosso A (delta) */}
+          {t.isWrapperVazio &&
+            (t.datas.inicioVigencia || t.datas.fimVigencia || t.datas.assinatura) && (
+              <Section title="Datas do endosso">
+                <DatasCard datas={t.datas} />
+              </Section>
+            )}
         </>
       )}
-
-      {/* Datas sempre úteis no endosso A (delta) */}
-      {t.isWrapperVazio &&
-        (t.datas.inicioVigencia || t.datas.fimVigencia || t.datas.assinatura) && (
-          <Section title="Datas do endosso">
-            <DatasCard datas={t.datas} />
-          </Section>
-        )}
 
       <Section title="Dados brutos" subtitle="Payload completo retornado pelo MOTOR OLÉ">
         <JsonExplorer data={endo.proposta} title="Endosso (raw)" defaultDepth={1} />
