@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as OperacaoRouteImport } from './routes/operacao'
 import { Route as IntelligenceRouteImport } from './routes/intelligence'
+import { Route as FerramentasRouteImport } from './routes/ferramentas'
 import { Route as EndossosRouteImport } from './routes/endossos'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as ApolicesRouteImport } from './routes/apolices'
@@ -28,6 +29,11 @@ const OperacaoRoute = OperacaoRouteImport.update({
 const IntelligenceRoute = IntelligenceRouteImport.update({
   id: '/intelligence',
   path: '/intelligence',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FerramentasRoute = FerramentasRouteImport.update({
+  id: '/ferramentas',
+  path: '/ferramentas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EndossosRoute = EndossosRouteImport.update({
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/apolices': typeof ApolicesRouteWithChildren
   '/configuracoes': typeof ConfiguracoesRoute
   '/endossos': typeof EndossosRoute
+  '/ferramentas': typeof FerramentasRoute
   '/intelligence': typeof IntelligenceRoute
   '/operacao': typeof OperacaoRoute
   '/apolices/$id': typeof ApolicesIdRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/apolices': typeof ApolicesRouteWithChildren
   '/configuracoes': typeof ConfiguracoesRoute
   '/endossos': typeof EndossosRoute
+  '/ferramentas': typeof FerramentasRoute
   '/intelligence': typeof IntelligenceRoute
   '/operacao': typeof OperacaoRoute
   '/apolices/$id': typeof ApolicesIdRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/apolices': typeof ApolicesRouteWithChildren
   '/configuracoes': typeof ConfiguracoesRoute
   '/endossos': typeof EndossosRoute
+  '/ferramentas': typeof FerramentasRoute
   '/intelligence': typeof IntelligenceRoute
   '/operacao': typeof OperacaoRoute
   '/apolices/$id': typeof ApolicesIdRoute
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/apolices'
     | '/configuracoes'
     | '/endossos'
+    | '/ferramentas'
     | '/intelligence'
     | '/operacao'
     | '/apolices/$id'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/apolices'
     | '/configuracoes'
     | '/endossos'
+    | '/ferramentas'
     | '/intelligence'
     | '/operacao'
     | '/apolices/$id'
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/apolices'
     | '/configuracoes'
     | '/endossos'
+    | '/ferramentas'
     | '/intelligence'
     | '/operacao'
     | '/apolices/$id'
@@ -154,6 +166,7 @@ export interface RootRouteChildren {
   ApolicesRoute: typeof ApolicesRouteWithChildren
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   EndossosRoute: typeof EndossosRoute
+  FerramentasRoute: typeof FerramentasRoute
   IntelligenceRoute: typeof IntelligenceRoute
   OperacaoRoute: typeof OperacaoRoute
   ApiPublicAuditCallbackRoute: typeof ApiPublicAuditCallbackRoute
@@ -173,6 +186,13 @@ declare module '@tanstack/react-router' {
       path: '/intelligence'
       fullPath: '/intelligence'
       preLoaderRoute: typeof IntelligenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ferramentas': {
+      id: '/ferramentas'
+      path: '/ferramentas'
+      fullPath: '/ferramentas'
+      preLoaderRoute: typeof FerramentasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/endossos': {
@@ -253,6 +273,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApolicesRoute: ApolicesRouteWithChildren,
   ConfiguracoesRoute: ConfiguracoesRoute,
   EndossosRoute: EndossosRoute,
+  FerramentasRoute: FerramentasRoute,
   IntelligenceRoute: IntelligenceRoute,
   OperacaoRoute: OperacaoRoute,
   ApiPublicAuditCallbackRoute: ApiPublicAuditCallbackRoute,

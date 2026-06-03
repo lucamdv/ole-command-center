@@ -1,46 +1,50 @@
-## Problema
+## Objetivo
 
-O n8n está enviando o callback com o formato:
+Elevar a plataforma a um padrão visual executivo/corporativo — denso em informação, hierárquico e intuitivo — mantendo o dashboard principal (`/`) alimentado pelos resultados reais das auditorias n8n. Demais abas continuam com mocks. Ajustes pontuais de identidade: usuário, nome do assistente de IA e nova aba "Ferramentas".
 
-```json
-{
-  "run_id": "...",
-  "status": "error",
-  "payload": {
-    "data_auditoria": "...",
-    "resumo": { "aprovados": 25, "reprovados": 4, "total_processado": 29 },
-    "status_geral": "ALERTA",
-    "mensagem_geral": "...",
-    "apolices_com_erro": [...]
-  }
-}
-```
+## Mudanças de navegação e identidade (rápidas)
 
-Os dados de auditoria estão completos, só que **aninhados em `payload`**. Nosso handler valida no nível raiz, não encontra `resumo`/`apolices_com_erro`, e cai no branch de erro por causa do `status: "error"` da raiz (que parece ser um artefato do nó "Respond" do n8n, não um erro real).
+- **Sidebar (`src/components/layout/sidebar.tsx`)**
+  - Renomear "OLÉ Intelligence" → **Oléver** (manter ícone Sparkles, rota `/intelligence`).
+  - Adicionar item **Ferramentas** logo abaixo de Oléver (ícone `Wrench`, rota `/ferramentas`).
+  - Trocar bloco do usuário rodapé: iniciais `LM`, nome **Luca Monteiro**, cargo "Operações · Admin".
+- **Header / Command palette**: se exibirem o nome do usuário, atualizar para Luca Monteiro.
+- **Nova rota** `src/routes/ferramentas.tsx`: placeholder executivo ("Em construção") com título, descrição curta, ícone e cartão indicando que ferramentas operacionais serão lançadas em breve. Sem lógica.
+- **Rota `/intelligence`**: atualizar `head.title` e H1 para "Oléver" (subtítulo: "Assistente de IA da operação OLÉ"). Conteúdo permanece mock.
 
-## Mudança
+## Redesign executivo da Visão Geral (`/`)
 
-### `src/routes/api/public/audit-callback.ts`
-Depois do `const candidate = Array.isArray(raw) ? raw[0] : raw;`, fazer **unwrap**:
+A página atual já tem todos os blocos certos; o trabalho é **elevar a apresentação** para um padrão de cockpit corporativo, sem mexer na lógica de dados (continuamos usando `useLatestAudit`, `useAuditHistory`, `deriveKpis`, etc.).
 
-```ts
-// n8n às vezes envelopa o resultado em { run_id, status, payload: {...} }
-const unwrapped =
-  candidate && typeof candidate === "object" && "payload" in candidate && candidate.payload && typeof candidate.payload === "object"
-    ? { run_id: candidate.run_id, ...candidate.payload }
-    : candidate;
-```
+### Diretrizes visuais
 
-Validar `unwrapped` em vez de `candidate`. Isso resolve o caso atual e também continua funcionando quando o n8n manda no formato plano.
+- **Hero executivo**: faixa superior com saudação contextual ("Bom dia, Luca"), data/hora, badge de status do sistema, badge da última auditoria, e ações principais (Ver lista, Exportar PDF, Rodar auditoria) alinhadas à direita em um cluster coeso.
+- **Tipografia hierárquica**: títulos de seção com kicker em maiúsculas + número grande tabular + subtítulo curto. Reforçar uso de `tabular-nums` em todos os KPIs.
+- **Cartões KPI premium**: refinar `KpiCard` para incluir ícone, delta colorido com seta, sparkline mais limpa e divisor sutil. Adicionar 2 KPIs executivos adicionais na linha principal (total: 6): **Tempo desde última auditoria** e **Score de saúde operacional** (derivado de aprovação - risco).
+- **Banner consolidado**: transformar em "Sumário Executivo" — 3 colunas (Status geral · Mensagem · Próxima ação recomendada), com borda colorida conforme severidade.
+- **Layout em bento**: reorganizar blocos abaixo dos KPIs em grid bento (12 colunas) que combina:
+  - Pulso Operacional (tendência) — 8 col
+  - Severidade + mini-stats empilhados — 4 col
+  - Heatmap de risco — 12 col (largura total, com legenda de intensidade)
+  - Top apólices afetadas — 6 col / Ranking de regras — 6 col
+  - Linha do tempo por mês — 12 col
+- **Acabamento**: bordas mais sutis (`border-border/60`), sombras `shadow-elevated`, fundos com leve gradiente (`from-surface to-surface-2`), divisores `bg-border` em grids bento, hover states discretos, animações `pulse-dot` reservadas para indicadores ao vivo.
+- **Densidade**: padding consistente (`p-5`), spacing `gap-3` em KPIs e `gap-6` entre seções, max-width já configurado em `app-shell`.
+- **Microcopy executiva**: substituir labels técnicos por linguagem de negócio ("Conformidade da carteira", "Apólices em risco", "Regras críticas acionadas", "Velocidade operacional").
 
-Também: só tratar como erro quando o **payload já desembrulhado** tiver `status === "error"` (ou `error`/`error_message`). O `status: "error"` da raiz original do envelope não conta.
+### Arquivos tocados no redesign
 
-## Não vou mexer
+- `src/routes/index.tsx` — reorganização de layout, novo hero, grid bento, novos KPIs derivados.
+- `src/components/kpi/kpi-card.tsx` — variante visual mais refinada (ícone opcional, delta com seta, sparkline polida). Manter API retrocompatível.
+- `src/components/layout/header.tsx` — saudação personalizada com nome Luca (se ainda não houver).
+- `src/styles.css` — adicionar (se faltar) tokens para gradientes sutis e sombras executivas; sem mudar paleta base.
 
-- Schema, polling, UI, ou qualquer outra lógica.
+## Escopo explicitamente fora
 
-## Validação
+- Sem alterar `src/lib/audit/*` (lógica de derivação permanece).
+- Sem mexer nas demais rotas (`/apolices`, `/endossos`, `/alertas`, `/analytics`, `/operacao`, `/configuracoes`) além de ajustes triviais se o nome do usuário aparecer.
+- Sem novo backend, sem migrações.
 
-1. Rodar uma auditoria.
-2. Confirmar no banco que `audit_runs` recebeu `status='success'`, `status_geral='ALERTA'`, e que `audit_findings` ganhou as linhas das apólices reprovadas.
-3. UI deve mostrar o resultado normalmente.
+## Resultado esperado
+
+Dashboard com cara de cockpit C-level: hero claro, 6 KPIs executivos com sparklines, bento layout coeso, heatmap em destaque, microcopy de negócio. Sidebar com Luca Monteiro, Oléver e nova aba Ferramentas (placeholder).
