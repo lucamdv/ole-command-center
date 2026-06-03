@@ -520,9 +520,6 @@ function AnalyticsPage() {
             <div className="grid lg:grid-cols-2 gap-6">
               <ChartCard
                 title="Carteira por nº de endossos"
-            <div className="grid lg:grid-cols-2 gap-6">
-              <ChartCard
-                title="Carteira por nº de endossos"
                 subtitle="Quantas alterações cada apólice acumulou"
               >
                 {endorsementsDist.length === 0 ? (
