@@ -167,6 +167,8 @@ export interface PropostaTraduzida {
   limiteApolice: LimiteApoliceInfo | null;
   cancelamento: CancelamentoInfo | null;
   tipoEndosso: TipoEndosso | null;
+  /** Número completo do documento (ex.: `…0001` para um endosso). Vem do envelope. */
+  numeroDocumento: string | null;
   /** O objeto "proposta" desembrulhado — para o JsonExplorer fallback. */
   raw: Record<string, unknown>;
   /** Indicador se a proposta veio vazia/wrapper (caso típico de endosso A). */
