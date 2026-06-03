@@ -52,10 +52,12 @@ function AnalyticsPage() {
   const latestQ = useLatestAudit();
   const historyQ = useAuditHistory();
   const policiesQ = usePolicies();
+  const aggregatesQ = useAnalyticsAggregates();
 
   const latest = latestQ.data ?? null;
   const history = historyQ.data ?? [];
   const policies = policiesQ.data ?? [];
+  const aggregates = aggregatesQ.data ?? { findingsByVigencia: [], revenueByMonth: [] };
 
   const kpis = useMemo(() => deriveKpis({ latest, history }), [latest, history]);
   const findings = latest?.findings ?? [];
@@ -64,7 +66,9 @@ function AnalyticsPage() {
   const errorTypes = useMemo(() => errorTypeBreakdown(findings).slice(0, 10), [findings]);
   const apoliceRank = useMemo(() => groupByApolice(findings).slice(0, 10), [findings]);
   const endossoRank = useMemo(() => groupByEndosso(findings).slice(0, 8), [findings]);
-  const monthly = useMemo(() => bucketByMonth(findings), [findings]);
+  const monthly = aggregates.findingsByVigencia;
+  const revenue = aggregates.revenueByMonth;
+  const totalUsd = useMemo(() => revenue.reduce((s, r) => s + r.usd, 0), [revenue]);
   const heatmap = useMemo(() => buildHeatmap(latest, history, 12), [latest, history]);
 
   // Distribuição da carteira por faixa de prêmio líquido
