@@ -541,8 +541,8 @@ function AnalyticsPage() {
 
             <div className="grid lg:grid-cols-2 gap-6">
               <ChartCard
-                title="Carteira por faixa de prêmio líquido"
-                subtitle={`${formatInt(policies.length)} apólices · ${formatBRL(totalPremium)}`}
+                title="Carteira por faixa de prêmio líquido (USD)"
+                subtitle={`${formatInt(policies.length)} apólices · ${formatUSD(totalUsd)}`}
               >
                 {premiumBuckets.length === 0 ? (
                   <EmptyMsg text="Sem apólices na carteira." />
@@ -556,9 +556,8 @@ function AnalyticsPage() {
                         <Tooltip
                           {...tooltipProps}
                           formatter={(v, k) =>
-                            k === "total" ? formatBRL(Number(v)) : formatInt(Number(v))
+                            k === "total" ? formatUSD(Number(v)) : formatInt(Number(v))
                           }
-
                         />
                         <Bar dataKey="count" fill="var(--primary)" radius={[4, 4, 0, 0]} name="Apólices" />
                       </BarChart>
@@ -566,6 +565,7 @@ function AnalyticsPage() {
                   </div>
                 )}
               </ChartCard>
+
 
               <ChartCard
                 title="Carteira por nº de endossos"
