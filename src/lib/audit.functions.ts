@@ -4,7 +4,7 @@ import { z } from "zod";
 import type { AuditHistoryItem, LatestAudit } from "./audit/types";
 
 // URL pode ser sobrescrita pelo secret N8N_AUDIT_WEBHOOK_URL em produção.
-const DEFAULT_WEBHOOK = "https://nuvembot.app.n8n.cloud/webhook-test/c80c897f-9951-43c8-9976-df81c44bce16";
+const DEFAULT_WEBHOOK = "https://nuvembot.app.n8n.cloud/webhook/c80c897f-9951-43c8-9976-df81c44bce16";
 const EMPTY_SUMMARY = {
   aprovados: 0,
   reprovados: 0,
