@@ -44,6 +44,7 @@ import {
   type Severity,
 } from "@/lib/audit/derive";
 import { exportAuditPdf } from "@/lib/audit/export-pdf";
+import { useAuditHistory } from "@/hooks/use-audit";
 import type { AuditFindingRow, LatestAudit } from "@/lib/audit/types";
 import { formatDate, formatDateTime, formatInt } from "@/lib/format";
 import { cn } from "@/lib/utils";
