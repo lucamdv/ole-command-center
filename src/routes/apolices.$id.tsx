@@ -168,7 +168,7 @@ export default function ApoliceDetail() {
                     {isApolice ? "APÓLICE" : `ENDOSSO ${seq}`}
                   </span>
                   <span className="font-mono text-[11.5px] text-muted-foreground truncate">
-                    {e.numero_apolice}
+                    {policy.numero_apolice.slice(0, -6) + seq}
                   </span>
                 </div>
                 <div className="col-span-2 text-right font-mono text-[12px]">
