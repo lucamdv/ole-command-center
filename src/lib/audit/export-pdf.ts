@@ -173,7 +173,7 @@ export function exportAuditPdf(latest: LatestAudit, history: AuditHistoryItem[] 
     for (const f of g.findings) {
       const sv = severityOf(f);
       const nrm = normalizeFinding(f);
-      const detalhesRaw = (f.detalhes ?? {}) as Record<string, unknown>;
+      const detalhesRaw = (f.detalhes ?? {}) as unknown as Record<string, unknown>;
       const detalheErro =
         (typeof detalhesRaw.detalhe_erro === "string" && detalhesRaw.detalhe_erro.trim()) || "";
       const endossoCom =
