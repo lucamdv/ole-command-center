@@ -1,42 +1,38 @@
-# Analytics — corrigir vigência e adicionar receita USD × tempo
+# Adicionar gráficos de emissões à tela de Analytics
 
-## Diagnóstico
+## Objetivo
 
-1. **"Findings por mês de vigência" está vazio** porque `audit_findings.data_inicio` / `data_fim` são sempre `NULL`. A vigência real está em `policies.proposta -> 'datas' -> 'inicio_vigencia'`. Precisamos juntar `findings.apolice → policies.numero_apolice` para extrair.
+Incluir três novos gráficos na página `/analytics`, usando os dados da tabela `endorsements` (cada linha = uma emissão; `numero_endosso = '000000'` representa a apólice em si, e a presença das chaves `endosso_A` / `endosso_B` / `endosso_C` / `endosso_D` em `proposta` determina o tipo do endosso).
 
-2. **Receita USD da OLÉ** não existe como coluna — `policies.premio_liquido` é 0. O dado real está em `proposta -> 'itens' -> 'coberturas' -> 'composicao_premio_cobertura'`, filtrando `tipo_premio='DIRETO'` e `natureza_premio='PREMIO'`, somando `valor_premio` (USD) e `valor_premio_brl` (BRL).
+Data de emissão = `proposta.datas.assinatura` (com fallback para `registro_origem`), agrupada por mês `YYYY-MM`.
 
-## Solução
+## Novos gráficos
 
-### Backend — novo server function
+1. **Apólices emitidas por mês** — bar chart, contando emissões com `numero_endosso = '000000'`.
+2. **Endossos emitidos por mês** — bar chart, contando emissões com `numero_endosso != '000000'`.
+3. **Emissões por mês e por tipo** — bar chart **empilhado**, com séries: `Apólice`, `Endosso A`, `Endosso B`, `Endosso C`, `Endosso D`.
 
-Criar `src/lib/analytics.functions.ts` com `getAnalyticsAggregates()` (POST, sem auth — usa cliente público de leitura, igual aos outros queries da app).
+Os três compartilham o mesmo eixo X (meses ordenados crescente) e usam tokens do design system (sem cores hardcoded).
 
-Retorna:
-```ts
-{
-  findingsByVigencia: { month: string; label: string; count: number }[];
-  revenueByMonth:     { month: string; label: string; usd: number; brl: number; policies: number }[];
-}
-```
+## Mudanças
 
-Implementação:
-- `findingsByVigencia`: SQL agregado via `supabase.rpc` ou query — buscar `audit_findings` da última run + join com `policies` por `numero_apolice`, bucketar por `to_char(inicio_vigencia, 'YYYY-MM')`. Como Supabase JS não faz join arbitrário em jsonb, faço em duas etapas: (a) busca `policies (numero_apolice, proposta->datas->>inicio_vigencia)`, monta map; (b) busca findings da última run, agrupa pelo mês do map. Tudo dentro da server function (não pesa no cliente).
-- `revenueByMonth`: busca todas as `policies(numero_apolice, proposta)`, percorre `proposta.itens[].coberturas[].composicao_premio_cobertura[]` filtrando `tipo_premio='DIRETO' AND natureza_premio='PREMIO'`, soma USD/BRL, bucketa pelo mês de `proposta.datas.inicio_vigencia`. Ordenado cronologicamente.
+### `src/lib/analytics.functions.ts`
+- Adicionar interface `IssuanceBucket { month; label; apolices; endossoA; endossoB; endossoC; endossoD; total }`.
+- Incluir `issuancesByMonth: IssuanceBucket[]` em `AnalyticsAggregates`.
+- Carregar `endorsements` (`numero_endosso, proposta`), resolver mês via helper `pickMonth(proposta.datas.assinatura ?? proposta.datas.registro_origem)`, classificar tipo pelas chaves `endosso_A/B/C/D` (ou `apolices` se `numero_endosso = '000000'`), agregar em `Map<month, counters>` e devolver ordenado.
 
-Hook React Query `useAnalyticsAggregates()` em `src/hooks/use-analytics.ts`, `staleTime: 60_000`.
+### `src/routes/analytics.tsx`
+- Consumir `issuancesByMonth` do hook existente.
+- Adicionar três `ChartCard`s na grade existente:
+  - `BarChart` simples para Apólices/mês.
+  - `BarChart` simples para Endossos/mês (soma A+B+C+D).
+  - `BarChart` empilhado (`stackId="emissoes"`) com as 4 séries de endosso + apólice, usando `hsl(var(--chart-1..5))`.
+- Tooltip com `formatInt`; legenda com nomes amigáveis.
+- Incluir os três novos cards no fluxo de exportação para PDF (mesma lógica já usada pelos demais gráficos em `src/lib/analytics/export-charts.ts` — adicionar refs).
 
-### Frontend — `src/routes/analytics.tsx`
+### Sem mudanças em backend/DB
+Apenas leitura; nenhuma migration necessária.
 
-- **Trocar** o gráfico atual "Findings por mês de vigência" pelo retorno de `findingsByVigencia` (mesmo `BarChart`, agora com dados reais).
-- **Adicionar** novo `ChartCard` "Receita OLÉ (USD) por mês de vigência" com `AreaChart` mostrando `usd` ao longo do tempo, tooltip formatando como USD (`Intl.NumberFormat('en-US', {style:'currency', currency:'USD'})`) e linha secundária opcional em BRL desabilitada (mantém só USD para clareza). Eixo X = `label` (mmm/aa pt-BR).
-- **KPI extra**: adicionar tile "Receita acumulada (USD)" na faixa de KPIs, somando `revenueByMonth.usd`.
-- Manter `data-export="chart"` nos dois cards para o exportador PDF continuar pegando.
-- Tratar `loading`/`empty` com os helpers `EmptyMsg` já existentes.
-
-Adicionar formatter `formatUSD` em `src/lib/format.ts`.
-
-## Fora de escopo
-- Não alterar schema (não preencher `data_inicio/data_fim` retroativamente).
-- Não mexer no n8n / motor de auditoria.
-- Não criar tabela materializada — agregação on-demand basta para o volume atual (31 apólices, 21 findings).
+## Verificação
+- `bunx tsc --noEmit`.
+- Conferir visualmente no preview (`/analytics`) que os 3 gráficos renderizam com dados e que o botão "Exportar PDF" inclui os novos.
