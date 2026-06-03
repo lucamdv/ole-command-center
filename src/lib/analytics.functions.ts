@@ -56,6 +56,8 @@ export const getAnalyticsAggregates = createServerFn({ method: "GET" }).handler(
     const apoliceMonth = new Map<string, string>();
     // acumulador de receita por mês
     const revMap = new Map<string, { usd: number; brl: number; policies: Set<string> }>();
+    const policyPremiums: PolicyPremium[] = [];
+
 
     for (const p of policies ?? []) {
       const raw =
