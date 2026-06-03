@@ -157,7 +157,7 @@ export function DocumentoHeader({
         {premioValor !== undefined && (
           <div className="text-right">
             <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground">
-              Prêmio líquido <span className="opacity-70">(PREMIO − IOF)</span>
+              Prêmio total
             </div>
             <div className="text-[22px] font-semibold text-foreground font-mono">
               {fmtNum(premioValor ?? 0, premioMoeda ?? "BRL")}
