@@ -173,7 +173,7 @@ export default function ApoliceDetail() {
                   </span>
                 </div>
                 <div className="col-span-2 text-right font-mono text-[12px]">
-                  {formatBRL(e.premio_liquido)}
+                  {fmtNum(e.premio_liquido, e.premio_moeda)}
                 </div>
                 <div className="col-span-1 text-right text-muted-foreground">›</div>
               </Link>
