@@ -407,11 +407,6 @@ function CoberturaCard({ c }: { c: CoberturaInfo }) {
                     {fmtNum(l.valor, l.moeda ?? "BRL")}
                   </div>
                 </div>
-                {l.moeda !== "BRL" && l.valorBRL !== null && (
-                  <div className="text-right text-[11px] text-muted-foreground font-mono">
-                    ≈ {formatBRL(l.valorBRL)}
-                  </div>
-                )}
               </div>
             ))}
           </div>
