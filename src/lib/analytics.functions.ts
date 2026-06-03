@@ -148,7 +148,7 @@ export const getAnalyticsAggregates = createServerFn({ method: "GET" }).handler(
       }))
       .sort((a, b) => a.month.localeCompare(b.month));
 
-    return { findingsByVigencia, revenueByMonth };
+    return { findingsByVigencia, revenueByMonth, policyPremiums };
   },
 );
 
