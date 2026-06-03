@@ -75,7 +75,8 @@ function EndossoDetail() {
 
       <DocumentoHeader
         documento={documento}
-        premioBRL={endo.premio_liquido}
+        premioValor={endo.premio_liquido}
+        premioMoeda={endo.premio_moeda}
         seguradoNome={seguradoNome}
       />
 
