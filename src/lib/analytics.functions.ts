@@ -14,10 +14,18 @@ export interface RevenueBucket {
   policies: number;
 }
 
+export interface PolicyPremium {
+  numero_apolice: string;
+  usd: number;
+  brl: number;
+}
+
 export interface AnalyticsAggregates {
   findingsByVigencia: MonthBucket[];
   revenueByMonth: RevenueBucket[];
+  policyPremiums: PolicyPremium[];
 }
+
 
 function monthLabel(month: string): string {
   const [y, m] = month.split("-").map(Number);
@@ -48,6 +56,8 @@ export const getAnalyticsAggregates = createServerFn({ method: "GET" }).handler(
     const apoliceMonth = new Map<string, string>();
     // acumulador de receita por mês
     const revMap = new Map<string, { usd: number; brl: number; policies: Set<string> }>();
+    const policyPremiums: PolicyPremium[] = [];
+
 
     for (const p of policies ?? []) {
       const raw =
@@ -85,6 +95,11 @@ export const getAnalyticsAggregates = createServerFn({ method: "GET" }).handler(
           }
         }
       }
+      policyPremiums.push({
+        numero_apolice: p.numero_apolice,
+        usd: round2(usd),
+        brl: round2(brl),
+      });
       if (month && (usd > 0 || brl > 0)) {
         const cur = revMap.get(month) ?? { usd: 0, brl: 0, policies: new Set<string>() };
         cur.usd += usd;
@@ -93,6 +108,7 @@ export const getAnalyticsAggregates = createServerFn({ method: "GET" }).handler(
         revMap.set(month, cur);
       }
     }
+
 
     // 2) carrega findings da última run de auditoria
     const { data: latestRun, error: rErr } = await supabaseAdmin
@@ -132,7 +148,7 @@ export const getAnalyticsAggregates = createServerFn({ method: "GET" }).handler(
       }))
       .sort((a, b) => a.month.localeCompare(b.month));
 
-    return { findingsByVigencia, revenueByMonth };
+    return { findingsByVigencia, revenueByMonth, policyPremiums };
   },
 );
 
