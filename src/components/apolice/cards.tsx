@@ -102,12 +102,14 @@ export function Section({
 // ============ Header da apólice/endosso ============
 export function DocumentoHeader({
   documento,
-  premioBRL,
+  premioValor,
+  premioMoeda,
   seguradoNome,
   extra,
 }: {
   documento: DocumentoInfo;
-  premioBRL?: number | null;
+  premioValor?: number | null;
+  premioMoeda?: string;
   seguradoNome?: string | null;
   extra?: ReactNode;
 }) {
@@ -146,13 +148,13 @@ export function DocumentoHeader({
             </div>
           )}
         </div>
-        {premioBRL !== undefined && (
+        {premioValor !== undefined && (
           <div className="text-right">
             <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground">
-              Prêmio líquido
+              Prêmio líquido <span className="opacity-70">(PREMIO − IOF)</span>
             </div>
             <div className="text-[22px] font-semibold text-foreground font-mono">
-              {formatBRL(premioBRL ?? 0)}
+              {fmtNum(premioValor ?? 0, premioMoeda ?? "BRL")}
             </div>
           </div>
         )}
