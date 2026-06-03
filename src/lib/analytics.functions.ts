@@ -20,10 +20,23 @@ export interface PolicyPremium {
   brl: number;
 }
 
+export interface IssuanceBucket {
+  month: string;
+  label: string;
+  apolices: number;
+  endossoA: number;
+  endossoB: number;
+  endossoC: number;
+  endossoD: number;
+  endossosTotal: number;
+  total: number;
+}
+
 export interface AnalyticsAggregates {
   findingsByVigencia: MonthBucket[];
   revenueByMonth: RevenueBucket[];
   policyPremiums: PolicyPremium[];
+  issuancesByMonth: IssuanceBucket[];
 }
 
 
