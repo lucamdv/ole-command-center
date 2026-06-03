@@ -95,6 +95,11 @@ export const getAnalyticsAggregates = createServerFn({ method: "GET" }).handler(
           }
         }
       }
+      policyPremiums.push({
+        numero_apolice: p.numero_apolice,
+        usd: round2(usd),
+        brl: round2(brl),
+      });
       if (month && (usd > 0 || brl > 0)) {
         const cur = revMap.get(month) ?? { usd: 0, brl: 0, policies: new Set<string>() };
         cur.usd += usd;
@@ -103,6 +108,7 @@ export const getAnalyticsAggregates = createServerFn({ method: "GET" }).handler(
         revMap.set(month, cur);
       }
     }
+
 
     // 2) carrega findings da última run de auditoria
     const { data: latestRun, error: rErr } = await supabaseAdmin
