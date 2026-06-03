@@ -1,6 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useRef, useState } from "react";
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -14,222 +16,730 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { POLICIES, WEEKLY_TREND, AUDIT_RULES } from "@/lib/mock/data";
-import { formatBRL, formatCompact, formatInt } from "@/lib/format";
+import { BarChart3, Download, FileText, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { useAuditHistory, useLatestAudit } from "@/hooks/use-audit";
+import { usePolicies } from "@/hooks/use-policies";
+import {
+  bucketByMonth,
+  buildHeatmap,
+  countBySeverity,
+  deriveKpis,
+  errorTypeBreakdown,
+  groupByApolice,
+  groupByEndosso,
+  runSeries,
+} from "@/lib/audit/derive";
+import { exportAuditPdf } from "@/lib/audit/export-pdf";
+import { exportChartsPdf } from "@/lib/analytics/export-charts";
+import { formatBRL, formatCompact, formatInt, formatPct, relativeTime } from "@/lib/format";
 
 export const Route = createFileRoute("/analytics")({
   head: () => ({
     meta: [
       { title: "Analytics · OLÉ COPILOT" },
-      { name: "description", content: "Rankings, tendências, análise financeira e eficiência operacional." },
+      {
+        name: "description",
+        content:
+          "Inteligência estratégica sobre carteira, runs de auditoria, severidade e eficiência operacional.",
+      },
     ],
   }),
   component: AnalyticsPage,
 });
 
 function AnalyticsPage() {
-  const brokerRank = useMemo(() => {
-    const map = new Map<string, { name: string; total: number; failed: number; premium: number }>();
-    for (const p of POLICIES) {
-      const cur = map.get(p.broker) ?? { name: p.broker, total: 0, failed: 0, premium: 0 };
-      cur.total++;
-      if (p.audit === "REPROVADA") cur.failed++;
-      cur.premium += p.premium;
-      map.set(p.broker, cur);
+  const latestQ = useLatestAudit();
+  const historyQ = useAuditHistory();
+  const policiesQ = usePolicies();
+
+  const latest = latestQ.data ?? null;
+  const history = historyQ.data ?? [];
+  const policies = policiesQ.data ?? [];
+
+  const kpis = useMemo(() => deriveKpis({ latest, history }), [latest, history]);
+  const findings = latest?.findings ?? [];
+  const sev = useMemo(() => countBySeverity(findings), [findings]);
+  const series = useMemo(() => runSeries(history).slice(-12), [history]);
+  const errorTypes = useMemo(() => errorTypeBreakdown(findings).slice(0, 10), [findings]);
+  const apoliceRank = useMemo(() => groupByApolice(findings).slice(0, 10), [findings]);
+  const endossoRank = useMemo(() => groupByEndosso(findings).slice(0, 8), [findings]);
+  const monthly = useMemo(() => bucketByMonth(findings), [findings]);
+  const heatmap = useMemo(() => buildHeatmap(latest, history, 12), [latest, history]);
+
+  // Distribuição da carteira por faixa de prêmio líquido
+  const premiumBuckets = useMemo(() => {
+    const buckets = [
+      { label: "Sem prêmio", min: 0, max: 0, count: 0, total: 0 },
+      { label: "≤ R$ 1k", min: 0.01, max: 1_000, count: 0, total: 0 },
+      { label: "1k – 10k", min: 1_000, max: 10_000, count: 0, total: 0 },
+      { label: "10k – 50k", min: 10_000, max: 50_000, count: 0, total: 0 },
+      { label: "50k – 250k", min: 50_000, max: 250_000, count: 0, total: 0 },
+      { label: "> 250k", min: 250_000, max: Infinity, count: 0, total: 0 },
+    ];
+    for (const p of policies) {
+      const v = Number(p.premio_liquido) || 0;
+      const b =
+        v === 0
+          ? buckets[0]
+          : buckets.find((x) => v > x.min && v <= x.max) ?? buckets[buckets.length - 1];
+      b.count++;
+      b.total += v;
     }
-    return Array.from(map.values()).sort((a, b) => b.premium - a.premium);
-  }, []);
+    return buckets.filter((b) => b.count > 0);
+  }, [policies]);
 
-  const productRank = useMemo(() => {
-    const map = new Map<string, { name: string; total: number; premium: number }>();
-    for (const p of POLICIES) {
-      const cur = map.get(p.product) ?? { name: p.product, total: 0, premium: 0 };
-      cur.total++;
-      cur.premium += p.premium;
-      map.set(p.product, cur);
+  // Distribuição por nº de endossos
+  const endorsementsDist = useMemo(() => {
+    const buckets = [
+      { label: "0", count: 0 },
+      { label: "1-2", count: 0 },
+      { label: "3-5", count: 0 },
+      { label: "6-10", count: 0 },
+      { label: "> 10", count: 0 },
+    ];
+    for (const p of policies) {
+      const n = p.endorsements_count ?? 0;
+      const idx = n === 0 ? 0 : n <= 2 ? 1 : n <= 5 ? 2 : n <= 10 ? 3 : 4;
+      buckets[idx].count++;
     }
-    return Array.from(map.values()).sort((a, b) => b.total - a.total);
-  }, []);
+    return buckets.filter((b) => b.count > 0);
+  }, [policies]);
 
-  const errorTrend = useMemo(() => {
-    return AUDIT_RULES.slice(0, 5).map((rule) => ({
-      name: rule,
-      value: Math.round(Math.random() * 80 + 20),
-    }));
-  }, []);
+  const totalPremium = useMemo(
+    () => policies.reduce((s, p) => s + (Number(p.premio_liquido) || 0), 0),
+    [policies],
+  );
 
-  const PIE_COLORS = ["var(--primary)", "var(--info)", "var(--success)", "var(--warning)", "var(--destructive)"];
+  const chartsRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState<"none" | "report" | "charts">("none");
+
+  const handleExportReport = () => {
+    if (!latest) return;
+    setExporting("report");
+    try {
+      exportAuditPdf(latest, history);
+      toast.success("Relatório gerado");
+    } catch (e) {
+      toast.error("Falha ao gerar relatório", { description: (e as Error).message });
+    } finally {
+      setExporting("none");
+    }
+  };
+
+  const handleExportCharts = async () => {
+    if (!chartsRef.current) return;
+    const nodes = Array.from(
+      chartsRef.current.querySelectorAll<HTMLElement>('[data-export="chart"]'),
+    );
+    if (nodes.length === 0) return;
+    setExporting("charts");
+    try {
+      await exportChartsPdf(nodes);
+      toast.success(`${nodes.length} gráficos exportados`);
+    } catch (e) {
+      toast.error("Falha ao exportar gráficos", { description: (e as Error).message });
+    } finally {
+      setExporting("none");
+    }
+  };
+
+  const loading = latestQ.isLoading || historyQ.isLoading;
+  const lastRunAt = latest?.run.data_auditoria ?? latest?.run.created_at;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-[24px] font-semibold tracking-tight">Analytics</h1>
-        <p className="text-[13px] text-muted-foreground mt-1">
-          Inteligência estratégica sobre carteira, distribuição e eficiência operacional.
-        </p>
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Weekly trend */}
-        <div className="lg:col-span-2 rounded-2xl border border-border bg-surface p-5 shadow-elevated">
-          <SectionHeader title="Tendência semanal" subtitle="Aprovações vs reprovações nas últimas 12 semanas" />
-          <div className="h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={WEEKLY_TREND}>
-                <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="week" stroke="var(--muted-foreground)" fontSize={11} />
-                <YAxis stroke="var(--muted-foreground)" fontSize={11} />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--surface-2)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                  cursor={{ fill: "var(--accent)", opacity: 0.3 }}
-                />
-                <Bar dataKey="approved" stackId="a" fill="var(--success)" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="rejected" stackId="a" fill="var(--destructive)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+      {/* Header */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-[24px] font-semibold tracking-tight">Analytics</h1>
+            <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/30">
+              BI · LIVE
+            </span>
           </div>
+          <p className="text-[13px] text-muted-foreground">
+            Inteligência estratégica sobre carteira, runs de auditoria, severidade e eficiência operacional.
+            {history.length > 0 && (
+              <>
+                {" · "}
+                <span className="font-mono">{history.length}</span> runs no histórico
+                {lastRunAt && <> · última {relativeTime(lastRunAt)}</>}
+              </>
+            )}
+          </p>
         </div>
-
-        {/* Distribution */}
-        <div className="rounded-2xl border border-border bg-surface p-5 shadow-elevated">
-          <SectionHeader title="Distribuição de riscos" subtitle="Por regra de auditoria" />
-          <div className="h-[220px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={errorTrend} dataKey="value" innerRadius={48} outerRadius={80} paddingAngle={3} stroke="none">
-                  {errorTrend.map((_, i) => (
-                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--surface-2)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="space-y-1.5 mt-2">
-            {errorTrend.map((e, i) => (
-              <div key={e.name} className="flex items-center gap-2 text-[11.5px]">
-                <span className="h-2 w-2 rounded-full" style={{ background: PIE_COLORS[i] }} />
-                <span className="text-muted-foreground truncate flex-1">{e.name}</span>
-                <span className="font-mono text-foreground">{e.value}</span>
-              </div>
-            ))}
-          </div>
+        <div className="flex gap-2">
+          <button
+            onClick={handleExportCharts}
+            disabled={!latest || exporting !== "none"}
+            className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-border bg-surface hover:bg-surface-2 text-[12px] font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            {exporting === "charts" ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Download className="h-3.5 w-3.5" />
+            )}
+            Exportar gráficos (PDF)
+          </button>
+          <button
+            onClick={handleExportReport}
+            disabled={!latest || exporting !== "none"}
+            className="inline-flex items-center gap-2 h-9 px-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-[12px] font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            {exporting === "report" ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <FileText className="h-3.5 w-3.5" />
+            )}
+            Relatório completo (PDF)
+          </button>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        <Ranking title="Ranking de Corretores" subtitle="Por volume de prêmio" data={brokerRank} valueKey="premium" format={(v) => formatBRL(v)} errorKey="failed" totalKey="total" />
-        <Ranking title="Ranking de Produtos" subtitle="Por quantidade de apólices" data={productRank} valueKey="total" format={(v) => formatInt(v)} secondaryKey="premium" secondaryFormat={(v) => `R$ ${formatCompact(v)}`} />
-      </div>
+      {loading && !latest ? (
+        <LoadingState />
+      ) : !latest ? (
+        <EmptyState />
+      ) : (
+        <>
+          {/* KPI grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Kpi label="Apólices na carteira" value={formatInt(policies.length)} hint={`${formatBRL(totalPremium)} em prêmio`} />
+            <Kpi
+              label="Auditadas (última run)"
+              value={formatInt(kpis?.audited ?? 0)}
+              delta={kpis?.deltaApproved}
+              deltaSuffix="%"
+            />
+            <Kpi
+              label="Conformidade"
+              value={formatPct(kpis?.approvedRate ?? 0, 1)}
+              delta={kpis ? -kpis.deltaRisk : undefined}
+              deltaSuffix=" pp"
+              tone="success"
+            />
+            <Kpi
+              label="Risco operacional"
+              value={formatPct(kpis?.operationalRisk ?? 0, 1)}
+              delta={kpis?.deltaRisk}
+              deltaSuffix=" pp"
+              tone="warning"
+              invertDelta
+            />
+            <Kpi label="Erros críticos" value={formatInt(sev.erros)} tone="destructive" />
+            <Kpi label="Alertas" value={formatInt(sev.alertas)} tone="warning" />
+            <Kpi label="Tipos de erro únicos" value={formatInt(kpis?.uniqueErrorTypes ?? 0)} />
+            <Kpi
+              label="Apólices impactadas"
+              value={formatInt(kpis?.affectedPolicies ?? 0)}
+              hint={
+                policies.length > 0
+                  ? `${formatPct(((kpis?.affectedPolicies ?? 0) / policies.length) * 100, 1)} da carteira`
+                  : undefined
+              }
+              tone="destructive"
+            />
+          </div>
 
-      <div className="rounded-2xl border border-border bg-surface p-5 shadow-elevated">
-        <SectionHeader title="Volume financeiro · 12 semanas" subtitle="Prêmio processado semanalmente" />
-        <div className="h-[200px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={WEEKLY_TREND}>
-              <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="week" stroke="var(--muted-foreground)" fontSize={11} />
-              <YAxis stroke="var(--muted-foreground)" fontSize={11} tickFormatter={(v) => `R$ ${formatCompact(v)}`} />
-              <Tooltip
-                contentStyle={{
-                  background: "var(--surface-2)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
-                formatter={(v: any) => formatBRL(Number(v))}
-              />
-              <Line type="monotone" dataKey="premium" stroke="var(--primary)" strokeWidth={2} dot={{ fill: "var(--primary)", r: 3 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+          <div ref={chartsRef} className="space-y-6">
+            <div className="grid lg:grid-cols-3 gap-6">
+              <ChartCard
+                className="lg:col-span-2"
+                title="Tendência de runs"
+                subtitle="Aprovados vs reprovados nas últimas 12 auditorias"
+              >
+                <div className="h-[280px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={series}>
+                      <defs>
+                        <linearGradient id="gApr" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--success)" stopOpacity={0.5} />
+                          <stop offset="100%" stopColor="var(--success)" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="gRej" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--destructive)" stopOpacity={0.5} />
+                          <stop offset="100%" stopColor="var(--destructive)" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={11} />
+                      <YAxis stroke="var(--muted-foreground)" fontSize={11} />
+                      <Tooltip {...tooltipProps} />
+                      <Area type="monotone" dataKey="approved" stackId="1" stroke="var(--success)" fill="url(#gApr)" />
+                      <Area type="monotone" dataKey="rejected" stackId="1" stroke="var(--destructive)" fill="url(#gRej)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </ChartCard>
+
+              <ChartCard title="Severidade" subtitle="Distribuição na última auditoria">
+                <div className="h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: "Erros", value: sev.erros, color: "var(--destructive)" },
+                          { name: "Alertas", value: sev.alertas, color: "var(--warning)" },
+                          { name: "Info", value: sev.infos, color: "var(--info)" },
+                        ].filter((d) => d.value > 0)}
+                        dataKey="value"
+                        innerRadius={50}
+                        outerRadius={80}
+                        paddingAngle={3}
+                        stroke="none"
+                      >
+                        {[
+                          "var(--destructive)",
+                          "var(--warning)",
+                          "var(--info)",
+                        ].map((c, i) => (
+                          <Cell key={i} fill={c} />
+                        ))}
+                      </Pie>
+                      <Tooltip {...tooltipProps} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <SeverityLegend sev={sev} />
+              </ChartCard>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-6">
+              <ChartCard title="Conformidade ao longo do tempo" subtitle="% aprovado por run">
+                <div className="h-[220px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={series.map((s) => ({ ...s, conf: s.total ? (s.approved / s.total) * 100 : 0 }))}>
+                      <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={11} />
+                      <YAxis stroke="var(--muted-foreground)" fontSize={11} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                      <Tooltip {...tooltipProps} formatter={(v) => formatPct(Number(v), 1)} />
+                      <Line type="monotone" dataKey="conf" stroke="var(--primary)" strokeWidth={2} dot={{ fill: "var(--primary)", r: 3 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </ChartCard>
+
+              <ChartCard title="Volume processado" subtitle="Apólices auditadas por run">
+                <div className="h-[220px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={series}>
+                      <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={11} />
+                      <YAxis stroke="var(--muted-foreground)" fontSize={11} />
+                      <Tooltip {...tooltipProps} />
+                      <Bar dataKey="total" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </ChartCard>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-6">
+              <ChartCard title="Top 10 tipos de erro" subtitle="Última auditoria">
+                {errorTypes.length === 0 ? (
+                  <EmptyMsg text="Nenhum tipo de erro nesta run." />
+                ) : (
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={errorTypes} layout="vertical" margin={{ left: 8, right: 16 }}>
+                        <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" horizontal={false} />
+                        <XAxis type="number" stroke="var(--muted-foreground)" fontSize={11} />
+                        <YAxis
+                          type="category"
+                          dataKey="tipo"
+                          stroke="var(--muted-foreground)"
+                          fontSize={10}
+                          width={140}
+                          tickFormatter={(v: string) => (v.length > 22 ? v.slice(0, 22) + "…" : v)}
+                        />
+                        <Tooltip {...tooltipProps} />
+                        <Bar dataKey="count" fill="var(--destructive)" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </ChartCard>
+
+              <ChartCard title="Findings por mês de vigência" subtitle="Distribuição temporal das inconsistências">
+                {monthly.length === 0 ? (
+                  <EmptyMsg text="Sem datas de vigência nos findings." />
+                ) : (
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={monthly}>
+                        <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={10} />
+                        <YAxis stroke="var(--muted-foreground)" fontSize={11} />
+                        <Tooltip {...tooltipProps} />
+                        <Bar dataKey="count" fill="var(--info)" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </ChartCard>
+            </div>
+
+            <ChartCard
+              title="Heatmap · tipo de erro × runs"
+              subtitle="Intensidade de inconsistências por tipo nas últimas runs"
+            >
+              <Heatmap runs={heatmap.runs} rows={heatmap.rows} />
+            </ChartCard>
+
+            <div className="grid lg:grid-cols-2 gap-6">
+              <ChartCard
+                title="Apólices mais problemáticas"
+                subtitle={`Top ${apoliceRank.length} por nº de inconsistências`}
+              >
+                {apoliceRank.length === 0 ? (
+                  <EmptyMsg text="Nenhuma apólice com inconsistências." />
+                ) : (
+                  <div className="space-y-2.5">
+                    {apoliceRank.map((g, i) => {
+                      const max = apoliceRank[0].total;
+                      const s = countBySeverity(g.findings);
+                      return (
+                        <div key={g.apolice} className="group">
+                          <div className="flex items-baseline justify-between mb-1.5 gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="font-mono text-[10.5px] text-muted-foreground w-5">
+                                #{i + 1}
+                              </span>
+                              <Link
+                                to="/apolices/$id"
+                                params={{ id: g.apolice }}
+                                className="font-mono text-[11.5px] text-foreground hover:text-primary truncate"
+                              >
+                                {g.apolice}
+                              </Link>
+                              {s.erros > 0 && (
+                                <span className="text-[10px] font-mono text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
+                                  {s.erros}E
+                                </span>
+                              )}
+                              {s.alertas > 0 && (
+                                <span className="text-[10px] font-mono text-warning bg-warning/10 px-1.5 py-0.5 rounded">
+                                  {s.alertas}A
+                                </span>
+                              )}
+                            </div>
+                            <span className="font-mono text-[12px] text-foreground">{g.total}</span>
+                          </div>
+                          <div className="h-1 rounded-full bg-background overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-destructive to-warning transition-all"
+                              style={{ width: `${(g.total / max) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </ChartCard>
+
+              <ChartCard
+                title="Top endossos com inconsistências"
+                subtitle="Endossos que mais acumulam findings"
+              >
+                {endossoRank.length === 0 ? (
+                  <EmptyMsg text="Sem endossos identificados." />
+                ) : (
+                  <div className="space-y-2.5">
+                    {endossoRank.map((e, i) => {
+                      const max = endossoRank[0].total;
+                      return (
+                        <div key={e.endosso} className="group">
+                          <div className="flex items-baseline justify-between mb-1.5 gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="font-mono text-[10.5px] text-muted-foreground w-5">
+                                #{i + 1}
+                              </span>
+                              <span className="font-mono text-[11.5px] text-foreground truncate">
+                                {e.endosso}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground">
+                                {e.apolices} apólices
+                              </span>
+                            </div>
+                            <span className="font-mono text-[12px] text-foreground">{e.total}</span>
+                          </div>
+                          <div className="h-1 rounded-full bg-background overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-warning to-destructive transition-all"
+                              style={{ width: `${(e.total / max) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </ChartCard>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-6">
+              <ChartCard
+                title="Carteira por faixa de prêmio líquido"
+                subtitle={`${formatInt(policies.length)} apólices · ${formatBRL(totalPremium)}`}
+              >
+                {premiumBuckets.length === 0 ? (
+                  <EmptyMsg text="Sem apólices na carteira." />
+                ) : (
+                  <div className="h-[260px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={premiumBuckets}>
+                        <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={10} />
+                        <YAxis stroke="var(--muted-foreground)" fontSize={11} />
+                        <Tooltip
+                          {...tooltipProps}
+                          formatter={(v, k) =>
+                            k === "total" ? formatBRL(Number(v)) : formatInt(Number(v))
+                          }
+
+                        />
+                        <Bar dataKey="count" fill="var(--primary)" radius={[4, 4, 0, 0]} name="Apólices" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </ChartCard>
+
+              <ChartCard
+                title="Carteira por nº de endossos"
+                subtitle="Quantas alterações cada apólice acumulou"
+              >
+                {endorsementsDist.length === 0 ? (
+                  <EmptyMsg text="Sem apólices na carteira." />
+                ) : (
+                  <div className="h-[260px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={endorsementsDist}>
+                        <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={11} />
+                        <YAxis stroke="var(--muted-foreground)" fontSize={11} />
+                        <Tooltip {...tooltipProps} />
+                        <Bar dataKey="count" fill="var(--info)" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </ChartCard>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
-function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
+const tooltipProps = {
+  contentStyle: {
+    background: "var(--surface-2)",
+    border: "1px solid var(--border)",
+    borderRadius: 8,
+    fontSize: 12,
+  },
+  cursor: { fill: "var(--accent)", opacity: 0.3 },
+} as const;
+
+function Kpi({
+  label,
+  value,
+  hint,
+  delta,
+  deltaSuffix = "%",
+  tone,
+  invertDelta,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  delta?: number;
+  deltaSuffix?: string;
+  tone?: "success" | "warning" | "destructive";
+  invertDelta?: boolean;
+}) {
+  const toneClass =
+    tone === "success"
+      ? "text-success"
+      : tone === "warning"
+      ? "text-warning"
+      : tone === "destructive"
+      ? "text-destructive"
+      : "text-foreground";
+
+  const showDelta = delta !== undefined && Number.isFinite(delta) && Math.abs(delta) >= 0.05;
+  const positive = invertDelta ? (delta ?? 0) < 0 : (delta ?? 0) > 0;
   return (
-    <div className="mb-4">
-      <div className="text-[13px] font-semibold">{title}</div>
-      <div className="text-[11px] text-muted-foreground">{subtitle}</div>
+    <div className="rounded-2xl border border-border bg-surface p-4 shadow-elevated">
+      <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-medium">
+        {label}
+      </div>
+      <div className={`mt-1.5 text-[22px] font-semibold tabular-nums ${toneClass}`}>{value}</div>
+      <div className="mt-1 flex items-center gap-2 text-[11px]">
+        {showDelta && (
+          <span
+            className={`font-mono ${positive ? "text-success" : "text-destructive"}`}
+          >
+            {(delta ?? 0) > 0 ? "▲" : "▼"} {Math.abs(delta ?? 0).toFixed(1)}
+            {deltaSuffix}
+          </span>
+        )}
+        {hint && <span className="text-muted-foreground truncate">{hint}</span>}
+      </div>
     </div>
   );
 }
 
-function Ranking<T extends Record<string, any>>({
+function ChartCard({
   title,
   subtitle,
-  data,
-  valueKey,
-  format,
-  errorKey,
-  totalKey,
-  secondaryKey,
-  secondaryFormat,
+  className,
+  children,
 }: {
   title: string;
-  subtitle: string;
-  data: T[];
-  valueKey: keyof T;
-  format: (v: number) => string;
-  errorKey?: keyof T;
-  totalKey?: keyof T;
-  secondaryKey?: keyof T;
-  secondaryFormat?: (v: number) => string;
+  subtitle?: string;
+  className?: string;
+  children: React.ReactNode;
 }) {
-  const max = Math.max(...data.map((d) => Number(d[valueKey])));
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5 shadow-elevated">
-      <SectionHeader title={title} subtitle={subtitle} />
-      <div className="space-y-2.5">
-        {data.slice(0, 8).map((d, i) => {
-          const v = Number(d[valueKey]);
-          const ratio = (v / max) * 100;
-          const errorRate = errorKey && totalKey ? (Number(d[errorKey]) / Number(d[totalKey])) * 100 : null;
-          return (
-            <div key={i} className="group">
-              <div className="flex items-baseline justify-between mb-1.5">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-mono text-[10.5px] text-muted-foreground w-5">#{i + 1}</span>
-                  <span className="text-[12.5px] text-foreground truncate">{d.name}</span>
-                  {errorRate !== null && errorRate > 30 && (
-                    <span className="text-[10px] font-mono text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
-                      {errorRate.toFixed(0)}% falhas
-                    </span>
-                  )}
-                </div>
-                <div className="text-right">
-                  <span className="font-mono text-[12px] text-foreground">{format(v)}</span>
-                  {secondaryKey && secondaryFormat && (
-                    <span className="ml-2 font-mono text-[10.5px] text-muted-foreground">
-                      {secondaryFormat(Number(d[secondaryKey]))}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="h-1 rounded-full bg-background overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-primary to-info group-hover:from-primary group-hover:to-primary-glow transition-all"
-                  style={{ width: `${ratio}%` }}
-                />
-              </div>
-            </div>
-          );
-        })}
+    <div
+      data-export="chart"
+      data-title={title}
+      className={`rounded-2xl border border-border bg-surface p-5 shadow-elevated ${className ?? ""}`}
+    >
+      <div className="mb-4">
+        <div className="text-[13px] font-semibold">{title}</div>
+        {subtitle && <div className="text-[11px] text-muted-foreground">{subtitle}</div>}
       </div>
+      {children}
+    </div>
+  );
+}
+
+function SeverityLegend({ sev }: { sev: { erros: number; alertas: number; infos: number } }) {
+  const items = [
+    { name: "Erros", value: sev.erros, color: "var(--destructive)" },
+    { name: "Alertas", value: sev.alertas, color: "var(--warning)" },
+    { name: "Info", value: sev.infos, color: "var(--info)" },
+  ];
+  return (
+    <div className="mt-3 space-y-1.5">
+      {items.map((it) => (
+        <div key={it.name} className="flex items-center gap-2 text-[11.5px]">
+          <span className="h-2 w-2 rounded-full" style={{ background: it.color }} />
+          <span className="text-muted-foreground flex-1">{it.name}</span>
+          <span className="font-mono text-foreground">{it.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Heatmap({
+  runs,
+  rows,
+}: {
+  runs: ReturnType<typeof runSeries>;
+  rows: { tipo: string; cells: number[] }[];
+}) {
+  if (rows.length === 0 || runs.length === 0) {
+    return <EmptyMsg text="Sem dados suficientes para o heatmap." />;
+  }
+  const max = Math.max(1, ...rows.flatMap((r) => r.cells));
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-[10.5px]">
+        <thead>
+          <tr>
+            <th className="text-left font-normal text-muted-foreground pb-2 pr-3 sticky left-0 bg-surface">
+              Tipo de erro
+            </th>
+            {runs.map((r) => (
+              <th
+                key={r.id}
+                className="text-center font-mono font-normal text-muted-foreground pb-2 px-1 min-w-[42px]"
+              >
+                {r.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.slice(0, 12).map((r) => (
+            <tr key={r.tipo}>
+              <td className="py-1 pr-3 text-foreground truncate max-w-[200px] sticky left-0 bg-surface">
+                {r.tipo}
+              </td>
+              {r.cells.map((c, i) => {
+                const intensity = c / max;
+                const bg =
+                  c === 0
+                    ? "transparent"
+                    : `color-mix(in oklab, var(--destructive) ${Math.round(
+                        20 + intensity * 70,
+                      )}%, transparent)`;
+                return (
+                  <td key={i} className="p-0.5">
+                    <div
+                      className="h-7 rounded flex items-center justify-center font-mono text-[10px] text-foreground border border-border/40"
+                      style={{ background: bg }}
+                      title={`${c} inconsistências`}
+                    >
+                      {c > 0 ? formatCompact(c) : ""}
+                    </div>
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function EmptyMsg({ text }: { text: string }) {
+  return (
+    <div className="h-[160px] flex items-center justify-center text-[12px] text-muted-foreground">
+      {text}
+    </div>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="h-24 rounded-2xl border border-border bg-surface animate-pulse" />
+        ))}
+      </div>
+      <div className="grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 h-[320px] rounded-2xl border border-border bg-surface animate-pulse" />
+        <div className="h-[320px] rounded-2xl border border-border bg-surface animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-12 text-center">
+      <BarChart3 className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+      <div className="text-[14px] font-semibold mb-1">Sem auditorias ainda</div>
+      <p className="text-[12.5px] text-muted-foreground mb-4">
+        Execute uma auditoria para começar a ver indicadores e gráficos por aqui.
+      </p>
+      <Link
+        to="/operacao"
+        className="inline-flex items-center gap-2 h-9 px-4 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-[12px] font-medium"
+      >
+        Ir para Operação
+      </Link>
     </div>
   );
 }
