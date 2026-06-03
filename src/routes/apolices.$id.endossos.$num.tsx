@@ -15,7 +15,11 @@ import {
   PartesList,
   Section,
 } from "@/components/apolice/cards";
-import { parseDocumento, translateProposta } from "@/lib/excelsior/translate";
+import {
+  normalizeEndossoNum,
+  parseDocumento,
+  translateProposta,
+} from "@/lib/excelsior/translate";
 
 export const Route = createFileRoute("/apolices/$id/endossos/$num")({
   head: ({ params }) => ({
