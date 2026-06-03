@@ -144,6 +144,23 @@ function safeJson(s: string): Record<string, unknown> {
   }
 }
 
+/**
+ * O JSON da apólice pode vir no formato "achatado" ({datas, itens, ...}) ou
+ * encapsulado em endosso_A / endosso_C → proposta_endosso_X → proposta.
+ * Esta função retorna o objeto que efetivamente contém `datas` + `itens`.
+ */
+function resolveProposta(raw: Record<string, unknown>): Record<string, unknown> {
+  if (raw.datas || raw.itens) return raw;
+  for (const k of ["endosso_A", "endosso_B", "endosso_C", "endosso_D"]) {
+    const wrapper = raw[k] as Record<string, unknown> | undefined;
+    if (!wrapper) continue;
+    const inner = wrapper[`proposta_${k}`] as Record<string, unknown> | undefined;
+    const inside = inner?.proposta as Record<string, unknown> | undefined;
+    if (inside && (inside.datas || inside.itens)) return inside;
+  }
+  return raw;
+}
+
 function round2(n: number) {
   return Math.round(n * 100) / 100;
 }
