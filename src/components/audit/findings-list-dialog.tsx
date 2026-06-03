@@ -60,6 +60,7 @@ export function FindingsListDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
+  const { data: history = [] } = useAuditHistory();
   const [tipo, setTipo] = useState<string>("__all__");
   const [sev, setSev] = useState<Severity | "__all__">("__all__");
   const [view, setView] = useState<View>("agrupado");
