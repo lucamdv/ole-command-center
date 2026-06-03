@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import { AlertTriangle, CheckCircle2, Copy, FileDown, List, TrendingUp, XCircle } from "lucide-react";
+import { AlertTriangle, Activity, CheckCircle2, Copy, FileDown, Gauge, List, ShieldCheck, Timer, TrendingUp, XCircle } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -98,56 +98,67 @@ function PageHeader({
   latest: LatestAudit | null;
   history: ReturnType<typeof useAuditHistory>["data"] extends infer T ? Exclude<T, undefined> : never;
 }) {
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
   return (
-    <div className="flex items-start justify-between gap-6 flex-wrap">
-      <div>
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-primary">OLÉ COPILOT</span>
-          <span className="h-1 w-1 rounded-full bg-muted-foreground/40" />
-          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Visão Geral</span>
-          {status && (
-            <span
-              className={cn(
-                "ml-2 inline-flex items-center gap-1.5 text-[10.5px] font-mono uppercase px-2 py-0.5 rounded border",
-                status === "SUCESSO"
-                  ? "bg-success/10 text-success border-success/30"
-                  : "bg-warning/10 text-warning border-warning/30",
-              )}
-            >
+    <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-surface via-surface to-surface-2 px-6 py-5 shadow-elevated">
+      <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+      <div className="relative flex items-start justify-between gap-6 flex-wrap">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-primary">OLÉ COPILOT</span>
+            <span className="h-1 w-1 rounded-full bg-muted-foreground/40" />
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Cockpit Executivo</span>
+            <span className="inline-flex items-center gap-1.5 text-[10.5px] font-mono uppercase px-2 py-0.5 rounded border bg-success/10 text-success border-success/30">
               <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse-dot" />
-              {status}
+              Sistema Operacional
             </span>
-          )}
+            {status && (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 text-[10.5px] font-mono uppercase px-2 py-0.5 rounded border",
+                  status === "SUCESSO"
+                    ? "bg-success/10 text-success border-success/30"
+                    : "bg-warning/10 text-warning border-warning/30",
+                )}
+              >
+                <Activity className="h-3 w-3" /> {status}
+              </span>
+            )}
+          </div>
+          <h1 className="text-[28px] font-semibold tracking-tight text-foreground">
+            {greeting}, Luca. <span className="text-muted-foreground">Aqui está sua operação.</span>
+          </h1>
+          <p className="text-[13.5px] text-muted-foreground mt-1 max-w-2xl">
+            {latestAt
+              ? `Última auditoria executada ${relativeTime(latestAt)} · ${formatDateTime(latestAt)}.`
+              : "Dispare a primeira auditoria para alimentar o cockpit."}
+          </p>
         </div>
-        <h1 className="text-[28px] font-semibold tracking-tight text-foreground">Centro de Comando OLÉ</h1>
-        <p className="text-[13.5px] text-muted-foreground mt-1 max-w-2xl">
-          {latestAt
-            ? `Dados consolidados da auditoria executada ${relativeTime(latestAt)} (${formatDateTime(latestAt)}).`
-            : "Dispare a primeira auditoria para alimentar a plataforma."}
-        </p>
-      </div>
-      <div className="flex items-center gap-2 flex-wrap">
-        {latest && (
-          <>
-            <FindingsListDialog
-              latest={latest}
-              trigger={
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  <List className="h-4 w-4" /> Ver lista
-                </Button>
-              }
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => exportAuditPdf(latest, history)}
-            >
-              <FileDown className="h-4 w-4" /> Exportar PDF
-            </Button>
-          </>
-        )}
-        <RunAuditButton />
+        <div className="flex items-center gap-2 flex-wrap">
+          {latest && (
+            <>
+              <FindingsListDialog
+                latest={latest}
+                trigger={
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <List className="h-4 w-4" /> Ver achados
+                  </Button>
+                }
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => exportAuditPdf(latest, history)}
+              >
+                <FileDown className="h-4 w-4" /> Exportar PDF
+              </Button>
+            </>
+          )}
+          <RunAuditButton />
+        </div>
       </div>
     </div>
   );
@@ -187,12 +198,14 @@ function Dashboard({
       {/* Banner consolidado estilo Notion */}
       <ConsolidatedBanner latest={latest} sev={sev} grouped={grouped.length} />
 
-      {/* KPIs principais — 4 cartões */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard label="Conformidade" value={k.approvedRate} suffix="%" delta={Number(k.deltaApproved.toFixed(1))} spark={series.map((s) => 100 - s.risk)} tone="success" hint="Taxa de aprovação" />
+      {/* KPIs executivos — 6 cartões */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <KpiCard label="Conformidade da Carteira" value={k.approvedRate} suffix="%" delta={Number(k.deltaApproved.toFixed(1))} spark={series.map((s) => 100 - s.risk)} tone="success" hint="Taxa de aprovação" />
+        <KpiCard label="Saúde Operacional" value={Math.max(0, 100 - k.operationalRisk)} suffix="pts" spark={series.map((s) => 100 - s.risk)} tone="info" hint="Score executivo (100 - risco)" />
         <KpiCard label="Apólices Auditadas" value={k.audited} format={formatInt} spark={sparkTotal} tone="default" hint={`${history.length} run(s) registradas`} />
-        <KpiCard label="Não Conformes" value={k.rejected} format={formatInt} delta={Number(k.deltaRejected.toFixed(1))} spark={sparkRejected} tone="destructive" hint={`${k.affectedPolicies} apólices afetadas`} />
-        <KpiCard label="Achados Ativos" value={k.activeAlerts} format={formatInt} delta={Number(k.deltaAlerts.toFixed(1))} spark={sparkRejected} tone="warning" hint={k.topErrorType ? `Top: ${k.topErrorType}` : "—"} />
+        <KpiCard label="Apólices em Risco" value={k.affectedPolicies} format={formatInt} delta={Number(k.deltaRejected.toFixed(1))} spark={sparkRejected} tone="destructive" hint={`${k.rejected} reprovação(ões)`} />
+        <KpiCard label="Regras Críticas Acionadas" value={k.uniqueErrorTypes} format={formatInt} spark={sparkRejected} tone="warning" hint={k.topErrorType ? `Top: ${k.topErrorType}` : "—"} />
+        <KpiCard label="Velocidade Operacional" value={latest.run.duration_ms ? Number((latest.run.duration_ms / 1000).toFixed(1)) : 0} suffix="s" spark={sparkTotal} tone="info" hint="Duração da última run" />
       </div>
 
       {/* Severidade split + linha secundária */}
