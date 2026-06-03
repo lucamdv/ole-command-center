@@ -58,7 +58,7 @@ function AnalyticsPage() {
   const latest = latestQ.data ?? null;
   const history = historyQ.data ?? [];
   const policies = policiesQ.data ?? [];
-  const aggregates = aggregatesQ.data ?? { findingsByVigencia: [], revenueByMonth: [], policyPremiums: [] };
+  const aggregates = aggregatesQ.data ?? { findingsByVigencia: [], revenueByMonth: [], policyPremiums: [], issuancesByMonth: [] };
 
   const kpis = useMemo(() => deriveKpis({ latest, history }), [latest, history]);
   const findings = latest?.findings ?? [];
