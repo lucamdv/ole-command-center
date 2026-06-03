@@ -286,7 +286,7 @@ export interface EndorsementDetail {
   numero_endosso: string;
   premio_liquido: number;
   ordem: number;
-  proposta: Record<string, unknown>;
+  proposta: JsonObject;
   created_at: string;
 }
 
