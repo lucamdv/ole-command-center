@@ -30,7 +30,7 @@ function fmtDate(iso: string | null): string {
     return iso;
   }
 }
-function fmtNum(n: number | null | undefined, moeda = "BRL"): string {
+export function fmtNum(n: number | null | undefined, moeda = "BRL"): string {
   if (n === null || n === undefined) return "—";
   if (moeda === "BRL")
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
