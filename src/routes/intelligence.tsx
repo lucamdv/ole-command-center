@@ -335,7 +335,7 @@ function MessageBubble({ message }: { message: any }) {
             ))}
           </div>
         )}
-        <div className="text-sm whitespace-pre-wrap leading-relaxed">{text}</div>
+        <MessageResponse className="text-sm leading-relaxed">{text}</MessageResponse>
       </div>
     </div>
   );
