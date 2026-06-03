@@ -89,10 +89,6 @@ function AnalyticsPage() {
     return buckets.filter((b) => b.count > 0);
   }, [policies]);
 
-  const totalPremium = useMemo(
-    () => policies.reduce((s, p) => s + (Number(p.premio_liquido) || 0), 0),
-    [policies],
-  );
 
   const chartsRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState<"none" | "report" | "charts">("none");
