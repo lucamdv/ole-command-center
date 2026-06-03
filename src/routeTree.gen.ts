@@ -14,10 +14,10 @@ import { Route as IntelligenceRouteImport } from './routes/intelligence'
 import { Route as FerramentasRouteImport } from './routes/ferramentas'
 import { Route as EndossosRouteImport } from './routes/endossos'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
-import { Route as ApolicesRouteImport } from './routes/apolices'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApolicesIndexRouteImport } from './routes/apolices.index'
 import { Route as ApolicesIdRouteImport } from './routes/apolices.$id'
 import { Route as ApiPublicPolicySyncCallbackRouteImport } from './routes/api/public/policy-sync-callback'
 import { Route as ApiPublicAuditCallbackRouteImport } from './routes/api/public/audit-callback'
@@ -49,11 +49,6 @@ const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
   path: '/configuracoes',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApolicesRoute = ApolicesRouteImport.update({
-  id: '/apolices',
-  path: '/apolices',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AnalyticsRoute = AnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
@@ -67,6 +62,11 @@ const AlertasRoute = AlertasRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApolicesIndexRoute = ApolicesIndexRouteImport.update({
+  id: '/apolices/',
+  path: '/apolices/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApolicesIdRoute = ApolicesIdRouteImport.update({
@@ -101,13 +101,13 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
   '/analytics': typeof AnalyticsRoute
-  '/apolices': typeof ApolicesRouteWithChildren
   '/configuracoes': typeof ConfiguracoesRoute
   '/endossos': typeof EndossosRoute
   '/ferramentas': typeof FerramentasRoute
   '/intelligence': typeof IntelligenceRoute
   '/operacao': typeof OperacaoRoute
   '/apolices/$id': typeof ApolicesIdRouteWithChildren
+  '/apolices/': typeof ApolicesIndexRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
   '/api/public/hooks/policy-sync': typeof ApiPublicHooksPolicySyncRoute
@@ -117,13 +117,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
   '/analytics': typeof AnalyticsRoute
-  '/apolices': typeof ApolicesRouteWithChildren
   '/configuracoes': typeof ConfiguracoesRoute
   '/endossos': typeof EndossosRoute
   '/ferramentas': typeof FerramentasRoute
   '/intelligence': typeof IntelligenceRoute
   '/operacao': typeof OperacaoRoute
   '/apolices/$id': typeof ApolicesIdRouteWithChildren
+  '/apolices': typeof ApolicesIndexRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
   '/api/public/hooks/policy-sync': typeof ApiPublicHooksPolicySyncRoute
@@ -134,13 +134,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
   '/analytics': typeof AnalyticsRoute
-  '/apolices': typeof ApolicesRouteWithChildren
   '/configuracoes': typeof ConfiguracoesRoute
   '/endossos': typeof EndossosRoute
   '/ferramentas': typeof FerramentasRoute
   '/intelligence': typeof IntelligenceRoute
   '/operacao': typeof OperacaoRoute
   '/apolices/$id': typeof ApolicesIdRouteWithChildren
+  '/apolices/': typeof ApolicesIndexRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
   '/api/public/hooks/policy-sync': typeof ApiPublicHooksPolicySyncRoute
@@ -152,13 +152,13 @@ export interface FileRouteTypes {
     | '/'
     | '/alertas'
     | '/analytics'
-    | '/apolices'
     | '/configuracoes'
     | '/endossos'
     | '/ferramentas'
     | '/intelligence'
     | '/operacao'
     | '/apolices/$id'
+    | '/apolices/'
     | '/api/public/audit-callback'
     | '/api/public/policy-sync-callback'
     | '/api/public/hooks/policy-sync'
@@ -168,13 +168,13 @@ export interface FileRouteTypes {
     | '/'
     | '/alertas'
     | '/analytics'
-    | '/apolices'
     | '/configuracoes'
     | '/endossos'
     | '/ferramentas'
     | '/intelligence'
     | '/operacao'
     | '/apolices/$id'
+    | '/apolices'
     | '/api/public/audit-callback'
     | '/api/public/policy-sync-callback'
     | '/api/public/hooks/policy-sync'
@@ -184,13 +184,13 @@ export interface FileRouteTypes {
     | '/'
     | '/alertas'
     | '/analytics'
-    | '/apolices'
     | '/configuracoes'
     | '/endossos'
     | '/ferramentas'
     | '/intelligence'
     | '/operacao'
     | '/apolices/$id'
+    | '/apolices/'
     | '/api/public/audit-callback'
     | '/api/public/policy-sync-callback'
     | '/api/public/hooks/policy-sync'
@@ -201,12 +201,12 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AlertasRoute: typeof AlertasRoute
   AnalyticsRoute: typeof AnalyticsRoute
-  ApolicesRoute: typeof ApolicesRouteWithChildren
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   EndossosRoute: typeof EndossosRoute
   FerramentasRoute: typeof FerramentasRoute
   IntelligenceRoute: typeof IntelligenceRoute
   OperacaoRoute: typeof OperacaoRoute
+  ApolicesIndexRoute: typeof ApolicesIndexRoute
   ApiPublicAuditCallbackRoute: typeof ApiPublicAuditCallbackRoute
   ApiPublicPolicySyncCallbackRoute: typeof ApiPublicPolicySyncCallbackRoute
   ApiPublicHooksPolicySyncRoute: typeof ApiPublicHooksPolicySyncRoute
@@ -249,13 +249,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConfiguracoesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/apolices': {
-      id: '/apolices'
-      path: '/apolices'
-      fullPath: '/apolices'
-      preLoaderRoute: typeof ApolicesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/analytics': {
       id: '/analytics'
       path: '/analytics'
@@ -275,6 +268,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apolices/': {
+      id: '/apolices/'
+      path: '/apolices'
+      fullPath: '/apolices/'
+      preLoaderRoute: typeof ApolicesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/apolices/$id': {
@@ -315,40 +315,16 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface ApolicesIdRouteChildren {
-  ApolicesIdEndossosNumRoute: typeof ApolicesIdEndossosNumRoute
-}
-
-const ApolicesIdRouteChildren: ApolicesIdRouteChildren = {
-  ApolicesIdEndossosNumRoute: ApolicesIdEndossosNumRoute,
-}
-
-const ApolicesIdRouteWithChildren = ApolicesIdRoute._addFileChildren(
-  ApolicesIdRouteChildren,
-)
-
-interface ApolicesRouteChildren {
-  ApolicesIdRoute: typeof ApolicesIdRouteWithChildren
-}
-
-const ApolicesRouteChildren: ApolicesRouteChildren = {
-  ApolicesIdRoute: ApolicesIdRouteWithChildren,
-}
-
-const ApolicesRouteWithChildren = ApolicesRoute._addFileChildren(
-  ApolicesRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlertasRoute: AlertasRoute,
   AnalyticsRoute: AnalyticsRoute,
-  ApolicesRoute: ApolicesRouteWithChildren,
   ConfiguracoesRoute: ConfiguracoesRoute,
   EndossosRoute: EndossosRoute,
   FerramentasRoute: FerramentasRoute,
   IntelligenceRoute: IntelligenceRoute,
   OperacaoRoute: OperacaoRoute,
+  ApolicesIndexRoute: ApolicesIndexRoute,
   ApiPublicAuditCallbackRoute: ApiPublicAuditCallbackRoute,
   ApiPublicPolicySyncCallbackRoute: ApiPublicPolicySyncCallbackRoute,
   ApiPublicHooksPolicySyncRoute: ApiPublicHooksPolicySyncRoute,
@@ -356,3 +332,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
