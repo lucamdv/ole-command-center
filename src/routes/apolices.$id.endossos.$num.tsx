@@ -15,7 +15,11 @@ import {
   PartesList,
   Section,
 } from "@/components/apolice/cards";
-import { parseDocumento, translateProposta } from "@/lib/excelsior/translate";
+import {
+  normalizeEndossoNum,
+  parseDocumento,
+  translateProposta,
+} from "@/lib/excelsior/translate";
 
 export const Route = createFileRoute("/apolices/$id/endossos/$num")({
   head: ({ params }) => ({
@@ -53,7 +57,10 @@ function EndossoDetail() {
   }
 
   const t = translateProposta(endo.proposta);
-  const documento = parseDocumento(endo.numero_apolice, t.tipoEndosso);
+  // Número real do documento: vem do envelope; fallback = apolice base + sequencial do param.
+  const numeroDoc =
+    t.numeroDocumento ?? endo.numero_apolice.slice(0, -6) + normalizeEndossoNum(num);
+  const documento = parseDocumento(numeroDoc, t.tipoEndosso);
   const seguradoNome = t.partes.find((p) => p.papel === "SEGURADO")?.nome ?? null;
   const isCancelamento = t.tipoEndosso === "B" || t.tipoEndosso === "C";
 
