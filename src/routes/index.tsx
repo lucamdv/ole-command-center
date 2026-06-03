@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import { AlertTriangle, Activity, CheckCircle2, Copy, FileDown, Gauge, List, ShieldCheck, Timer, TrendingUp, XCircle } from "lucide-react";
+import { AlertTriangle, Activity, CheckCircle2, Copy, FileDown, List, TrendingUp, XCircle } from "lucide-react";
 import {
   Area,
   AreaChart,
