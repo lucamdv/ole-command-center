@@ -165,6 +165,8 @@ export interface PropostaTraduzida {
   pagamento: PagamentoInfo;
   cotacoes: CotacaoInfo[];
   limiteApolice: LimiteApoliceInfo | null;
+  cancelamento: CancelamentoInfo | null;
+  tipoEndosso: TipoEndosso | null;
   /** O objeto "proposta" desembrulhado — para o JsonExplorer fallback. */
   raw: Record<string, unknown>;
   /** Indicador se a proposta veio vazia/wrapper (caso típico de endosso A). */
