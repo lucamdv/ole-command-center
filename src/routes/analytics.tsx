@@ -520,6 +520,9 @@ function AnalyticsPage() {
             <div className="grid lg:grid-cols-2 gap-6">
               <ChartCard
                 title="Carteira por nº de endossos"
+            <div className="grid lg:grid-cols-2 gap-6">
+              <ChartCard
+                title="Carteira por nº de endossos"
                 subtitle="Quantas alterações cada apólice acumulou"
               >
                 {endorsementsDist.length === 0 ? (
@@ -533,6 +536,76 @@ function AnalyticsPage() {
                         <YAxis stroke="var(--muted-foreground)" fontSize={11} />
                         <Tooltip {...tooltipProps} />
                         <Bar dataKey="count" fill="var(--info)" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </ChartCard>
+
+              <ChartCard
+                title="Apólices emitidas por mês"
+                subtitle={`${formatInt(totalApolices)} apólices em ${issuances.filter((i) => i.apolices > 0).length} meses`}
+              >
+                {issuances.length === 0 ? (
+                  <EmptyMsg text="Sem emissões registradas." />
+                ) : (
+                  <div className="h-[260px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={issuances}>
+                        <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={10} />
+                        <YAxis stroke="var(--muted-foreground)" fontSize={11} allowDecimals={false} />
+                        <Tooltip {...tooltipProps} formatter={(v) => formatInt(Number(v))} />
+                        <Bar dataKey="apolices" name="Apólices" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </ChartCard>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-6">
+              <ChartCard
+                title="Endossos emitidos por mês"
+                subtitle={`${formatInt(totalEndossos)} endossos em ${issuances.filter((i) => i.endossosTotal > 0).length} meses`}
+              >
+                {issuances.length === 0 ? (
+                  <EmptyMsg text="Sem endossos registrados." />
+                ) : (
+                  <div className="h-[260px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={issuances}>
+                        <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={10} />
+                        <YAxis stroke="var(--muted-foreground)" fontSize={11} allowDecimals={false} />
+                        <Tooltip {...tooltipProps} formatter={(v) => formatInt(Number(v))} />
+                        <Bar dataKey="endossosTotal" name="Endossos" fill="var(--warning)" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </ChartCard>
+
+              <ChartCard
+                title="Emissões por mês e por tipo"
+                subtitle="Apólices e endossos (A, B, C, D) lado a lado"
+              >
+                {issuances.length === 0 ? (
+                  <EmptyMsg text="Sem emissões registradas." />
+                ) : (
+                  <div className="h-[260px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={issuances}>
+                        <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={10} />
+                        <YAxis stroke="var(--muted-foreground)" fontSize={11} allowDecimals={false} />
+                        <Tooltip {...tooltipProps} formatter={(v) => formatInt(Number(v))} />
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
+                        <Bar dataKey="apolices" name="Apólice" stackId="emi" fill="var(--primary)" />
+                        <Bar dataKey="endossoA" name="Endosso A" stackId="emi" fill="var(--info)" />
+                        <Bar dataKey="endossoB" name="Endosso B" stackId="emi" fill="var(--success)" />
+                        <Bar dataKey="endossoC" name="Endosso C" stackId="emi" fill="var(--warning)" />
+                        <Bar dataKey="endossoD" name="Endosso D" stackId="emi" fill="var(--destructive)" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
