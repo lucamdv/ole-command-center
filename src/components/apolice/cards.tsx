@@ -603,16 +603,6 @@ export function LimiteApoliceCard({ limite }: { limite: LimiteApoliceInfo | null
           {fmtNum(limite.valor, limite.moeda ?? "BRL")}
         </div>
       </div>
-      {limite.moeda !== "BRL" && limite.valorBRL !== null && (
-        <div className="text-right">
-          <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground">
-            Equivalente em BRL
-          </div>
-          <div className="text-[16px] font-mono text-muted-foreground mt-1">
-            ≈ {formatBRL(limite.valorBRL)}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
