@@ -6,6 +6,14 @@ export const formatBRL = (n: number, opts: Intl.NumberFormatOptions = {}) =>
     ...opts,
   }).format(n);
 
+export const formatUSD = (n: number, opts: Intl.NumberFormatOptions = {}) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+    ...opts,
+  }).format(n);
+
 export const formatCompact = (n: number) =>
   new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(n);
 

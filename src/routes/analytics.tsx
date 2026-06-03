@@ -20,8 +20,8 @@ import { BarChart3, Download, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuditHistory, useLatestAudit } from "@/hooks/use-audit";
 import { usePolicies } from "@/hooks/use-policies";
+import { useAnalyticsAggregates } from "@/hooks/use-analytics";
 import {
-  bucketByMonth,
   buildHeatmap,
   countBySeverity,
   deriveKpis,
@@ -32,7 +32,7 @@ import {
 } from "@/lib/audit/derive";
 import { exportAuditPdf } from "@/lib/audit/export-pdf";
 import { exportChartsPdf } from "@/lib/analytics/export-charts";
-import { formatBRL, formatCompact, formatInt, formatPct, relativeTime } from "@/lib/format";
+import { formatBRL, formatCompact, formatInt, formatPct, formatUSD, relativeTime } from "@/lib/format";
 
 export const Route = createFileRoute("/analytics")({
   head: () => ({
@@ -52,10 +52,12 @@ function AnalyticsPage() {
   const latestQ = useLatestAudit();
   const historyQ = useAuditHistory();
   const policiesQ = usePolicies();
+  const aggregatesQ = useAnalyticsAggregates();
 
   const latest = latestQ.data ?? null;
   const history = historyQ.data ?? [];
   const policies = policiesQ.data ?? [];
+  const aggregates = aggregatesQ.data ?? { findingsByVigencia: [], revenueByMonth: [] };
 
   const kpis = useMemo(() => deriveKpis({ latest, history }), [latest, history]);
   const findings = latest?.findings ?? [];
@@ -64,7 +66,9 @@ function AnalyticsPage() {
   const errorTypes = useMemo(() => errorTypeBreakdown(findings).slice(0, 10), [findings]);
   const apoliceRank = useMemo(() => groupByApolice(findings).slice(0, 10), [findings]);
   const endossoRank = useMemo(() => groupByEndosso(findings).slice(0, 8), [findings]);
-  const monthly = useMemo(() => bucketByMonth(findings), [findings]);
+  const monthly = aggregates.findingsByVigencia;
+  const revenue = aggregates.revenueByMonth;
+  const totalUsd = useMemo(() => revenue.reduce((s, r) => s + r.usd, 0), [revenue]);
   const heatmap = useMemo(() => buildHeatmap(latest, history, 12), [latest, history]);
 
   // Distribuição da carteira por faixa de prêmio líquido
@@ -240,7 +244,14 @@ function AnalyticsPage() {
               }
               tone="destructive"
             />
+            <Kpi
+              label="Receita acumulada (USD)"
+              value={formatUSD(totalUsd)}
+              hint={`${revenue.length} meses · ${formatInt(policies.length)} apólices`}
+              tone="success"
+            />
           </div>
+
 
           <div ref={chartsRef} className="space-y-6">
             <div className="grid lg:grid-cols-3 gap-6">
@@ -379,6 +390,54 @@ function AnalyticsPage() {
                 )}
               </ChartCard>
             </div>
+
+            <ChartCard
+              title="Receita OLÉ (USD) por mês de vigência"
+              subtitle={`Prêmio direto faturado · ${formatUSD(totalUsd)} acumulado em ${revenue.length} meses`}
+            >
+              {revenue.length === 0 ? (
+                <EmptyMsg text="Sem dados de prêmio em USD." />
+              ) : (
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={revenue}>
+                      <defs>
+                        <linearGradient id="gUsd" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--success)" stopOpacity={0.5} />
+                          <stop offset="100%" stopColor="var(--success)" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={11} />
+                      <YAxis
+                        stroke="var(--muted-foreground)"
+                        fontSize={11}
+                        tickFormatter={(v) => `$${formatCompact(Number(v))}`}
+                      />
+                      <Tooltip
+                        {...tooltipProps}
+                        formatter={(v, k) =>
+                          k === "usd"
+                            ? formatUSD(Number(v), { maximumFractionDigits: 2 })
+                            : k === "policies"
+                              ? `${formatInt(Number(v))} apólices`
+                              : String(v)
+                        }
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="usd"
+                        name="USD"
+                        stroke="var(--success)"
+                        strokeWidth={2}
+                        fill="url(#gUsd)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </ChartCard>
+
 
             <ChartCard
               title="Heatmap · tipo de erro × runs"
