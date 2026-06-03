@@ -44,6 +44,7 @@ import {
   type Severity,
 } from "@/lib/audit/derive";
 import { exportAuditPdf } from "@/lib/audit/export-pdf";
+import { useAuditHistory } from "@/hooks/use-audit";
 import type { AuditFindingRow, LatestAudit } from "@/lib/audit/types";
 import { formatDate, formatDateTime, formatInt } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -59,6 +60,7 @@ export function FindingsListDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
+  const { data: history = [] } = useAuditHistory();
   const [tipo, setTipo] = useState<string>("__all__");
   const [sev, setSev] = useState<Severity | "__all__">("__all__");
   const [view, setView] = useState<View>("agrupado");
@@ -211,7 +213,7 @@ export function FindingsListDialog({
           <Button size="sm" variant="outline" className="gap-1.5" onClick={copyAll}>
             <Copy className="h-3.5 w-3.5" /> Copiar tudo
           </Button>
-          <Button size="sm" variant="outline" onClick={() => exportAuditPdf(latest)} className="gap-1.5">
+          <Button size="sm" variant="outline" onClick={() => exportAuditPdf(latest, history)} className="gap-1.5">
             <FileDown className="h-4 w-4" /> Exportar PDF
           </Button>
         </div>

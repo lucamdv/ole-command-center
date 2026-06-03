@@ -75,6 +75,7 @@ function VisaoGeral() {
         latestAt={latest?.run?.created_at ?? null}
         status={latest?.run?.status_geral ?? null}
         latest={latest ?? null}
+        history={history}
       />
 
       {!latest ? (
@@ -90,10 +91,12 @@ function PageHeader({
   latestAt,
   status,
   latest,
+  history,
 }: {
   latestAt: string | null;
   status: string | null;
   latest: LatestAudit | null;
+  history: ReturnType<typeof useAuditHistory>["data"] extends infer T ? Exclude<T, undefined> : never;
 }) {
   return (
     <div className="flex items-start justify-between gap-6 flex-wrap">
@@ -138,7 +141,7 @@ function PageHeader({
               variant="outline"
               size="sm"
               className="gap-1.5"
-              onClick={() => exportAuditPdf(latest)}
+              onClick={() => exportAuditPdf(latest, history)}
             >
               <FileDown className="h-4 w-4" /> Exportar PDF
             </Button>
