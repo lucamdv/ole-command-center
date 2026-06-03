@@ -69,6 +69,9 @@ function AnalyticsPage() {
   const endossoRank = useMemo(() => groupByEndosso(findings).slice(0, 8), [findings]);
   const monthly = aggregates.findingsByVigencia;
   const revenue = aggregates.revenueByMonth;
+  const issuances = aggregates.issuancesByMonth;
+  const totalApolices = useMemo(() => issuances.reduce((s, r) => s + r.apolices, 0), [issuances]);
+  const totalEndossos = useMemo(() => issuances.reduce((s, r) => s + r.endossosTotal, 0), [issuances]);
   const totalUsd = useMemo(() => revenue.reduce((s, r) => s + r.usd, 0), [revenue]);
   const heatmap = useMemo(() => buildHeatmap(latest, history, 12), [latest, history]);
 
