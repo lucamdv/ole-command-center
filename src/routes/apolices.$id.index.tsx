@@ -63,7 +63,7 @@ export default function ApoliceDetail() {
 
   const proposta = policy.proposta ?? {};
   const t = translateProposta(proposta);
-  const documento = parseDocumento(policy.numero_apolice);
+  const documento = parseDocumento(policy.numero_apolice, t.tipoEndosso);
   const seguradoNome = t.partes.find((p) => p.papel === "SEGURADO")?.nome ?? null;
 
   return (
