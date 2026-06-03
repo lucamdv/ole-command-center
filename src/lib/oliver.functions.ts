@@ -1,0 +1,94 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+
+const MEMORY_ID = "00000000-0000-0000-0000-000000000001";
+
+export interface OliverThread {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export const listThreads = createServerFn({ method: "GET" }).handler(async (): Promise<OliverThread[]> => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("oliver_threads")
+    .select("id, title, created_at, updated_at")
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as OliverThread[];
+});
+
+export const createThread = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ title: z.string().max(120).optional() }).parse(input))
+  .handler(async ({ data }): Promise<OliverThread> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
+      .from("oliver_threads")
+      .insert({ title: data.title ?? "Nova conversa" })
+      .select("id, title, created_at, updated_at")
+      .single();
+    if (error) throw error;
+    return row as OliverThread;
+  });
+
+export const renameThread = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid(), title: z.string().min(1).max(120) }).parse(input))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("oliver_threads")
+      .update({ title: data.title })
+      .eq("id", data.id);
+    if (error) throw error;
+    return { ok: true };
+  });
+
+export const deleteThread = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("oliver_threads").delete().eq("id", data.id);
+    if (error) throw error;
+    return { ok: true };
+  });
+
+export const loadThreadMessages = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) => z.object({ threadId: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin
+      .from("oliver_messages")
+      .select("id, role, parts, created_at")
+      .eq("thread_id", data.threadId)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return (rows ?? []).map((r) => ({
+      id: r.id as string,
+      role: r.role as "user" | "assistant" | "system",
+      parts: (r.parts as unknown) as Array<{ type: string; [k: string]: unknown }>,
+    }));
+  });
+
+export const loadMemory = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("oliver_memory")
+    .select("content, updated_at")
+    .eq("id", MEMORY_ID)
+    .maybeSingle();
+  if (error) throw error;
+  return data ?? { content: "", updated_at: null };
+});
+
+export const replaceMemory = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ content: z.string().max(200000) }).parse(input))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("oliver_memory")
+      .upsert({ id: MEMORY_ID, content: data.content });
+    if (error) throw error;
+    return { ok: true };
+  });
