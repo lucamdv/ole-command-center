@@ -14,6 +14,7 @@ export interface PolicyListItem {
   numero_apolice: string;
   numero_endosso_atual: string | null;
   premio_liquido: number;
+  premio_moeda: string;
   endorsements_count: number;
   updated_at: string;
   segurado_nome: string | null;
@@ -27,6 +28,7 @@ export interface PolicyDetail {
   numero_apolice: string;
   numero_endosso_atual: string | null;
   premio_liquido: number;
+  premio_moeda: string;
   proposta: JsonObject;
   updated_at: string;
   last_sync_at: string | null;
@@ -34,6 +36,7 @@ export interface PolicyDetail {
     id: string;
     numero_endosso: string;
     premio_liquido: number;
+    premio_moeda: string;
     ordem: number;
     proposta: JsonObject;
     created_at: string;
@@ -155,7 +158,7 @@ export const getLatestPolicySync = createServerFn({ method: "GET" }).handler(asy
 
 export const getPolicies = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { findSeguradoNome, computePremioLiquidoBRL } = await import("@/lib/excelsior/translate");
+  const { findSeguradoNome, computePremioLiquido } = await import("@/lib/excelsior/translate");
   const { data, error } = await supabaseAdmin
     .from("policies")
     .select(
@@ -172,13 +175,13 @@ export const getPolicies = createServerFn({ method: "GET" }).handler(async () =>
     updated_at: string;
     endorsements: Array<{ id: string }>;
   }>).map((p) => {
-    const stored = Number(p.premio_liquido ?? 0);
-    const computed = stored > 0 ? stored : computePremioLiquidoBRL(p.proposta ?? {});
+    const { valor, moeda } = computePremioLiquido(p.proposta ?? {});
     return {
       id: p.id,
       numero_apolice: p.numero_apolice,
       numero_endosso_atual: p.numero_endosso_atual,
-      premio_liquido: computed,
+      premio_liquido: valor,
+      premio_moeda: moeda,
       endorsements_count: p.endorsements?.length ?? 0,
       updated_at: p.updated_at,
       segurado_nome: findSeguradoNome(p.proposta ?? {}),
@@ -226,13 +229,14 @@ export const getPolicyByNumero = createServerFn({ method: "GET" })
       lastSyncAt = r?.finished_at ?? r?.created_at ?? null;
     }
 
-    const { computePremioLiquidoBRL } = await import("@/lib/excelsior/translate");
-    const storedPolicy = Number(row.premio_liquido ?? 0);
+    const { computePremioLiquido } = await import("@/lib/excelsior/translate");
+    const headPL = computePremioLiquido(row.proposta ?? {});
     return {
       id: row.id,
       numero_apolice: row.numero_apolice,
       numero_endosso_atual: row.numero_endosso_atual,
-      premio_liquido: storedPolicy > 0 ? storedPolicy : computePremioLiquidoBRL(row.proposta ?? {}),
+      premio_liquido: headPL.valor,
+      premio_moeda: headPL.moeda,
       proposta: row.proposta ?? {},
       updated_at: row.updated_at,
       last_sync_at: lastSyncAt,
@@ -244,11 +248,12 @@ export const getPolicyByNumero = createServerFn({ method: "GET" })
         proposta: Record<string, unknown>;
         created_at: string;
       }>).map((e) => {
-        const stored = Number(e.premio_liquido ?? 0);
+        const pl = computePremioLiquido(e.proposta ?? {});
         return {
           id: e.id,
           numero_endosso: e.numero_endosso,
-          premio_liquido: stored > 0 ? stored : computePremioLiquidoBRL(e.proposta ?? {}),
+          premio_liquido: pl.valor,
+          premio_moeda: pl.moeda,
           ordem: e.ordem,
           proposta: e.proposta ?? {},
           created_at: e.created_at,
@@ -284,13 +289,14 @@ export const getEndorsement = createServerFn({ method: "GET" })
       proposta: Record<string, unknown>;
       created_at: string;
     };
-    const { computePremioLiquidoBRL } = await import("@/lib/excelsior/translate");
-    const stored = Number(row.premio_liquido ?? 0);
+    const { computePremioLiquido } = await import("@/lib/excelsior/translate");
+    const pl = computePremioLiquido(row.proposta ?? {});
     return {
       numero_apolice: policy.numero_apolice,
       id: row.id,
       numero_endosso: row.numero_endosso,
-      premio_liquido: stored > 0 ? stored : computePremioLiquidoBRL(row.proposta ?? {}),
+      premio_liquido: pl.valor,
+      premio_moeda: pl.moeda,
       ordem: row.ordem,
       proposta: row.proposta ?? {},
       created_at: row.created_at,
@@ -302,6 +308,7 @@ export interface EndorsementDetail {
   id: string;
   numero_endosso: string;
   premio_liquido: number;
+  premio_moeda: string;
   ordem: number;
   proposta: JsonObject;
   created_at: string;

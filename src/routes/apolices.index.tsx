@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { FileText, RefreshCw, Search } from "lucide-react";
 import { usePolicies, useLatestPolicySync, useRunPolicySync } from "@/hooks/use-policies";
-import { formatBRL, formatDateTime, relativeTime } from "@/lib/format";
+import { formatDateTime, relativeTime } from "@/lib/format";
+import { fmtNum } from "@/components/apolice/cards";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/apolices/")({
@@ -119,7 +120,7 @@ function ApolicesPage() {
                 {p.endorsements_count}
               </div>
               <div className="col-span-2 text-right font-mono text-[12px] text-foreground">
-                {formatBRL(p.premio_liquido)}
+                {fmtNum(p.premio_liquido, p.premio_moeda)}
               </div>
               <div className="col-span-1 text-right text-[10.5px] text-muted-foreground" title={formatDateTime(p.updated_at)}>
                 {relativeTime(p.updated_at)}

@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, FileText, GitBranch } from "lucide-react";
 import { usePolicy } from "@/hooks/use-policies";
-import { formatBRL, formatDateTime, relativeTime } from "@/lib/format";
+import { formatDateTime, relativeTime } from "@/lib/format";
 import { JsonExplorer } from "@/components/json-explorer";
 import {
   CotacaoCard,
   DadosGeraisCard,
   DatasCard,
   DocumentoHeader,
+  fmtNum,
   ItensCoberturas,
   LimiteApoliceCard,
   PagamentoCard,
@@ -74,7 +75,8 @@ export default function ApoliceDetail() {
 
       <DocumentoHeader
         documento={documento}
-        premioBRL={policy.premio_liquido}
+        premioValor={policy.premio_liquido}
+        premioMoeda={policy.premio_moeda}
         seguradoNome={seguradoNome}
         extra={
           <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border/60 rounded-xl overflow-hidden">
@@ -172,7 +174,7 @@ export default function ApoliceDetail() {
                   </span>
                 </div>
                 <div className="col-span-2 text-right font-mono text-[12px]">
-                  {formatBRL(e.premio_liquido)}
+                  {fmtNum(e.premio_liquido, e.premio_moeda)}
                 </div>
                 <div className="col-span-1 text-right text-muted-foreground">›</div>
               </Link>

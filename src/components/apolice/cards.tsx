@@ -6,7 +6,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { formatBRL, formatDateTime } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { NATUREZA_PREMIO_LABEL, TIPO_PESSOA_LABEL } from "@/lib/excelsior/codes";
 import type {
@@ -30,7 +30,7 @@ function fmtDate(iso: string | null): string {
     return iso;
   }
 }
-function fmtNum(n: number | null | undefined, moeda = "BRL"): string {
+export function fmtNum(n: number | null | undefined, moeda = "BRL"): string {
   if (n === null || n === undefined) return "—";
   if (moeda === "BRL")
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
@@ -102,12 +102,14 @@ export function Section({
 // ============ Header da apólice/endosso ============
 export function DocumentoHeader({
   documento,
-  premioBRL,
+  premioValor,
+  premioMoeda,
   seguradoNome,
   extra,
 }: {
   documento: DocumentoInfo;
-  premioBRL?: number | null;
+  premioValor?: number | null;
+  premioMoeda?: string;
   seguradoNome?: string | null;
   extra?: ReactNode;
 }) {
@@ -146,13 +148,13 @@ export function DocumentoHeader({
             </div>
           )}
         </div>
-        {premioBRL !== undefined && (
+        {premioValor !== undefined && (
           <div className="text-right">
             <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground">
-              Prêmio líquido
+              Prêmio líquido <span className="opacity-70">(PREMIO − IOF)</span>
             </div>
             <div className="text-[22px] font-semibold text-foreground font-mono">
-              {formatBRL(premioBRL ?? 0)}
+              {fmtNum(premioValor ?? 0, premioMoeda ?? "BRL")}
             </div>
           </div>
         )}
@@ -405,11 +407,6 @@ function CoberturaCard({ c }: { c: CoberturaInfo }) {
                     {fmtNum(l.valor, l.moeda ?? "BRL")}
                   </div>
                 </div>
-                {l.moeda !== "BRL" && l.valorBRL !== null && (
-                  <div className="text-right text-[11px] text-muted-foreground font-mono">
-                    ≈ {formatBRL(l.valorBRL)}
-                  </div>
-                )}
               </div>
             ))}
           </div>
@@ -454,7 +451,6 @@ function CoberturaCard({ c }: { c: CoberturaInfo }) {
                   <th className="text-left font-medium px-2 py-1.5">Natureza</th>
                   <th className="text-left font-medium px-2 py-1.5">Tipo</th>
                   <th className="text-right font-medium px-2 py-1.5">Valor</th>
-                  <th className="text-right font-medium px-2 py-1.5">BRL</th>
                 </tr>
               </thead>
               <tbody>
@@ -466,9 +462,6 @@ function CoberturaCard({ c }: { c: CoberturaInfo }) {
                     <td className="px-2 py-1.5 font-mono text-muted-foreground">{l.tipo}</td>
                     <td className="px-2 py-1.5 text-right font-mono">
                       {fmtNum(l.valor, l.moeda)}
-                    </td>
-                    <td className="px-2 py-1.5 text-right font-mono">
-                      {formatBRL(l.valorBRL)}
                     </td>
                   </tr>
                 ))}
@@ -536,6 +529,9 @@ export function PagamentoCard({ pagamento }: { pagamento: PagamentoInfo }) {
         Sem parcelas registradas.
       </div>
     );
+  const moeda =
+    pagamento.parcelas.find((p) => p.moeda)?.moeda ?? "BRL";
+  const totalMoeda = pagamento.parcelas.reduce((acc, p) => acc + (p.valor ?? 0), 0);
   return (
     <div className="rounded-xl border border-border bg-surface overflow-hidden">
       <table className="w-full text-[12px]">
@@ -545,7 +541,6 @@ export function PagamentoCard({ pagamento }: { pagamento: PagamentoInfo }) {
             <th className="text-left font-medium px-3 py-2">Vencimento</th>
             <th className="text-left font-medium px-3 py-2">Agente</th>
             <th className="text-right font-medium px-3 py-2">Valor</th>
-            <th className="text-right font-medium px-3 py-2">BRL</th>
           </tr>
         </thead>
         <tbody>
@@ -559,14 +554,13 @@ export function PagamentoCard({ pagamento }: { pagamento: PagamentoInfo }) {
               <td className="px-3 py-2 text-right font-mono">
                 {fmtNum(p.valor, p.moeda ?? "BRL")}
               </td>
-              <td className="px-3 py-2 text-right font-mono">{fmtNum(p.valorBRL)}</td>
             </tr>
           ))}
           <tr className="border-t border-border bg-surface-2/40 font-semibold">
-            <td colSpan={4} className="px-3 py-2 text-right">
+            <td colSpan={3} className="px-3 py-2 text-right">
               Total
             </td>
-            <td className="px-3 py-2 text-right font-mono">{formatBRL(pagamento.totalBRL)}</td>
+            <td className="px-3 py-2 text-right font-mono">{fmtNum(totalMoeda, moeda)}</td>
           </tr>
         </tbody>
       </table>
@@ -609,16 +603,6 @@ export function LimiteApoliceCard({ limite }: { limite: LimiteApoliceInfo | null
           {fmtNum(limite.valor, limite.moeda ?? "BRL")}
         </div>
       </div>
-      {limite.moeda !== "BRL" && limite.valorBRL !== null && (
-        <div className="text-right">
-          <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground">
-            Equivalente em BRL
-          </div>
-          <div className="text-[16px] font-mono text-muted-foreground mt-1">
-            ≈ {formatBRL(limite.valorBRL)}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
