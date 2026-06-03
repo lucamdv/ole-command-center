@@ -106,19 +106,26 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
         const startedAt = new Date((existing as { created_at: string }).created_at).getTime();
         const durationMs = Date.now() - startedAt;
 
-        // Persiste cada apólice + endossos (idempotente)
+        // Persiste cada apólice + endossos (idempotente).
+        // Aceita tanto "*_seguradora" quanto os nomes enviados pelo MOTOR OLÉ atual.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const pickNum = (o: any): string | undefined =>
+          o?.numero_apolice_seguradora ?? o?.numero_apolice ?? o?.numeroApolice ?? undefined;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const pickEnd = (o: any): string | null =>
+          o?.numero_endosso_seguradora ?? o?.numero_endosso ?? o?.numeroEndosso ?? null;
+
         let processed = 0;
         for (const apolice of payload.dados) {
-          const numero = apolice.numero_apolice_seguradora;
+          const numero = pickNum(apolice);
           if (!numero) continue;
 
-          // upsert policy
           const { data: up, error: upErr } = await supabaseAdmin
             .from("policies")
             .upsert(
               {
                 numero_apolice: numero,
-                numero_endosso_atual: apolice.numero_endosso_seguradora ?? null,
+                numero_endosso_atual: pickEnd(apolice),
                 premio_liquido: apolice.premio_liquido ?? 0,
                 proposta: apolice.proposta ?? {},
                 last_sync_run_id: runId,
@@ -134,12 +141,11 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
           }
           const policyId = (up as { id: string }).id;
 
-          // Replace endorsements
           await supabaseAdmin.from("endorsements").delete().eq("policy_id", policyId);
           const endos = (apolice.historico_endossos ?? []).map((e, idx) => ({
             policy_id: policyId,
-            numero_apolice: e.numero_apolice_seguradora ?? numero,
-            numero_endosso: e.numero_endosso_seguradora ?? String(idx),
+            numero_apolice: pickNum(e) ?? numero,
+            numero_endosso: pickEnd(e) ?? String(idx),
             premio_liquido: e.premio_liquido ?? 0,
             proposta: e.proposta ?? {},
             ordem: idx,
