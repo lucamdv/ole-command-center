@@ -74,7 +74,8 @@ export default function ApoliceDetail() {
 
       <DocumentoHeader
         documento={documento}
-        premioBRL={policy.premio_liquido}
+        premioValor={policy.premio_liquido}
+        premioMoeda={policy.premio_moeda}
         seguradoNome={seguradoNome}
         extra={
           <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border/60 rounded-xl overflow-hidden">
