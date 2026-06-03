@@ -15,6 +15,7 @@ import {
 } from "@/lib/oliver.functions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { MessageResponse } from "@/components/ai-elements/message";
 import {
   Dialog,
   DialogContent,
@@ -334,7 +335,7 @@ function MessageBubble({ message }: { message: any }) {
             ))}
           </div>
         )}
-        <div className="text-sm whitespace-pre-wrap leading-relaxed">{text}</div>
+        <MessageResponse className="text-sm leading-relaxed">{text}</MessageResponse>
       </div>
     </div>
   );
