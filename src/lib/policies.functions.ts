@@ -229,13 +229,14 @@ export const getPolicyByNumero = createServerFn({ method: "GET" })
       lastSyncAt = r?.finished_at ?? r?.created_at ?? null;
     }
 
-    const { computePremioLiquidoBRL } = await import("@/lib/excelsior/translate");
-    const storedPolicy = Number(row.premio_liquido ?? 0);
+    const { computePremioLiquido } = await import("@/lib/excelsior/translate");
+    const headPL = computePremioLiquido(row.proposta ?? {});
     return {
       id: row.id,
       numero_apolice: row.numero_apolice,
       numero_endosso_atual: row.numero_endosso_atual,
-      premio_liquido: storedPolicy > 0 ? storedPolicy : computePremioLiquidoBRL(row.proposta ?? {}),
+      premio_liquido: headPL.valor,
+      premio_moeda: headPL.moeda,
       proposta: row.proposta ?? {},
       updated_at: row.updated_at,
       last_sync_at: lastSyncAt,
@@ -247,11 +248,12 @@ export const getPolicyByNumero = createServerFn({ method: "GET" })
         proposta: Record<string, unknown>;
         created_at: string;
       }>).map((e) => {
-        const stored = Number(e.premio_liquido ?? 0);
+        const pl = computePremioLiquido(e.proposta ?? {});
         return {
           id: e.id,
           numero_endosso: e.numero_endosso,
-          premio_liquido: stored > 0 ? stored : computePremioLiquidoBRL(e.proposta ?? {}),
+          premio_liquido: pl.valor,
+          premio_moeda: pl.moeda,
           ordem: e.ordem,
           proposta: e.proposta ?? {},
           created_at: e.created_at,
