@@ -28,6 +28,7 @@ export interface PolicyDetail {
   numero_apolice: string;
   numero_endosso_atual: string | null;
   premio_liquido: number;
+  premio_moeda: string;
   proposta: JsonObject;
   updated_at: string;
   last_sync_at: string | null;
@@ -35,6 +36,7 @@ export interface PolicyDetail {
     id: string;
     numero_endosso: string;
     premio_liquido: number;
+    premio_moeda: string;
     ordem: number;
     proposta: JsonObject;
     created_at: string;
