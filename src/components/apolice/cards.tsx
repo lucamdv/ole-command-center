@@ -451,7 +451,6 @@ function CoberturaCard({ c }: { c: CoberturaInfo }) {
                   <th className="text-left font-medium px-2 py-1.5">Natureza</th>
                   <th className="text-left font-medium px-2 py-1.5">Tipo</th>
                   <th className="text-right font-medium px-2 py-1.5">Valor</th>
-                  <th className="text-right font-medium px-2 py-1.5">BRL</th>
                 </tr>
               </thead>
               <tbody>
@@ -463,9 +462,6 @@ function CoberturaCard({ c }: { c: CoberturaInfo }) {
                     <td className="px-2 py-1.5 font-mono text-muted-foreground">{l.tipo}</td>
                     <td className="px-2 py-1.5 text-right font-mono">
                       {fmtNum(l.valor, l.moeda)}
-                    </td>
-                    <td className="px-2 py-1.5 text-right font-mono">
-                      {formatBRL(l.valorBRL)}
                     </td>
                   </tr>
                 ))}
