@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, FileText, GitBranch } from "lucide-react";
 import { usePolicy } from "@/hooks/use-policies";
-import { formatBRL, formatDateTime, relativeTime } from "@/lib/format";
+import { formatDateTime, relativeTime } from "@/lib/format";
 import { JsonExplorer } from "@/components/json-explorer";
 import {
   CotacaoCard,
   DadosGeraisCard,
   DatasCard,
   DocumentoHeader,
+  fmtNum,
   ItensCoberturas,
   LimiteApoliceCard,
   PagamentoCard,
