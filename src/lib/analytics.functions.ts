@@ -161,7 +161,61 @@ export const getAnalyticsAggregates = createServerFn({ method: "GET" }).handler(
       }))
       .sort((a, b) => a.month.localeCompare(b.month));
 
-    return { findingsByVigencia, revenueByMonth, policyPremiums };
+    // 3) emissões por mês (apólices + endossos por tipo)
+    const { data: emissions, error: eErr } = await supabaseAdmin
+      .from("endorsements")
+      .select("numero_endosso, proposta");
+    if (eErr) throw eErr;
+
+    const issMap = new Map<string, IssuanceBucket>();
+    for (const e of emissions ?? []) {
+      const raw =
+        typeof e.proposta === "string"
+          ? safeJson(e.proposta)
+          : ((e.proposta ?? {}) as Record<string, unknown>);
+      const proposta = resolveProposta(raw);
+      const datas = (proposta.datas ?? {}) as Record<string, unknown>;
+      const iso =
+        (typeof datas.assinatura === "string" && datas.assinatura) ||
+        (typeof datas.registro_origem === "string" && datas.registro_origem) ||
+        (typeof datas.inicio_vigencia === "string" && datas.inicio_vigencia) ||
+        null;
+      const month = pickMonth(iso);
+      if (!month) continue;
+
+      const cur =
+        issMap.get(month) ??
+        {
+          month,
+          label: monthLabel(month),
+          apolices: 0,
+          endossoA: 0,
+          endossoB: 0,
+          endossoC: 0,
+          endossoD: 0,
+          endossosTotal: 0,
+          total: 0,
+        };
+
+      const isApolice = e.numero_endosso === "000000";
+      if (isApolice) {
+        cur.apolices += 1;
+      } else {
+        if (raw.endosso_A) cur.endossoA += 1;
+        else if (raw.endosso_B) cur.endossoB += 1;
+        else if (raw.endosso_C) cur.endossoC += 1;
+        else if (raw.endosso_D) cur.endossoD += 1;
+        cur.endossosTotal += 1;
+      }
+      cur.total += 1;
+      issMap.set(month, cur);
+    }
+
+    const issuancesByMonth: IssuanceBucket[] = Array.from(issMap.values()).sort(
+      (a, b) => a.month.localeCompare(b.month),
+    );
+
+    return { findingsByVigencia, revenueByMonth, policyPremiums, issuancesByMonth };
   },
 );
 
