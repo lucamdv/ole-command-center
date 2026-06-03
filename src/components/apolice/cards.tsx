@@ -32,12 +32,18 @@ function fmtDate(iso: string | null): string {
 }
 export function fmtNum(n: number | null | undefined, moeda = "BRL"): string {
   if (n === null || n === undefined) return "—";
-  if (moeda === "BRL")
-    return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
+  const opts: Intl.NumberFormatOptions = {
+    minimumFractionDigits: 4,
+    maximumFractionDigits: 4,
+  };
   try {
-    return new Intl.NumberFormat("pt-BR", { style: "currency", currency: moeda }).format(n);
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: moeda,
+      ...opts,
+    }).format(n);
   } catch {
-    return `${moeda} ${n.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+    return `${moeda} ${n.toLocaleString("pt-BR", opts)}`;
   }
 }
 function fmtCPFCNPJ(tipo: string, valor: string): string {
@@ -151,7 +157,7 @@ export function DocumentoHeader({
         {premioValor !== undefined && (
           <div className="text-right">
             <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground">
-              Prêmio líquido <span className="opacity-70">(PREMIO − IOF)</span>
+              Prêmio total
             </div>
             <div className="text-[22px] font-semibold text-foreground font-mono">
               {fmtNum(premioValor ?? 0, premioMoeda ?? "BRL")}

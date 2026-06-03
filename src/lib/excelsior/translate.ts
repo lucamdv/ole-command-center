@@ -421,33 +421,26 @@ export function findSeguradoNome(input: unknown): string | null {
   return partes.find((p) => p.papel === "SEGURADO")?.nome ?? null;
 }
 
-/** Calcula o prêmio líquido na moeda original = PREMIO DIRETO − IOF DIRETO,
- *  somando todas as parcelas.composicao_premio_parcela. */
-export function computePremioLiquido(input: unknown): { valor: number; moeda: string } {
+/** Prêmio total na moeda original = soma de PREMIO DIRETO em todas as parcelas. */
+export function computePremioTotal(input: unknown): { valor: number; moeda: string } {
   const { proposta } = unwrapProposta(input);
   const pg = isObj(proposta.pagamento) ? (proposta.pagamento as Obj) : {};
-  let premio = 0;
-  let iof = 0;
+  let total = 0;
   let moeda: string | null = null;
   for (const parc of asArr(pg.parcelas).filter(isObj)) {
     for (const l of asArr(parc.composicao_premio_parcela).filter(isObj)) {
       if (asStr(l.tipo_premio) !== "DIRETO") continue;
-      const nat = asStr(l.natureza_premio);
-      const v = asNum(l.valor_premio) ?? 0;
-      const m = asStr(l.moeda_premio);
-      if (nat === "PREMIO") {
-        premio += v;
-        if (!moeda && m) moeda = m;
-      } else if (nat === "IOF") {
-        iof += v;
-      }
+      if (asStr(l.natureza_premio) !== "PREMIO") continue;
+      total += asNum(l.valor_premio) ?? 0;
+      if (!moeda) moeda = asStr(l.moeda_premio);
     }
   }
-  return { valor: premio - iof, moeda: moeda ?? "BRL" };
+  return { valor: total, moeda: moeda ?? "BRL" };
 }
 
-/** Compat: número apenas (na moeda original). */
+/** Compat. */
+export const computePremioLiquido = computePremioTotal;
 export function computePremioLiquidoBRL(input: unknown): number {
-  return computePremioLiquido(input).valor;
+  return computePremioTotal(input).valor;
 }
 
