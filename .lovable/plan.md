@@ -1,38 +1,34 @@
-# Adicionar gráficos de emissões à tela de Analytics
+# Corrigir data de emissão usada nos 3 gráficos
 
-## Objetivo
+## Problema
 
-Incluir três novos gráficos na página `/analytics`, usando os dados da tabela `endorsements` (cada linha = uma emissão; `numero_endosso = '000000'` representa a apólice em si, e a presença das chaves `endosso_A` / `endosso_B` / `endosso_C` / `endosso_D` em `proposta` determina o tipo do endosso).
+Estou usando `proposta.datas.assinatura` (do `resolveProposta`) como data de emissão de **todos** os registros de `endorsements`. Para endossos, o `resolveProposta` desce em `endosso_X → proposta_endosso_X → proposta` e pega o `datas.assinatura` de lá — mas esse campo é a data de **assinatura/vigência** do contrato, não de emissão do endosso. Resultado: vários endossos caem em meses errados ou ficam concentrados nos meses de vigência das apólices, daí "nenhum endosso emitido em maio/26".
 
-Data de emissão = `proposta.datas.assinatura` (com fallback para `registro_origem`), agrupada por mês `YYYY-MM`.
+## Estrutura real
 
-## Novos gráficos
-
-1. **Apólices emitidas por mês** — bar chart, contando emissões com `numero_endosso = '000000'`.
-2. **Endossos emitidos por mês** — bar chart, contando emissões com `numero_endosso != '000000'`.
-3. **Emissões por mês e por tipo** — bar chart **empilhado**, com séries: `Apólice`, `Endosso A`, `Endosso B`, `Endosso C`, `Endosso D`.
-
-Os três compartilham o mesmo eixo X (meses ordenados crescente) e usam tokens do design system (sem cores hardcoded).
+- **Apólice** (`numero_endosso = '000000'`): JSON tem `datas`, `itens`, … no topo. Data de emissão correta = `proposta.datas.assinatura` (com fallback `conclusao_subscricao` → `registro_origem`).
+- **Endosso** (`numero_endosso != '000000'`): JSON tem `endosso_A | endosso_B | endosso_C | endosso_D` no topo, e **cada wrapper possui um campo `data_emissao` no próprio nível do wrapper** (ex.: `proposta.endosso_A.data_emissao = "2026-01-20T..."`). Esse é o campo certo.
 
 ## Mudanças
 
-### `src/lib/analytics.functions.ts`
-- Adicionar interface `IssuanceBucket { month; label; apolices; endossoA; endossoB; endossoC; endossoD; total }`.
-- Incluir `issuancesByMonth: IssuanceBucket[]` em `AnalyticsAggregates`.
-- Carregar `endorsements` (`numero_endosso, proposta`), resolver mês via helper `pickMonth(proposta.datas.assinatura ?? proposta.datas.registro_origem)`, classificar tipo pelas chaves `endosso_A/B/C/D` (ou `apolices` se `numero_endosso = '000000'`), agregar em `Map<month, counters>` e devolver ordenado.
+### `src/lib/analytics.functions.ts` — `getAnalyticsAggregates`
 
-### `src/routes/analytics.tsx`
-- Consumir `issuancesByMonth` do hook existente.
-- Adicionar três `ChartCard`s na grade existente:
-  - `BarChart` simples para Apólices/mês.
-  - `BarChart` simples para Endossos/mês (soma A+B+C+D).
-  - `BarChart` empilhado (`stackId="emissoes"`) com as 4 séries de endosso + apólice, usando `hsl(var(--chart-1..5))`.
-- Tooltip com `formatInt`; legenda com nomes amigáveis.
-- Incluir os três novos cards no fluxo de exportação para PDF (mesma lógica já usada pelos demais gráficos em `src/lib/analytics/export-charts.ts` — adicionar refs).
+Na iteração de `endorsements`, trocar a fonte da data:
 
-### Sem mudanças em backend/DB
-Apenas leitura; nenhuma migration necessária.
+1. Detectar o tipo primeiro olhando as chaves de topo (`endosso_A/B/C/D`) e qual `numero_endosso`.
+2. Resolver `emissionIso`:
+   - Se `numero_endosso === '000000'`: usar `raw.datas.assinatura ?? raw.datas.conclusao_subscricao ?? raw.datas.registro_origem`.
+   - Caso contrário: pegar o wrapper `raw.endosso_X` correspondente e usar `wrapper.data_emissao` (fallback para `wrapper.proposta_endosso_X.proposta.datas.assinatura` se ausente).
+3. `pickMonth(emissionIso)` continua igual.
+4. Acumular em `issMap` exatamente como hoje (apolices / endossoA-D / endossosTotal / total).
+
+Sem mudanças no `resolveProposta` (ele continua sendo usado para os cálculos de prêmio/vigência das apólices em outras partes).
+
+### Sem mudanças em `src/routes/analytics.tsx`
+
+Os 3 cards (Apólices/mês, Endossos/mês, Empilhado por tipo) e a exportação PDF já consomem `issuancesByMonth` — só os valores vão se ajustar.
 
 ## Verificação
-- `bunx tsc --noEmit`.
-- Conferir visualmente no preview (`/analytics`) que os 3 gráficos renderizam com dados e que o botão "Exportar PDF" inclui os novos.
+
+- `psql` rápido contando endossos por mês pela nova regra para conferir distribuição.
+- Conferir no preview `/analytics` que maio/26 e demais meses passam a ter endossos.

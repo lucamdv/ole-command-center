@@ -173,13 +173,41 @@ export const getAnalyticsAggregates = createServerFn({ method: "GET" }).handler(
         typeof e.proposta === "string"
           ? safeJson(e.proposta)
           : ((e.proposta ?? {}) as Record<string, unknown>);
-      const proposta = resolveProposta(raw);
-      const datas = (proposta.datas ?? {}) as Record<string, unknown>;
-      const iso =
-        (typeof datas.assinatura === "string" && datas.assinatura) ||
-        (typeof datas.registro_origem === "string" && datas.registro_origem) ||
-        (typeof datas.inicio_vigencia === "string" && datas.inicio_vigencia) ||
-        null;
+
+      const isApolice = e.numero_endosso === "000000";
+
+      // determinar wrapper de endosso (se houver)
+      let endossoKey: "A" | "B" | "C" | "D" | null = null;
+      for (const k of ["A", "B", "C", "D"] as const) {
+        if (raw[`endosso_${k}`]) {
+          endossoKey = k;
+          break;
+        }
+      }
+
+      // resolver data de emissão
+      let iso: string | null = null;
+      if (isApolice) {
+        const datas = (raw.datas ?? {}) as Record<string, unknown>;
+        iso =
+          (typeof datas.assinatura === "string" && datas.assinatura) ||
+          (typeof datas.conclusao_subscricao === "string" && datas.conclusao_subscricao) ||
+          (typeof datas.registro_origem === "string" && datas.registro_origem) ||
+          null;
+      } else if (endossoKey) {
+        const wrapper = (raw[`endosso_${endossoKey}`] ?? {}) as Record<string, unknown>;
+        if (typeof wrapper.data_emissao === "string") {
+          iso = wrapper.data_emissao;
+        } else {
+          const inner = (wrapper[`proposta_endosso_${endossoKey}`] as
+            | Record<string, unknown>
+            | undefined)?.proposta as Record<string, unknown> | undefined;
+          const innerDatas = (inner?.datas ?? {}) as Record<string, unknown>;
+          iso =
+            (typeof innerDatas.assinatura === "string" && innerDatas.assinatura) ||
+            null;
+        }
+      }
       const month = pickMonth(iso);
       if (!month) continue;
 
@@ -197,14 +225,16 @@ export const getAnalyticsAggregates = createServerFn({ method: "GET" }).handler(
           total: 0,
         };
 
-      const isApolice = e.numero_endosso === "000000";
       if (isApolice) {
         cur.apolices += 1;
+      } else if (endossoKey) {
+        if (endossoKey === "A") cur.endossoA += 1;
+        else if (endossoKey === "B") cur.endossoB += 1;
+        else if (endossoKey === "C") cur.endossoC += 1;
+        else if (endossoKey === "D") cur.endossoD += 1;
+        cur.endossosTotal += 1;
       } else {
-        if (raw.endosso_A) cur.endossoA += 1;
-        else if (raw.endosso_B) cur.endossoB += 1;
-        else if (raw.endosso_C) cur.endossoC += 1;
-        else if (raw.endosso_D) cur.endossoD += 1;
+        // endosso sem wrapper identificável — conta no total de endossos
         cur.endossosTotal += 1;
       }
       cur.total += 1;
