@@ -18,6 +18,7 @@ import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApolicesIndexRouteImport } from './routes/apolices.index'
+import { Route as ApiOliverChatRouteImport } from './routes/api/oliver-chat'
 import { Route as ApolicesIdIndexRouteImport } from './routes/apolices.$id.index'
 import { Route as ApiPublicPolicySyncCallbackRouteImport } from './routes/api/public/policy-sync-callback'
 import { Route as ApiPublicAuditCallbackRouteImport } from './routes/api/public/audit-callback'
@@ -69,6 +70,11 @@ const ApolicesIndexRoute = ApolicesIndexRouteImport.update({
   path: '/apolices/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOliverChatRoute = ApiOliverChatRouteImport.update({
+  id: '/api/oliver-chat',
+  path: '/api/oliver-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApolicesIdIndexRoute = ApolicesIdIndexRouteImport.update({
   id: '/apolices/$id/',
   path: '/apolices/$id/',
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/ferramentas': typeof FerramentasRoute
   '/intelligence': typeof IntelligenceRoute
   '/operacao': typeof OperacaoRoute
+  '/api/oliver-chat': typeof ApiOliverChatRoute
   '/apolices/': typeof ApolicesIndexRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/ferramentas': typeof FerramentasRoute
   '/intelligence': typeof IntelligenceRoute
   '/operacao': typeof OperacaoRoute
+  '/api/oliver-chat': typeof ApiOliverChatRoute
   '/apolices': typeof ApolicesIndexRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/ferramentas': typeof FerramentasRoute
   '/intelligence': typeof IntelligenceRoute
   '/operacao': typeof OperacaoRoute
+  '/api/oliver-chat': typeof ApiOliverChatRoute
   '/apolices/': typeof ApolicesIndexRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '/ferramentas'
     | '/intelligence'
     | '/operacao'
+    | '/api/oliver-chat'
     | '/apolices/'
     | '/api/public/audit-callback'
     | '/api/public/policy-sync-callback'
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
     | '/ferramentas'
     | '/intelligence'
     | '/operacao'
+    | '/api/oliver-chat'
     | '/apolices'
     | '/api/public/audit-callback'
     | '/api/public/policy-sync-callback'
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/ferramentas'
     | '/intelligence'
     | '/operacao'
+    | '/api/oliver-chat'
     | '/apolices/'
     | '/api/public/audit-callback'
     | '/api/public/policy-sync-callback'
@@ -206,6 +218,7 @@ export interface RootRouteChildren {
   FerramentasRoute: typeof FerramentasRoute
   IntelligenceRoute: typeof IntelligenceRoute
   OperacaoRoute: typeof OperacaoRoute
+  ApiOliverChatRoute: typeof ApiOliverChatRoute
   ApolicesIndexRoute: typeof ApolicesIndexRoute
   ApiPublicAuditCallbackRoute: typeof ApiPublicAuditCallbackRoute
   ApiPublicPolicySyncCallbackRoute: typeof ApiPublicPolicySyncCallbackRoute
@@ -279,6 +292,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApolicesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/oliver-chat': {
+      id: '/api/oliver-chat'
+      path: '/api/oliver-chat'
+      fullPath: '/api/oliver-chat'
+      preLoaderRoute: typeof ApiOliverChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/apolices/$id/': {
       id: '/apolices/$id/'
       path: '/apolices/$id'
@@ -326,6 +346,7 @@ const rootRouteChildren: RootRouteChildren = {
   FerramentasRoute: FerramentasRoute,
   IntelligenceRoute: IntelligenceRoute,
   OperacaoRoute: OperacaoRoute,
+  ApiOliverChatRoute: ApiOliverChatRoute,
   ApolicesIndexRoute: ApolicesIndexRoute,
   ApiPublicAuditCallbackRoute: ApiPublicAuditCallbackRoute,
   ApiPublicPolicySyncCallbackRoute: ApiPublicPolicySyncCallbackRoute,
