@@ -529,6 +529,9 @@ export function PagamentoCard({ pagamento }: { pagamento: PagamentoInfo }) {
         Sem parcelas registradas.
       </div>
     );
+  const moeda =
+    pagamento.parcelas.find((p) => p.moeda)?.moeda ?? "BRL";
+  const totalMoeda = pagamento.parcelas.reduce((acc, p) => acc + (p.valor ?? 0), 0);
   return (
     <div className="rounded-xl border border-border bg-surface overflow-hidden">
       <table className="w-full text-[12px]">
@@ -538,7 +541,6 @@ export function PagamentoCard({ pagamento }: { pagamento: PagamentoInfo }) {
             <th className="text-left font-medium px-3 py-2">Vencimento</th>
             <th className="text-left font-medium px-3 py-2">Agente</th>
             <th className="text-right font-medium px-3 py-2">Valor</th>
-            <th className="text-right font-medium px-3 py-2">BRL</th>
           </tr>
         </thead>
         <tbody>
@@ -552,14 +554,13 @@ export function PagamentoCard({ pagamento }: { pagamento: PagamentoInfo }) {
               <td className="px-3 py-2 text-right font-mono">
                 {fmtNum(p.valor, p.moeda ?? "BRL")}
               </td>
-              <td className="px-3 py-2 text-right font-mono">{fmtNum(p.valorBRL)}</td>
             </tr>
           ))}
           <tr className="border-t border-border bg-surface-2/40 font-semibold">
-            <td colSpan={4} className="px-3 py-2 text-right">
+            <td colSpan={3} className="px-3 py-2 text-right">
               Total
             </td>
-            <td className="px-3 py-2 text-right font-mono">{formatBRL(pagamento.totalBRL)}</td>
+            <td className="px-3 py-2 text-right font-mono">{fmtNum(totalMoeda, moeda)}</td>
           </tr>
         </tbody>
       </table>
