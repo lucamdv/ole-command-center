@@ -20,7 +20,7 @@ import {
   translateProposta,
 } from "@/lib/excelsior/translate";
 
-export const Route = createFileRoute("/apolices/$id")({
+export const Route = createFileRoute("/apolices/$id/")({
   head: ({ params }) => ({
     meta: [
       { title: `${params.id} · Apólice · OLÉ COPILOT` },
