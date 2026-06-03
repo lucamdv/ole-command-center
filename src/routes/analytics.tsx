@@ -313,7 +313,7 @@ function AnalyticsPage() {
                       <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
                       <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={11} />
                       <YAxis stroke="var(--muted-foreground)" fontSize={11} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
-                      <Tooltip {...tooltipProps} formatter={(v: number) => formatPct(v, 1)} />
+                      <Tooltip {...tooltipProps} formatter={(v) => formatPct(Number(v), 1)} />
                       <Line type="monotone" dataKey="conf" stroke="var(--primary)" strokeWidth={2} dot={{ fill: "var(--primary)", r: 3 }} />
                     </LineChart>
                   </ResponsiveContainer>
@@ -495,9 +495,10 @@ function AnalyticsPage() {
                         <YAxis stroke="var(--muted-foreground)" fontSize={11} />
                         <Tooltip
                           {...tooltipProps}
-                          formatter={(v: number, k: string) =>
-                            k === "total" ? formatBRL(v) : formatInt(v)
+                          formatter={(v, k) =>
+                            k === "total" ? formatBRL(Number(v)) : formatInt(Number(v))
                           }
+
                         />
                         <Bar dataKey="count" fill="var(--primary)" radius={[4, 4, 0, 0]} name="Apólices" />
                       </BarChart>
