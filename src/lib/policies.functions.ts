@@ -236,7 +236,7 @@ export const getPolicyByNumero = createServerFn({ method: "GET" })
         proposta: e.proposta ?? {},
         created_at: e.created_at,
       })),
-    } as PolicyDetail;
+    } as unknown as PolicyDetail;
   });
 
 export const getEndorsement = createServerFn({ method: "GET" })
@@ -274,8 +274,18 @@ export const getEndorsement = createServerFn({ method: "GET" })
       ordem: row.ordem,
       proposta: row.proposta ?? {},
       created_at: row.created_at,
-    };
+    } as unknown as EndorsementDetail;
   });
+
+export interface EndorsementDetail {
+  numero_apolice: string;
+  id: string;
+  numero_endosso: string;
+  premio_liquido: number;
+  ordem: number;
+  proposta: Record<string, unknown>;
+  created_at: string;
+}
 
 // Schema do callback do MOTOR OLÉ
 export const PolicySyncCallbackSchema = z.object({
