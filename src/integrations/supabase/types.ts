@@ -103,6 +103,121 @@ export type Database = {
         }
         Relationships: []
       }
+      endorsements: {
+        Row: {
+          created_at: string
+          id: string
+          numero_apolice: string
+          numero_endosso: string
+          ordem: number
+          policy_id: string
+          premio_liquido: number | null
+          proposta: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          numero_apolice: string
+          numero_endosso: string
+          ordem?: number
+          policy_id: string
+          premio_liquido?: number | null
+          proposta?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          numero_apolice?: string
+          numero_endosso?: string
+          ordem?: number
+          policy_id?: string
+          premio_liquido?: number | null
+          proposta?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "endorsements_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      policies: {
+        Row: {
+          created_at: string
+          id: string
+          last_sync_run_id: string | null
+          numero_apolice: string
+          numero_endosso_atual: string | null
+          premio_liquido: number | null
+          proposta: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_sync_run_id?: string | null
+          numero_apolice: string
+          numero_endosso_atual?: string | null
+          premio_liquido?: number | null
+          proposta?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_sync_run_id?: string | null
+          numero_apolice?: string
+          numero_endosso_atual?: string | null
+          premio_liquido?: number | null
+          proposta?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policies_last_sync_run_id_fkey"
+            columns: ["last_sync_run_id"]
+            isOneToOne: false
+            referencedRelation: "policy_sync_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      policy_sync_runs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          raw: Json | null
+          status: string
+          total_apolices: number
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          raw?: Json | null
+          status?: string
+          total_apolices?: number
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          raw?: Json | null
+          status?: string
+          total_apolices?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
