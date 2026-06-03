@@ -290,34 +290,12 @@ export interface EndorsementDetail {
   created_at: string;
 }
 
-// Schema do callback do MOTOR OLÉ
+// Schema do callback do MOTOR OLÉ — tolerante a variações de nomes de chave.
 export const PolicySyncCallbackSchema = z.object({
   origem: z.string().optional(),
   total_apolices: z.coerce.number().optional(),
   dados: z
-    .array(
-      z
-        .object({
-          numero_apolice_seguradora: z.string().optional(),
-          numero_endosso_seguradora: z.string().optional().nullable(),
-          premio_liquido: z.coerce.number().optional().default(0),
-          proposta: z.record(z.string(), z.unknown()).optional().default({}),
-          historico_endossos: z
-            .array(
-              z
-                .object({
-                  numero_apolice_seguradora: z.string().optional(),
-                  numero_endosso_seguradora: z.string().optional().nullable(),
-                  premio_liquido: z.coerce.number().optional().default(0),
-                  proposta: z.record(z.string(), z.unknown()).optional().default({}),
-                })
-                .passthrough(),
-            )
-            .optional()
-            .default([]),
-        })
-        .passthrough(),
-    )
+    .array(z.record(z.string(), z.unknown()))
     .optional()
     .default([]),
 });
