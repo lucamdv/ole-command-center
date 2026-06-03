@@ -14,6 +14,7 @@ export interface PolicyListItem {
   numero_apolice: string;
   numero_endosso_atual: string | null;
   premio_liquido: number;
+  premio_moeda: string;
   endorsements_count: number;
   updated_at: string;
   segurado_nome: string | null;
