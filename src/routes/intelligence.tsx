@@ -20,8 +20,8 @@ import { formatBRL } from "@/lib/format";
 export const Route = createFileRoute("/intelligence")({
   head: () => ({
     meta: [
-      { title: "OLÉ Intelligence · OLÉ COPILOT" },
-      { name: "description", content: "Analista operacional digital com IA — diagnóstico, causa raiz e recomendações." },
+      { title: "Oléver · OLÉ COPILOT" },
+      { name: "description", content: "Oléver — assistente de IA da operação OLÉ. Diagnóstico, causa raiz e recomendações." },
     ],
   }),
   component: IntelligencePage,
@@ -59,12 +59,12 @@ function IntelligencePage() {
               <Sparkles className="h-4.5 w-4.5 text-primary" />
             </div>
             <div>
-              <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-primary">OLÉ INTELLIGENCE</div>
-              <div className="text-[10.5px] text-muted-foreground">Analista operacional digital</div>
+              <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-primary">OLÉVER</div>
+              <div className="text-[10.5px] text-muted-foreground">Assistente de IA da operação OLÉ</div>
             </div>
           </div>
           <h1 className="text-[28px] font-semibold tracking-tight leading-tight">
-            Pergunte. <span className="text-muted-foreground">A operação inteira responde.</span>
+            Oléver. <span className="text-muted-foreground">Pergunte — a operação inteira responde.</span>
           </h1>
           <p className="text-[13.5px] text-muted-foreground mt-2">
             A IA observa apólices, endossos, auditorias e alertas em tempo real para diagnosticar causas-raiz e

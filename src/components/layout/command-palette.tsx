@@ -10,6 +10,7 @@ import {
   Radio,
   Settings,
   Sparkles,
+  Wrench,
 } from "lucide-react";
 import { POLICIES } from "@/lib/mock/data";
 
@@ -20,7 +21,8 @@ const NAV = [
   { to: "/endossos", label: "Endossos", icon: GitBranch, hint: "Histórico de alterações" },
   { to: "/alertas", label: "Alertas", icon: AlertTriangle, hint: "Incidentes operacionais" },
   { to: "/analytics", label: "Analytics", icon: BarChart3, hint: "Rankings e tendências" },
-  { to: "/intelligence", label: "OLÉ Intelligence", icon: Sparkles, hint: "Analista digital com IA" },
+  { to: "/intelligence", label: "Oléver", icon: Sparkles, hint: "Assistente de IA da operação" },
+  { to: "/ferramentas", label: "Ferramentas", icon: Wrench, hint: "Utilitários operacionais" },
   { to: "/configuracoes", label: "Configurações", icon: Settings, hint: "Preferências da plataforma" },
 ] as const;
 
