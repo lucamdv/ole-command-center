@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequestHost, getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import type { AuditHistoryItem, LatestAudit } from "./audit/types";
 
@@ -54,6 +53,7 @@ export const runAudit = createServerFn({ method: "POST" }).handler(async () => {
 
   // Monta callback URL pública (n8n na nuvem precisa de URL acessível externamente).
   // Prioridade: PUBLIC_APP_URL (secret) → host do request se não-localhost → URL estável do Lovable.
+  const { getRequestHost, getRequestHeader } = await import("@tanstack/react-start/server");
   const reqHost = getRequestHost();
   const proto = getRequestHeader("x-forwarded-proto") || "https";
   const isLocal = !reqHost || reqHost.includes("localhost") || reqHost.startsWith("127.") || reqHost.startsWith("0.");
