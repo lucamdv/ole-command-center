@@ -208,12 +208,7 @@ function ChatPanel({
   loadMsgs: LoadMsgsFn;
   onFirstMessage: () => void;
 }) {
-  const transport = useMemo(
-    () => new DefaultChatTransport({ api: "/api/oliver-chat", body: { threadId } }),
-    [threadId],
-  );
   const [initial, setInitial] = useState<unknown[] | null>(null);
-  const [input, setInput] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -229,11 +224,33 @@ function ChatPanel({
     };
   }, [threadId, loadMsgs]);
 
+  if (initial === null) {
+    return <div className="flex-1 grid place-items-center text-sm text-muted-foreground">Carregando…</div>;
+  }
+
+  return <ChatInner key={threadId} threadId={threadId} initial={initial} onFirstMessage={onFirstMessage} />;
+}
+
+function ChatInner({
+  threadId,
+  initial,
+  onFirstMessage,
+}: {
+  threadId: string;
+  initial: unknown[];
+  onFirstMessage: () => void;
+}) {
+  const transport = useMemo(
+    () => new DefaultChatTransport({ api: "/api/oliver-chat", body: { threadId } }),
+    [threadId],
+  );
+  const [input, setInput] = useState("");
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const chat = useChat<any>({
     id: threadId,
     transport,
-    messages: (initial ?? []) as never,
+    messages: initial as never,
   });
   const { messages, sendMessage, status, stop } = chat;
   const isBusy = status === "submitted" || status === "streaming";
@@ -247,9 +264,6 @@ function ChatPanel({
     if (wasEmpty) setTimeout(onFirstMessage, 1500);
   };
 
-  if (initial === null) {
-    return <div className="flex-1 grid place-items-center text-sm text-muted-foreground">Carregando…</div>;
-  }
 
   return (
     <>
