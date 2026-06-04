@@ -319,6 +319,41 @@ const tools = {
     },
   }),
 
+  render_chart: tool({
+    description:
+      "Renderiza um gráfico inline na resposta (linha, barra, pizza, área, scatter ou auto). Use SEMPRE que uma visualização ajudar a comunicar a resposta ou quando o usuário pedir um gráfico. Forneça os dados já agregados.",
+    inputSchema: z.object({
+      type: z
+        .enum(["line", "bar", "pie", "area", "scatter", "auto"])
+        .describe("Tipo do gráfico; use 'auto' para deixar o sistema escolher"),
+      title: z.string().min(1).max(120).describe("Título do gráfico"),
+      description: z.string().max(240).optional().describe("Subtítulo curto opcional"),
+      xKey: z
+        .string()
+        .min(1)
+        .max(40)
+        .describe("Nome da chave em cada objeto de 'data' que vai no eixo X / categorias / nome das fatias (pizza)"),
+      series: z
+        .array(
+          z.object({
+            key: z.string().min(1).max(40).describe("Chave em 'data' com o valor numérico"),
+            label: z.string().max(60).optional().describe("Rótulo amigável da série"),
+          }),
+        )
+        .min(1)
+        .max(6),
+      data: z
+        .array(z.record(z.string(), z.union([z.string(), z.number(), z.null()])))
+        .min(1)
+        .max(200)
+        .describe("Linhas com xKey + as keys de cada série"),
+    }),
+    execute: async () => {
+      // O conteúdo do gráfico vive nos `input` da tool-part; o frontend renderiza.
+      return { rendered: true };
+    },
+  }),
+
   appendToMemory: tool({
     description:
       "Anexa um trecho de aprendizado ao arquivo de memória markdown global do Oléver. Use quando descobrir uma regra de negócio, terminologia, preferência do usuário, padrão recorrente ou decisão importante. Operação aditiva — não precisa confirmar.",
