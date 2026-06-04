@@ -323,17 +323,25 @@ function MessageBubble({ message }: { message: any }) {
       </div>
       <div className="flex-1 space-y-2 min-w-0">
         {toolParts.length > 0 && (
-          <div className="space-y-1">
-            {toolParts.map((tp, i) => (
-              <details key={i} className="text-xs rounded-md border border-border bg-muted/30 px-2 py-1">
-                <summary className="cursor-pointer text-muted-foreground">
-                  🔧 {String(tp.type).replace(/^tool-/, "")} {tp.state ? `· ${tp.state}` : ""}
-                </summary>
-                <pre className="mt-2 overflow-auto text-[10px]">
-                  {JSON.stringify(tp, null, 2)}
-                </pre>
-              </details>
-            ))}
+          <div className="space-y-2">
+            {toolParts.map((tp, i) => {
+              const toolName = String(tp.type).replace(/^tool-/, "");
+              if (toolName === "render_chart") {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const input = (tp as any).input as ChartInput | undefined;
+                if (input) return <ChartPart key={i} input={input} />;
+              }
+              return (
+                <details key={i} className="text-xs rounded-md border border-border bg-muted/30 px-2 py-1">
+                  <summary className="cursor-pointer text-muted-foreground">
+                    🔧 {toolName} {tp.state ? `· ${tp.state}` : ""}
+                  </summary>
+                  <pre className="mt-2 overflow-auto text-[10px]">
+                    {JSON.stringify(tp, null, 2)}
+                  </pre>
+                </details>
+              );
+            })}
           </div>
         )}
         <MessageResponse className="text-sm leading-relaxed">{text}</MessageResponse>
