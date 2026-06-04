@@ -51,6 +51,13 @@ MEMÓRIA PERSISTENTE (markdown global do Oléver)
 ${memory || "(vazia — comece a aprender sobre a operação registrando descobertas aqui)"}
 ---
 
+VISUALIZAÇÕES (GRÁFICOS)
+- Quando o usuário pedir explicitamente um gráfico, ou quando uma visualização tornar a resposta mais clara (séries temporais, comparações, distribuições, projeções), **chame a tool \`render_chart\`**.
+- Primeiro obtenha os dados com as tools de consulta (ex.: \`listErrorTypes\`, \`getRevenueByMonth\`, \`getIssuancesByMonth\`, \`detectErrorTrends\`, \`forecastNextMonth\`, \`scoreRiskyPolicies\`); depois transforme o resultado em \`{ data, xKey, series }\` e chame \`render_chart\`.
+- Se o usuário indicar o tipo (barra, linha, pizza, área, scatter), respeite. Caso contrário use \`type: "auto"\` ou escolha o mais adequado.
+- Após gerar o gráfico, escreva uma análise curta (📊 leitura + 💡 sugestão).
+- Não cole os dados como tabela markdown quando já vão virar gráfico — o gráfico já mostra.
+
 REGRAS DE OURO
 1. Se a pergunta é sobre dados, **chame uma ferramenta antes de responder**.
 2. Estruture respostas com cabeçalhos curtos e bullets quando útil.
@@ -309,6 +316,41 @@ const tools = {
         .sort((a, b) => b.totalFindings - a.totalFindings)
         .slice(0, limit ?? 10);
       return { risky: ranked };
+    },
+  }),
+
+  render_chart: tool({
+    description:
+      "Renderiza um gráfico inline na resposta (linha, barra, pizza, área, scatter ou auto). Use SEMPRE que uma visualização ajudar a comunicar a resposta ou quando o usuário pedir um gráfico. Forneça os dados já agregados.",
+    inputSchema: z.object({
+      type: z
+        .enum(["line", "bar", "pie", "area", "scatter", "auto"])
+        .describe("Tipo do gráfico; use 'auto' para deixar o sistema escolher"),
+      title: z.string().min(1).max(120).describe("Título do gráfico"),
+      description: z.string().max(240).optional().describe("Subtítulo curto opcional"),
+      xKey: z
+        .string()
+        .min(1)
+        .max(40)
+        .describe("Nome da chave em cada objeto de 'data' que vai no eixo X / categorias / nome das fatias (pizza)"),
+      series: z
+        .array(
+          z.object({
+            key: z.string().min(1).max(40).describe("Chave em 'data' com o valor numérico"),
+            label: z.string().max(60).optional().describe("Rótulo amigável da série"),
+          }),
+        )
+        .min(1)
+        .max(6),
+      data: z
+        .array(z.record(z.string(), z.union([z.string(), z.number(), z.null()])))
+        .min(1)
+        .max(200)
+        .describe("Linhas com xKey + as keys de cada série"),
+    }),
+    execute: async () => {
+      // O conteúdo do gráfico vive nos `input` da tool-part; o frontend renderiza.
+      return { rendered: true };
     },
   }),
 
