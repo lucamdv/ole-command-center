@@ -210,3 +210,46 @@ export const CallbackPayloadSchema = z.object({
     .optional()
     .default([]),
 });
+
+export const getSystemStatus = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const [{ data: lastRun }, { data: lastSync }] = await Promise.all([
+    supabaseAdmin
+      .from("audit_runs")
+      .select("id, status, error_message, created_at, aprovados, total_processado")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabaseAdmin
+      .from("policy_sync_runs")
+      .select("id, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then((r) => r, () => ({ data: null })),
+  ]);
+
+  const run = lastRun as
+    | { status: string; error_message: string | null; created_at: string; aprovados: number | null; total_processado: number | null }
+    | null;
+  const sync = lastSync as { status: string; created_at: string } | null;
+
+  const approvalRate =
+    run && (run.total_processado ?? 0) > 0
+      ? ((run.aprovados ?? 0) / (run.total_processado as number)) * 100
+      : null;
+
+  let state: "operational" | "degraded" | "down" = "operational";
+  if (run?.status === "error" || sync?.status === "error") state = "down";
+  else if (run?.status === "running" || (approvalRate != null && approvalRate < 95)) state = "degraded";
+
+  return {
+    state,
+    approvalRate,
+    lastRunAt: run?.created_at ?? null,
+    lastRunStatus: run?.status ?? null,
+    lastSyncAt: sync?.created_at ?? null,
+    lastSyncStatus: sync?.status ?? null,
+  };
+});
