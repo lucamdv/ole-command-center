@@ -114,7 +114,7 @@ function OleverPage() {
                   className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleDelete(t.id);
+                    setDeleteConfirmId(t.id);
                   }}
                   aria-label="Excluir conversa"
                 >
