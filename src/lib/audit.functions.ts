@@ -4,7 +4,7 @@ import { z } from "zod";
 import type { AuditHistoryItem, LatestAudit } from "./audit/types";
 
 // URL pode ser sobrescrita pelo secret N8N_AUDIT_WEBHOOK_URL em produção.
-const DEFAULT_WEBHOOK = "https://nuvembot.app.n8n.cloud/webhook/c80c897f-9951-43c8-9976-df81c44bce16";
+const DEFAULT_WEBHOOK = "https://nuvembot.app.n8n.cloud/webhook-test/c80c897f-9951-43c8-9976-df81c44bce16";
 const EMPTY_SUMMARY = {
   aprovados: 0,
   reprovados: 0,
@@ -209,53 +209,4 @@ export const CallbackPayloadSchema = z.object({
     )
     .optional()
     .default([]),
-});
-
-export const getSystemStatus = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-  const [latestRunRes, latestSyncRes, lastErrorRes] = await Promise.all([
-    supabaseAdmin
-      .from("audit_runs")
-      .select("status, status_geral, total_processado, aprovados, reprovados, created_at")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabaseAdmin
-      .from("policy_sync_runs")
-      .select("status, finished_at, created_at")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabaseAdmin
-      .from("audit_runs")
-      .select("status")
-      .eq("status", "error")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-  ]);
-
-  const run = latestRunRes.data as
-    | { status: string; status_geral: string | null; total_processado: number; aprovados: number; reprovados: number; created_at: string }
-    | null;
-  const sync = latestSyncRes.data as { status: string; created_at: string } | null;
-
-  const runHealthy = run ? run.status === "success" : false;
-  const syncHealthy = sync ? sync.status !== "error" : true;
-  const approvalRate =
-    run && run.total_processado > 0 ? (run.aprovados / run.total_processado) * 100 : null;
-
-  let state: "operational" | "degraded" | "down" = "operational";
-  if (!runHealthy || !syncHealthy) state = "down";
-  else if (approvalRate !== null && approvalRate < 80) state = "degraded";
-
-  return {
-    state,
-    approvalRate,
-    lastRunAt: run?.created_at ?? null,
-    lastSyncAt: sync?.created_at ?? null,
-    runStatus: run?.status ?? null,
-    syncStatus: sync?.status ?? null,
-  };
 });
