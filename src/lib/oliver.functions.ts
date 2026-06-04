@@ -49,6 +49,9 @@ export const deleteThread = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Delete messages first, then the thread
+    const { error: msgError } = await supabaseAdmin.from("oliver_messages").delete().eq("thread_id", data.id);
+    if (msgError) throw msgError;
     const { error } = await supabaseAdmin.from("oliver_threads").delete().eq("id", data.id);
     if (error) throw error;
     return { ok: true };

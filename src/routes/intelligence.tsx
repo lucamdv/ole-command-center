@@ -48,6 +48,7 @@ function OleverPage() {
   const [threads, setThreads] = useState<OliverThread[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [memoryOpen, setMemoryOpen] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const list = useServerFn(listThreads);
   const create = useServerFn(createThread);
@@ -75,7 +76,10 @@ function OleverPage() {
     await del({ data: { id } });
     setThreads((cur) => cur.filter((t) => t.id !== id));
     if (activeId === id) setActiveId(null);
+    setDeleteConfirmId(null);
   };
+
+  const threadToDelete = threads.find((t) => t.id === deleteConfirmId);
 
   return (
     <div className="flex h-[calc(100vh-8rem)] gap-4">
@@ -110,7 +114,7 @@ function OleverPage() {
                   className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleDelete(t.id);
+                    setDeleteConfirmId(t.id);
                   }}
                   aria-label="Excluir conversa"
                 >
@@ -148,6 +152,25 @@ function OleverPage() {
       </main>
 
       <MemoryDialog open={memoryOpen} onOpenChange={setMemoryOpen} />
+
+      <Dialog open={!!deleteConfirmId} onOpenChange={(v) => !v && setDeleteConfirmId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir conversa</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Tem certeza que deseja excluir "{threadToDelete?.title ?? "esta conversa"}"? Esta ação não pode ser desfeita.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)}>
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
