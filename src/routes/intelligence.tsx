@@ -48,6 +48,7 @@ function OleverPage() {
   const [threads, setThreads] = useState<OliverThread[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [memoryOpen, setMemoryOpen] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const list = useServerFn(listThreads);
   const create = useServerFn(createThread);
@@ -75,7 +76,10 @@ function OleverPage() {
     await del({ data: { id } });
     setThreads((cur) => cur.filter((t) => t.id !== id));
     if (activeId === id) setActiveId(null);
+    setDeleteConfirmId(null);
   };
+
+  const threadToDelete = threads.find((t) => t.id === deleteConfirmId);
 
   return (
     <div className="flex h-[calc(100vh-8rem)] gap-4">
