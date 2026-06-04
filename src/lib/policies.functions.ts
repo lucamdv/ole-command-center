@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequestHost, getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 
 // URL pode ser sobrescrita pelo secret N8N_MOTOR_POLICIES_URL.
@@ -72,6 +71,7 @@ export const runPolicySync = createServerFn({ method: "POST" }).handler(async ()
   }
   const runId = (runRow as { id: string }).id;
 
+  const { getRequestHost, getRequestHeader } = await import("@tanstack/react-start/server");
   const reqHost = getRequestHost();
   const proto = getRequestHeader("x-forwarded-proto") || "https";
   const isLocal =

@@ -7,7 +7,6 @@ import {
   type UIMessage,
 } from "ai";
 import { z } from "zod";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { getAnalyticsAggregates } from "@/lib/analytics.functions";
 
 const MEMORY_ID = "00000000-0000-0000-0000-000000000001";
@@ -354,6 +353,7 @@ export const Route = createFileRoute("/api/oliver-chat")({
         if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
 
         const memory = await loadMemoryContent();
+        const { createLovableAiGatewayProvider } = await import("@/lib/ai-gateway.server");
         const gateway = createLovableAiGatewayProvider(key);
         const model = gateway("google/gemini-3-flash-preview");
 
