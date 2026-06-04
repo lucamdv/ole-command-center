@@ -39,8 +39,8 @@ export const Route = createFileRoute("/intelligence")({
 
 const SUGGESTIONS = [
   "Quais os tipos de erro com maior tendência de alta nos últimos 3 meses?",
-  "Projete as emissões e a receita do próximo mês.",
-  "Quais as 10 apólices com maior risco histórico?",
+  "Mostre em um gráfico de barras os 5 tipos de erro mais frequentes.",
+  "Projete a receita do próximo mês em um gráfico de linha.",
   "Faça um diagnóstico geral da operação e sugira 3 melhorias.",
 ];
 
