@@ -6,7 +6,7 @@ import { NotificacoesTab } from "@/components/settings/notificacoes-tab";
 import { IntegracoesTab } from "@/components/settings/integracoes-tab";
 import { DadosTab } from "@/components/settings/dados-tab";
 
-export const Route = createFileRoute("/configuracoes")({
+export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({
     meta: [
       { title: "Configurações · OLÉ COPILOT" },

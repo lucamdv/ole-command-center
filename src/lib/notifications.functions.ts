@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type NotifSeverity = "critical" | "high" | "info" | "low";
 export type NotifKind =
@@ -27,7 +28,7 @@ const CRITICAL_TIPOS = [
   "vigencia_invalida",
 ];
 
-export const getNotifications = createServerFn({ method: "GET" })
+export const getNotifications = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator((d: { lastSeenAt?: string | null }) => d)
   .handler(async ({ data }): Promise<ServerNotification[]> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

@@ -6,7 +6,7 @@ import { formatDateTime, relativeTime } from "@/lib/format";
 import { fmtNum } from "@/components/apolice/cards";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/apolices/")({
+export const Route = createFileRoute("/_authenticated/apolices/")({
   head: () => ({
     meta: [
       { title: "Apólices · OLÉ COPILOT" },

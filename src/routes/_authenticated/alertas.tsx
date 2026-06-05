@@ -8,7 +8,7 @@ import { relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export const Route = createFileRoute("/alertas")({
+export const Route = createFileRoute("/_authenticated/alertas")({
   head: () => ({
     meta: [
       { title: "Alertas · OLÉ COPILOT" },

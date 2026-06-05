@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 const MEMORY_ID = "00000000-0000-0000-0000-000000000001";
@@ -10,7 +11,7 @@ export interface OliverThread {
   updated_at: string;
 }
 
-export const listThreads = createServerFn({ method: "GET" }).handler(async (): Promise<OliverThread[]> => {
+export const listThreads = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async (): Promise<OliverThread[]> => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("oliver_threads")
@@ -20,7 +21,7 @@ export const listThreads = createServerFn({ method: "GET" }).handler(async (): P
   return (data ?? []) as OliverThread[];
 });
 
-export const createThread = createServerFn({ method: "POST" })
+export const createThread = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ title: z.string().max(120).optional() }).parse(input))
   .handler(async ({ data }): Promise<OliverThread> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -33,7 +34,7 @@ export const createThread = createServerFn({ method: "POST" })
     return row as OliverThread;
   });
 
-export const renameThread = createServerFn({ method: "POST" })
+export const renameThread = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid(), title: z.string().min(1).max(120) }).parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -45,7 +46,7 @@ export const renameThread = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const deleteThread = createServerFn({ method: "POST" })
+export const deleteThread = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -57,7 +58,7 @@ export const deleteThread = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const loadThreadMessages = createServerFn({ method: "GET" })
+export const loadThreadMessages = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ threadId: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -75,7 +76,7 @@ export const loadThreadMessages = createServerFn({ method: "GET" })
     }));
   });
 
-export const loadMemory = createServerFn({ method: "GET" }).handler(async () => {
+export const loadMemory = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("oliver_memory")
@@ -86,7 +87,7 @@ export const loadMemory = createServerFn({ method: "GET" }).handler(async () => 
   return data ?? { content: "", updated_at: null };
 });
 
-export const replaceMemory = createServerFn({ method: "POST" })
+export const replaceMemory = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ content: z.string().max(200000) }).parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export interface IntegrationStatus {
   id: "motor_policies" | "n8n_audit" | "audit_callback";
@@ -10,7 +11,7 @@ export interface IntegrationStatus {
   publicCallback?: string;
 }
 
-export const getIntegrationsStatus = createServerFn({ method: "GET" }).handler(
+export const getIntegrationsStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(
   async (): Promise<IntegrationStatus[]> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -115,11 +116,11 @@ async function pingWebhook(url: string | undefined, label: string) {
   }
 }
 
-export const pingMotorPolicies = createServerFn({ method: "POST" }).handler(async () => {
+export const pingMotorPolicies = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async () => {
   return pingWebhook(process.env.N8N_MOTOR_POLICIES_URL, "MOTOR OLÉ");
 });
 
-export const pingAuditWebhook = createServerFn({ method: "POST" }).handler(async () => {
+export const pingAuditWebhook = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async () => {
   return pingWebhook(process.env.N8N_AUDIT_WEBHOOK_URL, "N8N Auditoria");
 });
 
@@ -132,7 +133,7 @@ export interface DataCounters {
   endorsements: number;
 }
 
-export const getDataCounters = createServerFn({ method: "GET" }).handler(
+export const getDataCounters = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(
   async (): Promise<DataCounters> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const tables = [
@@ -153,7 +154,7 @@ export const getDataCounters = createServerFn({ method: "GET" }).handler(
   },
 );
 
-export const purgeOliver = createServerFn({ method: "POST" }).handler(async () => {
+export const purgeOliver = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   // messages cascade if FK; explicitly delete to be safe
   await supabaseAdmin.from("oliver_messages").delete().not("id", "is", null);
@@ -161,7 +162,7 @@ export const purgeOliver = createServerFn({ method: "POST" }).handler(async () =
   return { ok: true };
 });
 
-export const purgeOldAudits = createServerFn({ method: "POST" })
+export const purgeOldAudits = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((d: { days?: number }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -176,7 +177,7 @@ export const purgeOldAudits = createServerFn({ method: "POST" })
     return { ok: true, removed: count ?? 0, cutoff };
   });
 
-export const exportPoliciesCSV = createServerFn({ method: "GET" }).handler(async () => {
+export const exportPoliciesCSV = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { findSeguradoNome, computePremioLiquido } = await import("@/lib/excelsior/translate");
   const { data, error } = await supabaseAdmin
@@ -222,7 +223,7 @@ export const exportPoliciesCSV = createServerFn({ method: "GET" }).handler(async
   return { csv: lines.join("\n"), count: rows.length };
 });
 
-export const exportLatestAuditJSON = createServerFn({ method: "GET" }).handler(async () => {
+export const exportLatestAuditJSON = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: runs } = await supabaseAdmin
     .from("audit_runs")

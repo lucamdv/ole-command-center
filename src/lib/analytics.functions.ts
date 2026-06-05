@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { computeRepasse, type RepasseBreakdown } from "@/lib/analytics/repasse-rules";
 
 
@@ -65,7 +66,7 @@ function pickMonth(iso: string | null | undefined): string | null {
   return m ? `${m[1]}-${m[2]}` : null;
 }
 
-export const getAnalyticsAggregates = createServerFn({ method: "GET" }).handler(
+export const getAnalyticsAggregates = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(
   async (): Promise<AnalyticsAggregates> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 

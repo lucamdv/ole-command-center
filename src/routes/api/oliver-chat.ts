@@ -386,6 +386,26 @@ export const Route = createFileRoute("/api/oliver-chat")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        // Auth: exige Bearer token Supabase válido (mesmo padrão de requireSupabaseAuth)
+        const authHeader = request.headers.get("authorization");
+        if (!authHeader?.startsWith("Bearer ")) {
+          return new Response("Unauthorized", { status: 401 });
+        }
+        const token = authHeader.slice(7);
+        const SUPABASE_URL = process.env.SUPABASE_URL;
+        const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+        if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+          return new Response("Server misconfigured", { status: 500 });
+        }
+        const { createClient } = await import("@supabase/supabase-js");
+        const authClient = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+        const { data: claims, error: claimsErr } = await authClient.auth.getClaims(token);
+        if (claimsErr || !claims?.claims?.sub) {
+          return new Response("Unauthorized", { status: 401 });
+        }
+
         const body = (await request.json()) as { threadId?: string; messages?: UIMessage[] };
         const { threadId, messages } = body;
         if (!threadId || !Array.isArray(messages)) {

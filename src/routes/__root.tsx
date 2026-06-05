@@ -9,22 +9,22 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { AppShell } from "../components/layout/app-shell";
 import { Toaster } from "../components/ui/sonner";
+import { ThemeProvider } from "../components/theme/theme-provider";
+import { supabase } from "@/integrations/supabase/client";
+import { useRouter } from "@tanstack/react-router";
 
 function NotFoundComponent() {
   return (
-    <AppShell>
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="text-center">
-          <div className="text-[80px] font-semibold tracking-tight text-foreground">404</div>
-          <div className="text-[14px] text-muted-foreground">Rota não encontrada no Centro de Comando.</div>
-          <a href="/" className="inline-block mt-4 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-[13px] font-medium">
-            Voltar à Visão Geral
-          </a>
-        </div>
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="text-center">
+        <div className="text-[80px] font-semibold tracking-tight text-foreground">404</div>
+        <div className="text-[14px] text-muted-foreground">Rota não encontrada no Centro de Comando.</div>
+        <a href="/" className="inline-block mt-4 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-[13px] font-medium">
+          Voltar à Visão Geral
+        </a>
       </div>
-    </AppShell>
+    </div>
   );
 }
 
@@ -33,12 +33,12 @@ function ErrorComponent({ error }: { error: Error; reset: () => void }) {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
   return (
-    <AppShell>
+    <div className="p-6">
       <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-6">
         <div className="text-[14px] font-semibold text-destructive">Falha no carregamento</div>
         <div className="text-[12px] text-muted-foreground mt-1">{error.message}</div>
       </div>
-    </AppShell>
+    </div>
   );
 }
 
@@ -89,11 +89,20 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      router.invalidate();
+      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+    });
+    return () => data.subscription.unsubscribe();
+  }, [router, queryClient]);
   return (
     <QueryClientProvider client={queryClient}>
-      <AppShell>
+      <ThemeProvider>
         <Outlet />
-      </AppShell>
+      </ThemeProvider>
       <Toaster />
     </QueryClientProvider>
   );
