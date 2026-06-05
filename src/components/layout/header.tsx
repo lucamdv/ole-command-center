@@ -3,6 +3,7 @@ import { Bell, Command, RefreshCw, Search } from "lucide-react";
 import { relativeTime } from "@/lib/format";
 import { RECENT_ACTIVITIES } from "@/lib/mock/data";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
   const [lastSync, setLastSync] = useState(new Date().toISOString());
