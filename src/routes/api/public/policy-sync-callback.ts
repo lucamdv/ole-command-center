@@ -91,8 +91,7 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
         }
         const payload = parsed.data;
 
-        const url = new URL(request.url);
-        const runId = url.searchParams.get("run_id");
+        const runId = runIdQS;
         if (!runId) {
           return json({ error: "run_id ausente na query string do callback_url" }, 400);
         }
