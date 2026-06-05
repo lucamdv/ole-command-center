@@ -72,8 +72,7 @@ export const Route = createFileRoute("/api/public/audit-callback")({
 
         // run_id pode vir no body OU na query string (?run_id=...) — n8n
         // sempre tem acesso ao callback_url original, então a query é mais robusta.
-        const url = new URL(request.url);
-        const runId = payload.run_id ?? url.searchParams.get("run_id") ?? undefined;
+        const runId = payload.run_id ?? runIdQS ?? undefined;
         if (!runId) {
           return json(
             {
