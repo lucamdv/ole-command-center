@@ -392,7 +392,7 @@ function AnalyticsPage() {
 
             <ChartCard
               title="Receita Excelsior (USD) por mês de pagamento"
-              subtitle={`Carregamento fixo (US$ 8.333,33) + Prêmio Direto − PIS/COFINS (4,65%) · Total: ${formatUSD(repasseTotals.excelsiorLiquido, { maximumFractionDigits: 0 })} · Média/mês: ${formatUSD(repasseAvg, { maximumFractionDigits: 0 })} · ${repasse.length} meses`}
+              subtitle={`Carregamento (US$ 8.333,33) + Prêmio Direto − PIS/COFINS · PIS/COFINS = 4,65% × comissões Olé (Fee 35% + Nomad 20%) sobre prêmio líquido de IOF · Total: ${formatUSD(repasseTotals.excelsiorLiquido, { maximumFractionDigits: 0 })} · Média/mês: ${formatUSD(repasseAvg, { maximumFractionDigits: 0 })} · ${repasse.length} meses`}
             >
               {repasse.length === 0 ? (
                 <EmptyMsg text="Sem prêmios pagos sincronizados." />
@@ -423,10 +423,7 @@ function AnalyticsPage() {
                       />
                       <Tooltip
                         {...tooltipProps}
-                        formatter={(v, name) => [
-                          formatUSD(Number(v), { maximumFractionDigits: 2 }),
-                          name as string,
-                        ]}
+                        content={<RepasseTooltip />}
                       />
                       <Legend wrapperStyle={{ fontSize: 11 }} />
                       <ReferenceLine
@@ -440,6 +437,7 @@ function AnalyticsPage() {
                           fontSize: 10,
                         }}
                       />
+                      <ReferenceLine y={0} stroke="var(--border)" />
                       <Bar
                         dataKey="carregamentoExcelsior"
                         name="Carregamento"
@@ -459,11 +457,11 @@ function AnalyticsPage() {
                         animationDuration={900}
                       />
                       <Bar
-                        dataKey="pisCofins"
-                        name="PIS/COFINS"
+                        dataKey="pisCofinsDeducao"
+                        name="PIS/COFINS (dedução)"
                         fill="var(--destructive)"
                         fillOpacity={0.85}
-                        radius={[4, 4, 0, 0]}
+                        radius={[0, 0, 4, 4]}
                         isAnimationActive
                         animationDuration={900}
                       />
