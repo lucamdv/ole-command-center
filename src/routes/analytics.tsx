@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import type React from "react";
 import { useMemo, useRef, useState } from "react";
 import {
   Area,
@@ -8,6 +9,7 @@ import {
   CartesianGrid,
   Cell,
   ComposedChart,
+  LabelList,
   Legend,
   Line,
   LineChart,
@@ -244,9 +246,9 @@ function AnalyticsPage() {
               tone="destructive"
             />
             <Kpi
-              label="Receita acumulada (USD)"
-              value={formatUSD(totalUsd)}
-              hint={`${revenue.length} meses · ${formatInt(policies.length)} apólices`}
+              label="Receita acumulada Excelsior (USD)"
+              value={formatUSD(repasseTotals.excelsiorLiquido, { maximumFractionDigits: 0 })}
+              hint={`${repasse.length} meses · média ${formatUSD(repasseAvg, { maximumFractionDigits: 0 })}/mês`}
               tone="success"
             />
           </div>
@@ -397,9 +399,9 @@ function AnalyticsPage() {
               {repasse.length === 0 ? (
                 <EmptyMsg text="Sem prêmios pagos sincronizados." />
               ) : (
-                <div className="h-[360px]">
+                <div className="h-[420px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={repasse} margin={{ top: 12, right: 12, left: -4, bottom: 0 }}>
+                    <ComposedChart data={repasse} margin={{ top: 28, right: 24, left: 8, bottom: 8 }}>
                       <defs>
                         <linearGradient id="gCarregamento" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.95} />
@@ -415,21 +417,38 @@ function AnalyticsPage() {
                         </linearGradient>
                       </defs>
                       <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={11} />
+                      <XAxis
+                        dataKey="label"
+                        stroke="var(--muted-foreground)"
+                        fontSize={11}
+                        tickMargin={8}
+                        axisLine={false}
+                        tickLine={false}
+                      />
                       <YAxis
                         stroke="var(--muted-foreground)"
                         fontSize={11}
                         tickFormatter={(v) => `$${formatCompact(Number(v))}`}
+                        axisLine={false}
+                        tickLine={false}
+                        width={56}
+                        padding={{ top: 16, bottom: 8 }}
                       />
                       <Tooltip
                         {...tooltipProps}
+                        cursor={{ fill: "var(--muted)", fillOpacity: 0.18 }}
                         content={<RepasseTooltip />}
                       />
-                      <Legend wrapperStyle={{ fontSize: 11 }} />
+                      <Legend
+                        wrapperStyle={{ fontSize: 11, paddingTop: 12 }}
+                        iconType="circle"
+                        iconSize={8}
+                      />
                       <ReferenceLine
                         y={REPASSE_RULES.FIXO_SUPLEMENTAR_PISO}
                         stroke="var(--muted-foreground)"
                         strokeDasharray="4 4"
+                        strokeOpacity={0.6}
                         label={{
                           value: "Piso · US$ 8.333,33",
                           position: "insideTopRight",
@@ -444,6 +463,7 @@ function AnalyticsPage() {
                         stackId="rec"
                         fill="url(#gCarregamento)"
                         radius={[0, 0, 0, 0]}
+                        maxBarSize={48}
                         isAnimationActive
                         animationDuration={900}
                       />
@@ -453,6 +473,7 @@ function AnalyticsPage() {
                         stackId="rec"
                         fill="url(#gPremioDireto)"
                         radius={[6, 6, 0, 0]}
+                        maxBarSize={48}
                         isAnimationActive
                         animationDuration={900}
                       />
@@ -462,6 +483,7 @@ function AnalyticsPage() {
                         fill="var(--destructive)"
                         fillOpacity={0.85}
                         radius={[0, 0, 4, 4]}
+                        maxBarSize={24}
                         isAnimationActive
                         animationDuration={900}
                       />
@@ -472,10 +494,19 @@ function AnalyticsPage() {
                         stroke="url(#gLiquido)"
                         strokeWidth={2.5}
                         dot={{ fill: "var(--info)", r: 3.5, strokeWidth: 0 }}
-                        activeDot={{ r: 5 }}
+                        activeDot={{ r: 6 }}
                         isAnimationActive
                         animationDuration={1200}
-                      />
+                      >
+                        <LabelList
+                          dataKey="excelsiorLiquido"
+                          position="top"
+                          offset={10}
+                          fontSize={10}
+                          fill="var(--muted-foreground)"
+                          formatter={(v: React.ReactNode) => `$${formatCompact(Number(v))}`}
+                        />
+                      </Line>
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>
