@@ -50,9 +50,9 @@ export function computeRepasse(bruto: number): RepasseBreakdown {
   const pisCofinsComissoes = comissoes * r.PIS_COFINS_PCT;
   const ole = comissoes - pisCofinsComissoes;
 
+  const carregamentoExc = r.FIXO_SUPLEMENTAR_PISO;
   const feeExc = liquido * r.FEE_EXC_PCT;
-  const fixoSuplementar = Math.max(0, r.FIXO_SUPLEMENTAR_PISO - feeExc);
-  const carregamentoExc = feeExc + fixoSuplementar;
+  const fixoSuplementar = Math.max(0, carregamentoExc - feeExc);
   const premioDireto = liquido * r.PREMIO_DIRETO_PCT;
   const premioRetidoExc = premioDireto * r.PREMIO_RETIDO_EXC_PCT;
   const excelsior = carregamentoExc + premioRetidoExc;
