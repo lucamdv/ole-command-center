@@ -4,12 +4,14 @@ import { relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { useNotifications } from "@/hooks/use-notifications";
+import { getInitials, useProfile } from "@/hooks/use-settings";
 
 export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
   const [lastSync, setLastSync] = useState(new Date().toISOString());
   const [syncing, setSyncing] = useState(false);
   const [openNotif, setOpenNotif] = useState(false);
   const { items, unread, markAllRead, markRead, remove, clearAll } = useNotifications();
+  const { profile } = useProfile();
 
   useEffect(() => {
     const i = setInterval(() => {
