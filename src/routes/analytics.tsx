@@ -245,9 +245,9 @@ function AnalyticsPage() {
               tone="destructive"
             />
             <Kpi
-              label="Receita acumulada (USD)"
-              value={formatUSD(totalUsd)}
-              hint={`${revenue.length} meses · ${formatInt(policies.length)} apólices`}
+              label="Receita acumulada Excelsior (USD)"
+              value={formatUSD(repasseTotals.excelsiorLiquido, { maximumFractionDigits: 0 })}
+              hint={`${repasse.length} meses · média ${formatUSD(repasseAvg, { maximumFractionDigits: 0 })}/mês`}
               tone="success"
             />
           </div>
