@@ -30,7 +30,7 @@ import { formatInt, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export const Route = createFileRoute("/operacao")({
+export const Route = createFileRoute("/_authenticated/operacao")({
   head: () => ({
     meta: [
       { title: "Operação · OLÉ COPILOT" },

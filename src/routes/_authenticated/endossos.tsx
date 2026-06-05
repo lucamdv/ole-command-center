@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, GitBranch } from "lucide-react";
 
-export const Route = createFileRoute("/endossos")({
+export const Route = createFileRoute("/_authenticated/endossos")({
   head: () => ({
     meta: [
       { title: "Endossos · OLÉ COPILOT" },

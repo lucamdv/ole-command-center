@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Wrench, Sparkles, Hammer } from "lucide-react";
 
-export const Route = createFileRoute("/ferramentas")({
+export const Route = createFileRoute("/_authenticated/ferramentas")({
   head: () => ({
     meta: [
       { title: "Ferramentas · OLÉ COPILOT" },

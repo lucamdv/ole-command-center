@@ -27,7 +27,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { ChartPart, type ChartInput } from "@/components/oliver/chart-part";
 
-export const Route = createFileRoute("/intelligence")({
+export const Route = createFileRoute("/_authenticated/intelligence")({
   head: () => ({
     meta: [
       { title: "Oléver · OLÉ COPILOT" },
