@@ -74,8 +74,7 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
         if (!parsed.success) {
           // Persiste o raw para debug antes de falhar
           const { supabaseAdmin: sa } = await import("@/integrations/supabase/client.server");
-          const urlEarly = new URL(request.url);
-          const runIdEarly = urlEarly.searchParams.get("run_id");
+          const runIdEarly = runIdQS;
           if (runIdEarly) {
             await sa
               .from("policy_sync_runs")
