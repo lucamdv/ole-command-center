@@ -9,77 +9,87 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as OperacaoRouteImport } from './routes/operacao'
-import { Route as IntelligenceRouteImport } from './routes/intelligence'
-import { Route as FerramentasRouteImport } from './routes/ferramentas'
-import { Route as EndossosRouteImport } from './routes/endossos'
-import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
-import { Route as AnalyticsRouteImport } from './routes/analytics'
-import { Route as AlertasRouteImport } from './routes/alertas'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApolicesIndexRouteImport } from './routes/apolices.index'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as ApiOliverChatRouteImport } from './routes/api/oliver-chat'
-import { Route as ApolicesIdIndexRouteImport } from './routes/apolices.$id.index'
+import { Route as AuthenticatedOperacaoRouteImport } from './routes/_authenticated/operacao'
+import { Route as AuthenticatedIntelligenceRouteImport } from './routes/_authenticated/intelligence'
+import { Route as AuthenticatedFerramentasRouteImport } from './routes/_authenticated/ferramentas'
+import { Route as AuthenticatedEndossosRouteImport } from './routes/_authenticated/endossos'
+import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
+import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
+import { Route as AuthenticatedAlertasRouteImport } from './routes/_authenticated/alertas'
+import { Route as AuthenticatedApolicesIndexRouteImport } from './routes/_authenticated/apolices.index'
 import { Route as ApiPublicPolicySyncCallbackRouteImport } from './routes/api/public/policy-sync-callback'
 import { Route as ApiPublicAuditCallbackRouteImport } from './routes/api/public/audit-callback'
-import { Route as ApolicesIdEndossosNumRouteImport } from './routes/apolices.$id.endossos.$num'
+import { Route as AuthenticatedApolicesIdIndexRouteImport } from './routes/_authenticated/apolices.$id.index'
 import { Route as ApiPublicHooksPolicySyncRouteImport } from './routes/api/public/hooks/policy-sync'
+import { Route as AuthenticatedApolicesIdEndossosNumRouteImport } from './routes/_authenticated/apolices.$id.endossos.$num'
 
-const OperacaoRoute = OperacaoRouteImport.update({
-  id: '/operacao',
-  path: '/operacao',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IntelligenceRoute = IntelligenceRouteImport.update({
-  id: '/intelligence',
-  path: '/intelligence',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FerramentasRoute = FerramentasRouteImport.update({
-  id: '/ferramentas',
-  path: '/ferramentas',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EndossosRoute = EndossosRouteImport.update({
-  id: '/endossos',
-  path: '/endossos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
-  id: '/configuracoes',
-  path: '/configuracoes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AnalyticsRoute = AnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AlertasRoute = AlertasRouteImport.update({
-  id: '/alertas',
-  path: '/alertas',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApolicesIndexRoute = ApolicesIndexRouteImport.update({
-  id: '/apolices/',
-  path: '/apolices/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const ApiOliverChatRoute = ApiOliverChatRouteImport.update({
   id: '/api/oliver-chat',
   path: '/api/oliver-chat',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApolicesIdIndexRoute = ApolicesIdIndexRouteImport.update({
-  id: '/apolices/$id/',
-  path: '/apolices/$id/',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedOperacaoRoute = AuthenticatedOperacaoRouteImport.update({
+  id: '/operacao',
+  path: '/operacao',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedIntelligenceRoute =
+  AuthenticatedIntelligenceRouteImport.update({
+    id: '/intelligence',
+    path: '/intelligence',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFerramentasRoute =
+  AuthenticatedFerramentasRouteImport.update({
+    id: '/ferramentas',
+    path: '/ferramentas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEndossosRoute = AuthenticatedEndossosRouteImport.update({
+  id: '/endossos',
+  path: '/endossos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedConfiguracoesRoute =
+  AuthenticatedConfiguracoesRouteImport.update({
+    id: '/configuracoes',
+    path: '/configuracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAlertasRoute = AuthenticatedAlertasRouteImport.update({
+  id: '/alertas',
+  path: '/alertas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedApolicesIndexRoute =
+  AuthenticatedApolicesIndexRouteImport.update({
+    id: '/apolices/',
+    path: '/apolices/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicPolicySyncCallbackRoute =
   ApiPublicPolicySyncCallbackRouteImport.update({
     id: '/api/public/policy-sync-callback',
@@ -91,74 +101,86 @@ const ApiPublicAuditCallbackRoute = ApiPublicAuditCallbackRouteImport.update({
   path: '/api/public/audit-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApolicesIdEndossosNumRoute = ApolicesIdEndossosNumRouteImport.update({
-  id: '/apolices/$id/endossos/$num',
-  path: '/apolices/$id/endossos/$num',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const AuthenticatedApolicesIdIndexRoute =
+  AuthenticatedApolicesIdIndexRouteImport.update({
+    id: '/apolices/$id/',
+    path: '/apolices/$id/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicHooksPolicySyncRoute =
   ApiPublicHooksPolicySyncRouteImport.update({
     id: '/api/public/hooks/policy-sync',
     path: '/api/public/hooks/policy-sync',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedApolicesIdEndossosNumRoute =
+  AuthenticatedApolicesIdEndossosNumRouteImport.update({
+    id: '/apolices/$id/endossos/$num',
+    path: '/apolices/$id/endossos/$num',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/alertas': typeof AlertasRoute
-  '/analytics': typeof AnalyticsRoute
-  '/configuracoes': typeof ConfiguracoesRoute
-  '/endossos': typeof EndossosRoute
-  '/ferramentas': typeof FerramentasRoute
-  '/intelligence': typeof IntelligenceRoute
-  '/operacao': typeof OperacaoRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/auth': typeof AuthRoute
+  '/alertas': typeof AuthenticatedAlertasRoute
+  '/analytics': typeof AuthenticatedAnalyticsRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/endossos': typeof AuthenticatedEndossosRoute
+  '/ferramentas': typeof AuthenticatedFerramentasRoute
+  '/intelligence': typeof AuthenticatedIntelligenceRoute
+  '/operacao': typeof AuthenticatedOperacaoRoute
   '/api/oliver-chat': typeof ApiOliverChatRoute
-  '/apolices/': typeof ApolicesIndexRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
-  '/apolices/$id/': typeof ApolicesIdIndexRoute
+  '/apolices/': typeof AuthenticatedApolicesIndexRoute
   '/api/public/hooks/policy-sync': typeof ApiPublicHooksPolicySyncRoute
-  '/apolices/$id/endossos/$num': typeof ApolicesIdEndossosNumRoute
+  '/apolices/$id/': typeof AuthenticatedApolicesIdIndexRoute
+  '/apolices/$id/endossos/$num': typeof AuthenticatedApolicesIdEndossosNumRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/alertas': typeof AlertasRoute
-  '/analytics': typeof AnalyticsRoute
-  '/configuracoes': typeof ConfiguracoesRoute
-  '/endossos': typeof EndossosRoute
-  '/ferramentas': typeof FerramentasRoute
-  '/intelligence': typeof IntelligenceRoute
-  '/operacao': typeof OperacaoRoute
+  '/auth': typeof AuthRoute
+  '/alertas': typeof AuthenticatedAlertasRoute
+  '/analytics': typeof AuthenticatedAnalyticsRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/endossos': typeof AuthenticatedEndossosRoute
+  '/ferramentas': typeof AuthenticatedFerramentasRoute
+  '/intelligence': typeof AuthenticatedIntelligenceRoute
+  '/operacao': typeof AuthenticatedOperacaoRoute
   '/api/oliver-chat': typeof ApiOliverChatRoute
-  '/apolices': typeof ApolicesIndexRoute
+  '/': typeof AuthenticatedIndexRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
-  '/apolices/$id': typeof ApolicesIdIndexRoute
+  '/apolices': typeof AuthenticatedApolicesIndexRoute
   '/api/public/hooks/policy-sync': typeof ApiPublicHooksPolicySyncRoute
-  '/apolices/$id/endossos/$num': typeof ApolicesIdEndossosNumRoute
+  '/apolices/$id': typeof AuthenticatedApolicesIdIndexRoute
+  '/apolices/$id/endossos/$num': typeof AuthenticatedApolicesIdEndossosNumRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/alertas': typeof AlertasRoute
-  '/analytics': typeof AnalyticsRoute
-  '/configuracoes': typeof ConfiguracoesRoute
-  '/endossos': typeof EndossosRoute
-  '/ferramentas': typeof FerramentasRoute
-  '/intelligence': typeof IntelligenceRoute
-  '/operacao': typeof OperacaoRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/alertas': typeof AuthenticatedAlertasRoute
+  '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
+  '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/_authenticated/endossos': typeof AuthenticatedEndossosRoute
+  '/_authenticated/ferramentas': typeof AuthenticatedFerramentasRoute
+  '/_authenticated/intelligence': typeof AuthenticatedIntelligenceRoute
+  '/_authenticated/operacao': typeof AuthenticatedOperacaoRoute
   '/api/oliver-chat': typeof ApiOliverChatRoute
-  '/apolices/': typeof ApolicesIndexRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
-  '/apolices/$id/': typeof ApolicesIdIndexRoute
+  '/_authenticated/apolices/': typeof AuthenticatedApolicesIndexRoute
   '/api/public/hooks/policy-sync': typeof ApiPublicHooksPolicySyncRoute
-  '/apolices/$id/endossos/$num': typeof ApolicesIdEndossosNumRoute
+  '/_authenticated/apolices/$id/': typeof AuthenticatedApolicesIdIndexRoute
+  '/_authenticated/apolices/$id/endossos/$num': typeof AuthenticatedApolicesIdEndossosNumRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
     | '/alertas'
     | '/analytics'
     | '/configuracoes'
@@ -167,15 +189,15 @@ export interface FileRouteTypes {
     | '/intelligence'
     | '/operacao'
     | '/api/oliver-chat'
-    | '/apolices/'
     | '/api/public/audit-callback'
     | '/api/public/policy-sync-callback'
-    | '/apolices/$id/'
+    | '/apolices/'
     | '/api/public/hooks/policy-sync'
+    | '/apolices/$id/'
     | '/apolices/$id/endossos/$num'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
+    | '/auth'
     | '/alertas'
     | '/analytics'
     | '/configuracoes'
@@ -184,113 +206,65 @@ export interface FileRouteTypes {
     | '/intelligence'
     | '/operacao'
     | '/api/oliver-chat'
-    | '/apolices'
+    | '/'
     | '/api/public/audit-callback'
     | '/api/public/policy-sync-callback'
-    | '/apolices/$id'
+    | '/apolices'
     | '/api/public/hooks/policy-sync'
+    | '/apolices/$id'
     | '/apolices/$id/endossos/$num'
   id:
     | '__root__'
-    | '/'
-    | '/alertas'
-    | '/analytics'
-    | '/configuracoes'
-    | '/endossos'
-    | '/ferramentas'
-    | '/intelligence'
-    | '/operacao'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/alertas'
+    | '/_authenticated/analytics'
+    | '/_authenticated/configuracoes'
+    | '/_authenticated/endossos'
+    | '/_authenticated/ferramentas'
+    | '/_authenticated/intelligence'
+    | '/_authenticated/operacao'
     | '/api/oliver-chat'
-    | '/apolices/'
+    | '/_authenticated/'
     | '/api/public/audit-callback'
     | '/api/public/policy-sync-callback'
-    | '/apolices/$id/'
+    | '/_authenticated/apolices/'
     | '/api/public/hooks/policy-sync'
-    | '/apolices/$id/endossos/$num'
+    | '/_authenticated/apolices/$id/'
+    | '/_authenticated/apolices/$id/endossos/$num'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AlertasRoute: typeof AlertasRoute
-  AnalyticsRoute: typeof AnalyticsRoute
-  ConfiguracoesRoute: typeof ConfiguracoesRoute
-  EndossosRoute: typeof EndossosRoute
-  FerramentasRoute: typeof FerramentasRoute
-  IntelligenceRoute: typeof IntelligenceRoute
-  OperacaoRoute: typeof OperacaoRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
   ApiOliverChatRoute: typeof ApiOliverChatRoute
-  ApolicesIndexRoute: typeof ApolicesIndexRoute
   ApiPublicAuditCallbackRoute: typeof ApiPublicAuditCallbackRoute
   ApiPublicPolicySyncCallbackRoute: typeof ApiPublicPolicySyncCallbackRoute
-  ApolicesIdIndexRoute: typeof ApolicesIdIndexRoute
   ApiPublicHooksPolicySyncRoute: typeof ApiPublicHooksPolicySyncRoute
-  ApolicesIdEndossosNumRoute: typeof ApolicesIdEndossosNumRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/operacao': {
-      id: '/operacao'
-      path: '/operacao'
-      fullPath: '/operacao'
-      preLoaderRoute: typeof OperacaoRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/intelligence': {
-      id: '/intelligence'
-      path: '/intelligence'
-      fullPath: '/intelligence'
-      preLoaderRoute: typeof IntelligenceRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/ferramentas': {
-      id: '/ferramentas'
-      path: '/ferramentas'
-      fullPath: '/ferramentas'
-      preLoaderRoute: typeof FerramentasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/endossos': {
-      id: '/endossos'
-      path: '/endossos'
-      fullPath: '/endossos'
-      preLoaderRoute: typeof EndossosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/configuracoes': {
-      id: '/configuracoes'
-      path: '/configuracoes'
-      fullPath: '/configuracoes'
-      preLoaderRoute: typeof ConfiguracoesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/analytics': {
-      id: '/analytics'
-      path: '/analytics'
-      fullPath: '/analytics'
-      preLoaderRoute: typeof AnalyticsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/alertas': {
-      id: '/alertas'
-      path: '/alertas'
-      fullPath: '/alertas'
-      preLoaderRoute: typeof AlertasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/apolices/': {
-      id: '/apolices/'
-      path: '/apolices'
-      fullPath: '/apolices/'
-      preLoaderRoute: typeof ApolicesIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/oliver-chat': {
       id: '/api/oliver-chat'
@@ -299,12 +273,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOliverChatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/apolices/$id/': {
-      id: '/apolices/$id/'
-      path: '/apolices/$id'
-      fullPath: '/apolices/$id/'
-      preLoaderRoute: typeof ApolicesIdIndexRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/operacao': {
+      id: '/_authenticated/operacao'
+      path: '/operacao'
+      fullPath: '/operacao'
+      preLoaderRoute: typeof AuthenticatedOperacaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/intelligence': {
+      id: '/_authenticated/intelligence'
+      path: '/intelligence'
+      fullPath: '/intelligence'
+      preLoaderRoute: typeof AuthenticatedIntelligenceRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ferramentas': {
+      id: '/_authenticated/ferramentas'
+      path: '/ferramentas'
+      fullPath: '/ferramentas'
+      preLoaderRoute: typeof AuthenticatedFerramentasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/endossos': {
+      id: '/_authenticated/endossos'
+      path: '/endossos'
+      fullPath: '/endossos'
+      preLoaderRoute: typeof AuthenticatedEndossosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/configuracoes': {
+      id: '/_authenticated/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/analytics': {
+      id: '/_authenticated/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AuthenticatedAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/alertas': {
+      id: '/_authenticated/alertas'
+      path: '/alertas'
+      fullPath: '/alertas'
+      preLoaderRoute: typeof AuthenticatedAlertasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/apolices/': {
+      id: '/_authenticated/apolices/'
+      path: '/apolices'
+      fullPath: '/apolices/'
+      preLoaderRoute: typeof AuthenticatedApolicesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/public/policy-sync-callback': {
       id: '/api/public/policy-sync-callback'
@@ -320,12 +343,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAuditCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/apolices/$id/endossos/$num': {
-      id: '/apolices/$id/endossos/$num'
-      path: '/apolices/$id/endossos/$num'
-      fullPath: '/apolices/$id/endossos/$num'
-      preLoaderRoute: typeof ApolicesIdEndossosNumRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/apolices/$id/': {
+      id: '/_authenticated/apolices/$id/'
+      path: '/apolices/$id'
+      fullPath: '/apolices/$id/'
+      preLoaderRoute: typeof AuthenticatedApolicesIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/public/hooks/policy-sync': {
       id: '/api/public/hooks/policy-sync'
@@ -334,36 +357,56 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksPolicySyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/apolices/$id/endossos/$num': {
+      id: '/_authenticated/apolices/$id/endossos/$num'
+      path: '/apolices/$id/endossos/$num'
+      fullPath: '/apolices/$id/endossos/$num'
+      preLoaderRoute: typeof AuthenticatedApolicesIdEndossosNumRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAlertasRoute: typeof AuthenticatedAlertasRoute
+  AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
+  AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
+  AuthenticatedEndossosRoute: typeof AuthenticatedEndossosRoute
+  AuthenticatedFerramentasRoute: typeof AuthenticatedFerramentasRoute
+  AuthenticatedIntelligenceRoute: typeof AuthenticatedIntelligenceRoute
+  AuthenticatedOperacaoRoute: typeof AuthenticatedOperacaoRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedApolicesIndexRoute: typeof AuthenticatedApolicesIndexRoute
+  AuthenticatedApolicesIdIndexRoute: typeof AuthenticatedApolicesIdIndexRoute
+  AuthenticatedApolicesIdEndossosNumRoute: typeof AuthenticatedApolicesIdEndossosNumRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAlertasRoute: AuthenticatedAlertasRoute,
+  AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
+  AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
+  AuthenticatedEndossosRoute: AuthenticatedEndossosRoute,
+  AuthenticatedFerramentasRoute: AuthenticatedFerramentasRoute,
+  AuthenticatedIntelligenceRoute: AuthenticatedIntelligenceRoute,
+  AuthenticatedOperacaoRoute: AuthenticatedOperacaoRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedApolicesIndexRoute: AuthenticatedApolicesIndexRoute,
+  AuthenticatedApolicesIdIndexRoute: AuthenticatedApolicesIdIndexRoute,
+  AuthenticatedApolicesIdEndossosNumRoute:
+    AuthenticatedApolicesIdEndossosNumRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  AlertasRoute: AlertasRoute,
-  AnalyticsRoute: AnalyticsRoute,
-  ConfiguracoesRoute: ConfiguracoesRoute,
-  EndossosRoute: EndossosRoute,
-  FerramentasRoute: FerramentasRoute,
-  IntelligenceRoute: IntelligenceRoute,
-  OperacaoRoute: OperacaoRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
   ApiOliverChatRoute: ApiOliverChatRoute,
-  ApolicesIndexRoute: ApolicesIndexRoute,
   ApiPublicAuditCallbackRoute: ApiPublicAuditCallbackRoute,
   ApiPublicPolicySyncCallbackRoute: ApiPublicPolicySyncCallbackRoute,
-  ApolicesIdIndexRoute: ApolicesIdIndexRoute,
   ApiPublicHooksPolicySyncRoute: ApiPublicHooksPolicySyncRoute,
-  ApolicesIdEndossosNumRoute: ApolicesIdEndossosNumRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
