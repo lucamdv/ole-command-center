@@ -241,7 +241,19 @@ function ChatInner({
   onFirstMessage: () => void;
 }) {
   const transport = useMemo(
-    () => new DefaultChatTransport({ api: "/api/oliver-chat", body: { threadId } }),
+    () =>
+      new DefaultChatTransport({
+        api: "/api/oliver-chat",
+        body: { threadId },
+        fetch: async (url, init) => {
+          const { supabase } = await import("@/integrations/supabase/client");
+          const { data } = await supabase.auth.getSession();
+          const token = data.session?.access_token;
+          const headers = new Headers(init?.headers);
+          if (token) headers.set("Authorization", `Bearer ${token}`);
+          return fetch(url, { ...init, headers });
+        },
+      }),
     [threadId],
   );
   const [input, setInput] = useState("");
