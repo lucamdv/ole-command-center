@@ -1,52 +1,53 @@
 ## Diagnóstico
 
-Os dois fluxos disparam sem erro mas ficam para sempre em `status="running"` porque o callback do n8n nunca chega de volta nos endpoints `/api/public/audit-callback` e `/api/public/policy-sync-callback`. Causas confirmadas:
-
-1. **Auditoria** está usando o webhook hardcoded `DEFAULT_WEBHOOK = .../webhook-test/...` (modo teste, dispara 1 vez por clique em "Listen for test event") porque o secret `N8N_AUDIT_WEBHOOK_URL` nunca foi configurado.
-2. **Apólices** já tem `N8N_MOTOR_POLICIES_URL` setado, mas precisa apontar para a URL de produção que você passou.
-3. Em ambos os fluxos, o nó HTTP final do n8n precisa chamar o callback do app com o header `x-callback-secret`, senão o endpoint responde 401 e o run trava em "running" para sempre.
-
-## O que vou fazer no app
-
-1. **Adicionar/atualizar 2 secrets** (via tool de secrets — você confirma os valores no formulário seguro):
-   - `N8N_AUDIT_WEBHOOK_URL` = `https://nuvembot.app.n8n.cloud/webhook/c80c897f-9951-43c8-9976-df81c44bce16`
-   - `N8N_MOTOR_POLICIES_URL` (update) = `https://nuvembot.app.n8n.cloud/webhook/d51531b9-30dc-4904-a15d-506e7dd9f271`
-
-2. **Remover o `DEFAULT_WEBHOOK` hardcoded** em `src/lib/audit.functions.ts` e `src/lib/policies.functions.ts`. Se o secret estiver faltando, falhar com mensagem clara em vez de cair silenciosamente em `/webhook-test/`.
-
-3. **Marcar runs travados como erro**: rodar uma migração curta que marca como `error` qualquer `audit_runs` e `policy_sync_runs` com `status='running'` mais antigo que 10 min, para destravar a UI ("Sistema Degradado" some quando o último run não está mais running).
-
-4. **Acrescentar logs** no início de cada handler de callback (`audit-callback`, `policy-sync-callback`) com `console.log` do header `x-callback-secret` presente/ausente e do `run_id`, para você conseguir diagnosticar via `server-function-logs` na próxima execução.
-
-## Checklist para você ajustar no n8n
-
-Em CADA workflow (auditoria e MOTOR OLÉ):
-
-1. **Trigger** = nó "Webhook" em modo **Production URL** (não "Test"). O workflow precisa estar **Active** (toggle no canto superior direito).
-2. **Responder imediatamente**: no nó Webhook, opção "Respond" = "Immediately" com body `{"ok":true}`. Isso libera o front sem timeout.
-3. **Último nó = HTTP Request** chamando o callback do app:
-   - **Auditoria**: `POST https://olelifecockpit.lovable.app/api/public/audit-callback?run_id={{ $json.run_id }}`
-   - **Apólices**: `POST https://olelifecockpit.lovable.app/api/public/policy-sync-callback?run_id={{ $json.run_id }}`
-   - Headers:
-     - `Content-Type: application/json`
-     - `x-callback-secret: <valor do secret AUDIT_CALLBACK_SECRET>` (o mesmo secret serve para os 2 callbacks)
-   - Body: JSON do resultado (formato que o callback já aceita — array de apólices/auditoria; o handler normaliza `payload`, `body`, `dados`, `apolices`, etc.)
-4. O `run_id` chega no payload de entrada do workflow (o app envia `{ run_id, callback_url, trigger, at }`). Use `{{ $json.run_id }}` ou `{{ $json.body.run_id }}` dependendo de como o nó Webhook entrega os dados.
-
-## Detalhes técnicos
+Para a apólice `056902026000213910016500000000` o payload do MOTOR OLÉ traz:
 
 ```text
-Arquivos tocados:
-- src/lib/audit.functions.ts          (remover DEFAULT_WEBHOOK, exigir secret)
-- src/lib/policies.functions.ts       (remover DEFAULT_WEBHOOK, exigir secret)
-- src/routes/api/public/audit-callback.ts        (log de diagnóstico)
-- src/routes/api/public/policy-sync-callback.ts  (log de diagnóstico)
-- supabase migration: UPDATE audit_runs/policy_sync_runs SET status='error',
-  error_message='timeout > 10min sem callback', finished_at=now()
-  WHERE status='running' AND created_at < now() - interval '10 minutes'
-Secrets:
-- N8N_AUDIT_WEBHOOK_URL  (add)
-- N8N_MOTOR_POLICIES_URL (update)
+dados[i] = {
+  numero_apolice: "0569…0000",
+  numero_endosso: "0",
+  data_emissao:   "2026-05-07T12:52:01.579-03:00",   ← emissão REAL da apólice
+  historico_endossos: [
+    { numero_endosso_seguradora: "000000", proposta: { datas, itens, partes, … } },   ← apólice
+    { proposta: { endosso_A: { data_emissao: "2026-06-05T07:01:31.999-03:00", … } } } ← endosso A
+  ]
+}
 ```
 
-Sem mudança de UI nem de schema. Após implementar, você ajusta os 2 workflows no n8n conforme o checklist e testa um disparo de cada.
+Dois bugs no `src/routes/api/public/policy-sync-callback.ts`:
+
+1. `currentEndNum = pickEnd(apolice)` devolve `"0"` (top-level), mas o item da apólice no `historico_endossos` tem `numero_endosso_seguradora = "000000"`. O `historico.find(...)` falha, cai no fallback `historico[length-1]` e **persiste o envelope do endosso A como `proposta` da apólice**. É por isso que a tela da apólice mostra a data do endosso (05/06/2026 07:01) em vez da emissão real (07/05/2026 12:52).
+2. O `data_emissao` da apólice vive no objeto top-level (`dados[i].data_emissao`) e nunca é gravado — `parseDatas` só lê `env.data_emissao`, que não existe quando a "proposta" da apólice é a proposta direta.
+
+Há também um efeito colateral: `numero_endosso_atual` da apólice é gravado como `"0"` em vez de `"000000"`.
+
+## Mudanças
+
+### 1. `src/routes/api/public/policy-sync-callback.ts`
+- Normalizar comparações de endosso com `normalizeEndossoNum` (em `src/lib/excelsior/translate.ts`) — `"0"`, `"000000"`, `0` viram a mesma chave.
+- Reescrever a seleção do `currentEndo`:
+  - Se `pickEnd(apolice)` normalizado for `000000` → escolher o item de `historico_endossos` cujo `numero_endosso_seguradora` normalizado seja `000000` (a apólice em si).
+  - Caso contrário → buscar pela igualdade normalizada; só cair no `length-1` se nada bater (com `console.warn`).
+- Antes do `upsert` da `policies`, mesclar no `proposta` salvo o `data_emissao` top-level: `proposta = { ...currentEndo.proposta, data_emissao: apolice.data_emissao }` (só quando o `currentEndo` é a apólice base, para não sobrescrever envelope de endosso).
+- Gravar `numero_endosso_atual = normalizeEndossoNum(pickEnd(apolice))` (sempre 6 dígitos).
+
+### 2. `src/lib/excelsior/translate.ts` (`parseDatas`)
+- Acrescentar fallback: `dataEmissao = asStr(env?.data_emissao) ?? asStr(p.data_emissao)`.
+  Isso cobre tanto o caso "proposta da apólice com `data_emissao` mesclado" quanto futuras variações em que o n8n entregue a chave direto na proposta.
+
+### 3. Backfill via migration
+Migration única que reprocessa o último `policy_sync_runs.raw` com `status='success'` para regravar `policies.proposta` e `numero_endosso_atual` corretos (sem precisar disparar o n8n de novo). Algoritmo idêntico ao do callback corrigido, em PL/pgSQL ou via `do $$ ... $$` com `jsonb`.
+
+Se preferir, posso pular a migration e só esperar o próximo run — me avisa no chat.
+
+## Validação
+
+Após aplicar:
+- `select proposta->>'data_emissao', numero_endosso_atual from policies where numero_apolice='0569…0000';`
+  deve retornar `2026-05-07T12:52:01…` e `000000`.
+- Abrir `/apolices/0569…0000` → campo "Data de emissão" mostra **07/05/2026 12:52**.
+- Abrir o endosso `0001` da mesma apólice → continua mostrando **05/06/2026 07:01** (vem do envelope, intacto).
+
+## Fora de escopo
+
+Não vou mexer no resto da tradução (partes, coberturas, pagamento) — esse problema específico é só o pareamento da proposta da apólice + `data_emissao`. Se você notar outro campo errado em outra apólice, me manda exemplo que eu trato em separado.

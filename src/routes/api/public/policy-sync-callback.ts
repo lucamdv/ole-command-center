@@ -128,13 +128,29 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
           const historico = (apolice.historico_endossos ?? []) as Array<Record<string, any>>;
           // O n8n envia a apólice "casca" (sem proposta/prêmio); os dados reais
           // vivem em cada item de historico_endossos. Pegamos o endosso "atual"
-          // (numero_endosso do topo) ou, na falta, o de maior ordem.
-          const currentEndNum = pickEnd(apolice);
-          const currentEndo =
-            historico.find((e) => pickEnd(e) === currentEndNum) ??
-            historico[historico.length - 1] ??
-            null;
-          const proposta = currentEndo?.proposta ?? apolice.proposta ?? {};
+          // (numero_endosso do topo, normalizado p/ 6 dígitos).
+          const { normalizeEndossoNum } = await import("@/lib/excelsior/translate");
+          const currentEndNumRaw = pickEnd(apolice);
+          const currentEndNum = currentEndNumRaw ? normalizeEndossoNum(currentEndNumRaw) : null;
+          let currentEndo = currentEndNum
+            ? historico.find((e) => {
+                const v = pickEnd(e);
+                return v ? normalizeEndossoNum(v) === currentEndNum : false;
+              })
+            : undefined;
+          if (!currentEndo) {
+            console.warn(
+              `[policy-sync-callback] historico sem match para numero_endosso=${currentEndNumRaw}; usando último item`,
+            );
+            currentEndo = historico[historico.length - 1];
+          }
+          const isApoliceBase = currentEndNum === "000000";
+          const baseProposta = currentEndo?.proposta ?? apolice.proposta ?? {};
+          // Quando o item escolhido é a apólice (000000), o `data_emissao` real
+          // mora no topo do objeto da apólice — mescla para a UI exibir certo.
+          const proposta = isApoliceBase
+            ? { ...baseProposta, data_emissao: apolice.data_emissao ?? baseProposta?.data_emissao }
+            : baseProposta;
           const premio = currentEndo?.premio_liquido ?? apolice.premio_liquido ?? 0;
 
           const { data: up, error: upErr } = await supabaseAdmin
@@ -159,14 +175,17 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
           const policyId = (up as { id: string }).id;
 
           await supabaseAdmin.from("endorsements").delete().eq("policy_id", policyId);
-          const endos = historico.map((e, idx) => ({
-            policy_id: policyId,
-            numero_apolice: pickNum(e) ?? numero,
-            numero_endosso: pickEnd(e) ?? String(idx),
-            premio_liquido: e.premio_liquido ?? 0,
-            proposta: e.proposta ?? {},
-            ordem: idx,
-          }));
+          const endos = historico.map((e, idx) => {
+            const endRaw = pickEnd(e);
+            return {
+              policy_id: policyId,
+              numero_apolice: pickNum(e) ?? numero,
+              numero_endosso: endRaw ? normalizeEndossoNum(endRaw) : String(idx).padStart(6, "0"),
+              premio_liquido: e.premio_liquido ?? 0,
+              proposta: e.proposta ?? {},
+              ordem: idx,
+            };
+          });
           if (endos.length > 0) {
             const { error: endErr } = await supabaseAdmin
               .from("endorsements")
