@@ -21,9 +21,14 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
       OPTIONS: async () => new Response(null, { status: 204, headers: CORS }),
 
       POST: async ({ request }) => {
+        const reqUrl = new URL(request.url);
+        const runIdQS = reqUrl.searchParams.get("run_id");
         // Reaproveita AUDIT_CALLBACK_SECRET para não exigir secret novo.
         const expected = process.env.AUDIT_CALLBACK_SECRET;
         const provided = request.headers.get("x-callback-secret");
+        console.log(
+          `[policy-sync-callback] hit run_id=${runIdQS ?? "(missing)"} secret_present=${!!provided} secret_match=${!!expected && provided === expected}`,
+        );
         if (!expected || provided !== expected) {
           return json({ error: "Unauthorized" }, 401);
         }
@@ -69,8 +74,7 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
         if (!parsed.success) {
           // Persiste o raw para debug antes de falhar
           const { supabaseAdmin: sa } = await import("@/integrations/supabase/client.server");
-          const urlEarly = new URL(request.url);
-          const runIdEarly = urlEarly.searchParams.get("run_id");
+          const runIdEarly = runIdQS;
           if (runIdEarly) {
             await sa
               .from("policy_sync_runs")
@@ -87,8 +91,7 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
         }
         const payload = parsed.data;
 
-        const url = new URL(request.url);
-        const runId = url.searchParams.get("run_id");
+        const runId = runIdQS;
         if (!runId) {
           return json({ error: "run_id ausente na query string do callback_url" }, 400);
         }

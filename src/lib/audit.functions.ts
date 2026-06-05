@@ -2,8 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { AuditHistoryItem, LatestAudit } from "./audit/types";
 
-// URL pode ser sobrescrita pelo secret N8N_AUDIT_WEBHOOK_URL em produção.
-const DEFAULT_WEBHOOK = "https://nuvembot.app.n8n.cloud/webhook-test/c80c897f-9951-43c8-9976-df81c44bce16";
+// URL do webhook do fluxo n8n de auditoria. DEVE ser configurada via secret
+// N8N_AUDIT_WEBHOOK_URL (use a URL de produção /webhook/..., não /webhook-test/...).
 const EMPTY_SUMMARY = {
   aprovados: 0,
   reprovados: 0,
@@ -28,7 +28,12 @@ const PRODUCTION_PUBLIC_URL = `https://project--${LOVABLE_PROJECT_ID}.lovable.ap
  *  3. Retorna o run_id imediatamente. O frontend faz polling.
  */
 export const runAudit = createServerFn({ method: "POST" }).handler(async () => {
-  const url = process.env.N8N_AUDIT_WEBHOOK_URL || DEFAULT_WEBHOOK;
+  const url = process.env.N8N_AUDIT_WEBHOOK_URL;
+  if (!url) {
+    throw new Error(
+      "Secret N8N_AUDIT_WEBHOOK_URL não configurada. Cole a URL de produção do webhook n8n (/webhook/...) nos secrets do projeto.",
+    );
+  }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   // 1. Cria o run em status 'running'

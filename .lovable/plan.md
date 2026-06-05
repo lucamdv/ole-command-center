@@ -1,80 +1,52 @@
-## Objetivo
+## Diagnóstico
 
-Permitir que o Oléver gere gráficos personalizados (linha, barra, pizza, área, scatter) sob demanda — usando dados reais do banco quando aplicável, ou séries calculadas/projetadas por ele — renderizados inline na conversa e persistidos como parte da mensagem.
+Os dois fluxos disparam sem erro mas ficam para sempre em `status="running"` porque o callback do n8n nunca chega de volta nos endpoints `/api/public/audit-callback` e `/api/public/policy-sync-callback`. Causas confirmadas:
 
-## Arquitetura
+1. **Auditoria** está usando o webhook hardcoded `DEFAULT_WEBHOOK = .../webhook-test/...` (modo teste, dispara 1 vez por clique em "Listen for test event") porque o secret `N8N_AUDIT_WEBHOOK_URL` nunca foi configurado.
+2. **Apólices** já tem `N8N_MOTOR_POLICIES_URL` setado, mas precisa apontar para a URL de produção que você passou.
+3. Em ambos os fluxos, o nó HTTP final do n8n precisa chamar o callback do app com o header `x-callback-secret`, senão o endpoint responde 401 e o run trava em "running" para sempre.
 
-Usaremos o padrão de **tool calling** do AI SDK. O Oléver decide quando chamar a tool e com quais parâmetros. O frontend detecta partes do tipo `tool-render_chart` na mensagem e renderiza o gráfico com Recharts (já instalado).
+## O que vou fazer no app
 
-```text
-User pergunta → Oléver (streamText)
-                    │
-                    ├─ (opcional) tool: query_metric   → SQL agregado no banco
-                    ├─ (opcional) tool: project_series → calcula projeção
-                    └─ tool: render_chart {type, title, data, xKey, series[]}
-                              ↓
-                  toUIMessageStreamResponse persiste parts no onFinish
-                              ↓
-                  MessageBubble renderiza <ChartPart /> (Recharts)
-```
+1. **Adicionar/atualizar 2 secrets** (via tool de secrets — você confirma os valores no formulário seguro):
+   - `N8N_AUDIT_WEBHOOK_URL` = `https://nuvembot.app.n8n.cloud/webhook/c80c897f-9951-43c8-9976-df81c44bce16`
+   - `N8N_MOTOR_POLICIES_URL` (update) = `https://nuvembot.app.n8n.cloud/webhook/d51531b9-30dc-4904-a15d-506e7dd9f271`
 
-## Mudanças
+2. **Remover o `DEFAULT_WEBHOOK` hardcoded** em `src/lib/audit.functions.ts` e `src/lib/policies.functions.ts`. Se o secret estiver faltando, falhar com mensagem clara em vez de cair silenciosamente em `/webhook-test/`.
 
-### 1. Backend — novas tools em `src/routes/api/oliver-chat.ts`
+3. **Marcar runs travados como erro**: rodar uma migração curta que marca como `error` qualquer `audit_runs` e `policy_sync_runs` com `status='running'` mais antigo que 10 min, para destravar a UI ("Sistema Degradado" some quando o último run não está mais running).
 
-Adicionar ao `streamText` um objeto `tools` com:
+4. **Acrescentar logs** no início de cada handler de callback (`audit-callback`, `policy-sync-callback`) com `console.log` do header `x-callback-secret` presente/ausente e do `run_id`, para você conseguir diagnosticar via `server-function-logs` na próxima execução.
 
-- **`render_chart`** — tool "de saída visual". Recebe `{ type: 'line'|'bar'|'pie'|'area'|'scatter'|'auto', title, description?, xKey, series: [{key, label, color?}], data: Array<Record<string, number|string>> }`. Não executa nada server-side — `execute` apenas retorna `{ ok: true }`. O valor real fica nos `input` da tool-part, que o frontend lê para renderizar.
-- **`query_metric`** — agrega dados reais. Recebe `{ metric: 'audits_by_status'|'policies_over_time'|'findings_by_type'|'premium_by_month'|... , groupBy?, range? }`. Server executa via `supabaseAdmin` retornando uma série pronta para alimentar `render_chart`. Conjunto fechado de métricas para evitar SQL arbitrário.
-- **`project_series`** — projeções simples (regressão linear / médias móveis) sobre uma série fornecida. Recebe `{ data, periods }` e devolve série estendida.
+## Checklist para você ajustar no n8n
 
-System prompt atualizado para instruir o Oléver:
-- "Quando o usuário pedir um gráfico ou quando uma visualização ajudar, chame `render_chart`."
-- "Se o usuário indicar o tipo (`barra`, `pizza`...), use-o; caso contrário, escolha o mais adequado."
-- "Para dados históricos use `query_metric` primeiro; para cenários futuros, combine com `project_series`."
+Em CADA workflow (auditoria e MOTOR OLÉ):
 
-`stopWhen: stepCountIs(50)` para permitir múltiplas chamadas em sequência (query → project → render).
-
-### 2. Persistência — já funciona
-
-O `onFinish` do `toUIMessageStreamResponse` já salva `message.parts` em `oliver_messages.parts` (jsonb). Tool-parts entram automaticamente. Só precisamos garantir que o `loadThreadMessages` continue devolvendo `parts` intactos (já devolve).
-
-### 3. Frontend — renderizar gráficos em `src/routes/intelligence.tsx`
-
-No `MessageBubble`, hoje os `toolParts` são exibidos como `<details>` JSON cru. Substituir por roteamento por tipo:
-
-- `tool-render_chart` (qualquer state ≥ `input-available`) → `<ChartPart input={tp.input} />`
-- Demais tools (`query_metric`, `project_series`) → manter o accordion discreto atual (telemetria), ou ocultar quando state = `output-available` e a próxima tool é `render_chart`.
-
-### 4. Novo componente `src/components/oliver/chart-part.tsx`
-
-- Lê `input` da tool-part (type, title, data, xKey, series).
-- Renderiza com `ResponsiveContainer` + componente apropriado do Recharts (`LineChart`, `BarChart`, `PieChart`, `AreaChart`, `ScatterChart`).
-- Usa cores do design system via `hsl(var(--primary))`, `--chart-1..5` (adicionar tokens em `src/styles.css` se faltarem).
-- Card com `title`, `description`, container 100% width × ~300px altura, tooltip e legenda padronizados.
-- `type: 'auto'` → heurística: 1 série numérica + xKey temporal = linha; categoria + valor = barra; ≤6 fatias somando 100% sugeridas = pizza.
-
-### 5. Helper de métricas em `src/lib/oliver/metrics.server.ts`
-
-Funções puras, server-only, mapeando cada `metric` enum para uma query Supabase admin que retorna `Array<{x, y, ...}>`. Mantém SQL longe do prompt e impede injeção. Exemplos iniciais:
-- `audits_by_status` (count agrupado por `status_geral` em `audit_runs`)
-- `policies_over_time` (count por mês de `policies.created_at`)
-- `findings_by_type` (top N `tipo_erro` em `audit_findings`)
-- `premium_by_month` (sum `premio_liquido` por mês em `endorsements`)
-
-### 6. Sugestões da home
-
-Adicionar 1-2 sugestões em `SUGGESTIONS` que induzem gráfico, ex.: "Mostre em um gráfico de barras os 5 tipos de erro mais frequentes nos últimos 90 dias."
+1. **Trigger** = nó "Webhook" em modo **Production URL** (não "Test"). O workflow precisa estar **Active** (toggle no canto superior direito).
+2. **Responder imediatamente**: no nó Webhook, opção "Respond" = "Immediately" com body `{"ok":true}`. Isso libera o front sem timeout.
+3. **Último nó = HTTP Request** chamando o callback do app:
+   - **Auditoria**: `POST https://olelifecockpit.lovable.app/api/public/audit-callback?run_id={{ $json.run_id }}`
+   - **Apólices**: `POST https://olelifecockpit.lovable.app/api/public/policy-sync-callback?run_id={{ $json.run_id }}`
+   - Headers:
+     - `Content-Type: application/json`
+     - `x-callback-secret: <valor do secret AUDIT_CALLBACK_SECRET>` (o mesmo secret serve para os 2 callbacks)
+   - Body: JSON do resultado (formato que o callback já aceita — array de apólices/auditoria; o handler normaliza `payload`, `body`, `dados`, `apolices`, etc.)
+4. O `run_id` chega no payload de entrada do workflow (o app envia `{ run_id, callback_url, trigger, at }`). Use `{{ $json.run_id }}` ou `{{ $json.body.run_id }}` dependendo de como o nó Webhook entrega os dados.
 
 ## Detalhes técnicos
 
-- AI SDK: `tool({ description, inputSchema: z.object({...}), execute })`. `inputSchema` Zod com enums curtas e sem `format/pattern` extensos (evita estouro de estado do Gemini).
-- `render_chart.execute` retorna `{ rendered: true }` — o gráfico vive no `input`, não no `output`, para que esteja disponível mesmo durante streaming (state `input-available`).
-- Sem migração de banco. `oliver_messages.parts` é jsonb e já aceita o formato.
-- Sem novas dependências (Recharts e Zod já estão no projeto).
+```text
+Arquivos tocados:
+- src/lib/audit.functions.ts          (remover DEFAULT_WEBHOOK, exigir secret)
+- src/lib/policies.functions.ts       (remover DEFAULT_WEBHOOK, exigir secret)
+- src/routes/api/public/audit-callback.ts        (log de diagnóstico)
+- src/routes/api/public/policy-sync-callback.ts  (log de diagnóstico)
+- supabase migration: UPDATE audit_runs/policy_sync_runs SET status='error',
+  error_message='timeout > 10min sem callback', finished_at=now()
+  WHERE status='running' AND created_at < now() - interval '10 minutes'
+Secrets:
+- N8N_AUDIT_WEBHOOK_URL  (add)
+- N8N_MOTOR_POLICIES_URL (update)
+```
 
-## Fora de escopo
-
-- Edição interativa do gráfico pelo usuário (drag/zoom avançado).
-- Export do gráfico como PNG/CSV (pode ser adicionado depois com `export-charts.ts` já existente).
-- Métricas arbitrárias por SQL livre — apenas o enum fechado em `query_metric`.
+Sem mudança de UI nem de schema. Após implementar, você ajusta os 2 workflows no n8n conforme o checklist e testa um disparo de cada.

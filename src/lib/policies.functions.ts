@@ -1,8 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-// URL pode ser sobrescrita pelo secret N8N_MOTOR_POLICIES_URL.
-const DEFAULT_WEBHOOK = "";
+// URL do webhook MOTOR OLÉ. DEVE ser configurada via secret N8N_MOTOR_POLICIES_URL
+// (use a URL de produção /webhook/..., não /webhook-test/...).
 
 const LOVABLE_PROJECT_ID = "5db7fa90-1492-4717-b26e-8b99a107e006";
 const PREVIEW_PUBLIC_URL = `https://project--${LOVABLE_PROJECT_ID}-dev.lovable.app`;
@@ -52,7 +52,7 @@ export interface PolicySyncStatus {
 }
 
 export const runPolicySync = createServerFn({ method: "POST" }).handler(async () => {
-  const url = process.env.N8N_MOTOR_POLICIES_URL || DEFAULT_WEBHOOK;
+  const url = process.env.N8N_MOTOR_POLICIES_URL;
   if (!url) {
     throw new Error(
       "Secret N8N_MOTOR_POLICIES_URL ainda não configurada. Cole a URL do webhook do MOTOR OLÉ.",
