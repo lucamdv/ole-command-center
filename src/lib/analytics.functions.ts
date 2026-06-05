@@ -350,3 +350,31 @@ function resolveProposta(raw: Record<string, unknown>): Record<string, unknown> 
 function round2(n: number) {
   return Math.round(n * 100) / 100;
 }
+
+function buildRepasseByMonth(brutoByMonth: Map<string, number>): RepasseBucket[] {
+  if (brutoByMonth.size === 0) return [];
+  const months = Array.from(brutoByMonth.keys()).sort();
+  const first = months[0];
+  const now = new Date();
+  const currentMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+  const last = currentMonth.localeCompare(months[months.length - 1]) > 0
+    ? currentMonth
+    : months[months.length - 1];
+
+  const out: RepasseBucket[] = [];
+  let [y, m] = first.split("-").map(Number);
+  const [yLast, mLast] = last.split("-").map(Number);
+  while (y < yLast || (y === yLast && m <= mLast)) {
+    const key = `${y}-${String(m).padStart(2, "0")}`;
+    const bruto = round2(brutoByMonth.get(key) ?? 0);
+    const breakdown = computeRepasse(bruto);
+    out.push({ month: key, label: monthLabel(key), bruto, ...breakdown });
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
+  }
+  return out;
+}
+
