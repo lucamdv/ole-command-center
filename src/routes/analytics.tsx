@@ -36,6 +36,7 @@ import {
 import { exportAuditPdf } from "@/lib/audit/export-pdf";
 import { exportChartsPdf } from "@/lib/analytics/export-charts";
 import { formatBRL, formatCompact, formatInt, formatPct, formatUSD, relativeTime } from "@/lib/format";
+import { REPASSE_RULES } from "@/lib/analytics/repasse-rules";
 
 export const Route = createFileRoute("/analytics")({
   head: () => ({
