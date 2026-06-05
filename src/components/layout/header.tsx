@@ -92,7 +92,7 @@ export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
         <span className="text-[12px] font-medium text-foreground">Luca Monteiro</span>
         <span className="text-[10px] text-muted-foreground">Operações · Admin</span>
       </div>
-      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-info grid place-items-center text-[11px] font-semibold text-primary-foreground ring-2 ring-background" title="Luca Monteiro">
+      <div className="h-8 w-8 rounded-full bg-linear-to-br from-primary to-info grid place-items-center text-[11px] font-semibold text-primary-foreground ring-2 ring-background" title="Luca Monteiro">
         LM
       </div>
     </header>

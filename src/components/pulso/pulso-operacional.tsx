@@ -46,7 +46,7 @@ export function PulsoOperacional() {
   return (
     <div className="rounded-2xl border border-border bg-surface/80 backdrop-blur overflow-hidden shadow-elevated">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-gradient-to-r from-surface to-surface-2">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-linear-to-r from-surface to-surface-2">
         <div className="flex items-center gap-3">
           <div className="relative">
             <div className="h-9 w-9 rounded-lg bg-primary/15 grid place-items-center">

@@ -71,7 +71,7 @@ export function RunAuditButton({ compact = false }: { compact?: boolean }) {
           !mutation.isRunning && "hover:bg-primary/90 hover:shadow-[0_0_40px_-8px_var(--primary)]",
         )}
       >
-        <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
+        <span className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
         {mutation.isRunning ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />

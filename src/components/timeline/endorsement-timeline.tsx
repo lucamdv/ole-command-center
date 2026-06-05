@@ -19,7 +19,7 @@ export function EndorsementTimeline({ items }: { items: Endorsement[] }) {
           >
             {/* Vertical connector */}
             {i < items.length - 1 && (
-              <div className="absolute left-[18px] top-9 bottom-0 w-px bg-gradient-to-b from-border to-transparent" />
+              <div className="absolute left-[18px] top-9 bottom-0 w-px bg-linear-to-b from-border to-transparent" />
             )}
 
             {/* Node */}

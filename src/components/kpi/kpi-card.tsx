@@ -48,11 +48,11 @@ export function KpiCard({
     <div className="group relative overflow-hidden rounded-xl border border-border bg-surface hover:border-primary/30 transition-all duration-300">
       <div
         className={cn(
-          "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br pointer-events-none",
+          "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-linear-to-br pointer-events-none",
           TONE_RING[tone],
         )}
       />
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-white/15 to-transparent" />
 
       <div className="relative p-4">
         <div className="flex items-center justify-between mb-3">

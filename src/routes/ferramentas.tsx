@@ -30,7 +30,7 @@ function FerramentasPage() {
         </p>
       </div>
 
-      <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-surface to-surface-2 p-10 shadow-elevated">
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-linear-to-br from-surface to-surface-2 p-10 shadow-elevated">
         <div className="absolute -top-16 -right-16 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
         <div className="relative max-w-xl">
           <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md border border-primary/30 bg-primary/10 text-primary text-[11px] font-mono uppercase tracking-wider mb-4">

@@ -12,7 +12,7 @@ export function RiskHeatmap() {
 
   return (
     <div className="rounded-2xl border border-border bg-surface/80 backdrop-blur shadow-elevated overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-gradient-to-r from-surface to-surface-2">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-linear-to-r from-surface to-surface-2">
         <div>
           <div className="text-[14px] font-semibold tracking-tight">Matriz de Risco Operacional</div>
           <div className="text-[11px] text-muted-foreground">
