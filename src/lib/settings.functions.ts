@@ -149,7 +149,7 @@ export const getDataCounters = createServerFn({ method: "GET" }).handler(
         return [t, count ?? 0] as const;
       }),
     );
-    return Object.fromEntries(entries) as DataCounters;
+    return Object.fromEntries(entries) as unknown as DataCounters;
   },
 );
 
