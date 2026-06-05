@@ -34,12 +34,20 @@ export interface IssuanceBucket {
   total: number;
 }
 
+export interface RepasseBucket extends RepasseBreakdown {
+  month: string;
+  label: string;
+  bruto: number;
+}
+
 export interface AnalyticsAggregates {
   findingsByVigencia: MonthBucket[];
   revenueByMonth: RevenueBucket[];
   policyPremiums: PolicyPremium[];
   issuancesByMonth: IssuanceBucket[];
+  repasseByMonth: RepasseBucket[];
 }
+
 
 
 function monthLabel(month: string): string {
