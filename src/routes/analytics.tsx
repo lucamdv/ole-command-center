@@ -857,6 +857,33 @@ function EmptyMsg({ text }: { text: string }) {
   );
 }
 
+function RepasseTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: Record<string, number> & { label: string } }> }) {
+  if (!active || !payload || payload.length === 0) return null;
+  const d = payload[0].payload;
+  const row = (label: string, value: number, tone?: string) => (
+    <div className="flex items-center justify-between gap-6 text-[11px]">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={`font-mono tabular-nums ${tone ?? "text-foreground"}`}>
+        {formatUSD(value, { maximumFractionDigits: 2 })}
+      </span>
+    </div>
+  );
+  return (
+    <div className="rounded-lg border border-border bg-surface/95 backdrop-blur p-3 shadow-elevated min-w-[240px]">
+      <div className="text-[12px] font-semibold mb-2">{d.label}</div>
+      <div className="space-y-1">
+        {row("Carregamento", d.carregamentoExcelsior)}
+        {row("Prêmio Direto", d.premioDireto, "text-success")}
+        {row("IOF (0,38%)", d.iof, "text-muted-foreground")}
+        {row("Base Olé+Nomad (55%)", d.comissoesOle, "text-muted-foreground")}
+        {row("PIS/COFINS (4,65%)", -d.pisCofins, "text-destructive")}
+        <div className="h-px bg-border my-1.5" />
+        {row("Total Excelsior", d.excelsiorLiquido, "text-info font-semibold")}
+      </div>
+    </div>
+  );
+}
+
 function LoadingState() {
   return (
     <div className="space-y-4">
