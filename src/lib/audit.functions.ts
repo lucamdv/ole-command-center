@@ -2,8 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { AuditHistoryItem, LatestAudit } from "./audit/types";
 
-// URL pode ser sobrescrita pelo secret N8N_AUDIT_WEBHOOK_URL em produção.
-const DEFAULT_WEBHOOK = "https://nuvembot.app.n8n.cloud/webhook-test/c80c897f-9951-43c8-9976-df81c44bce16";
+// URL do webhook do fluxo n8n de auditoria. DEVE ser configurada via secret
+// N8N_AUDIT_WEBHOOK_URL (use a URL de produção /webhook/..., não /webhook-test/...).
 const EMPTY_SUMMARY = {
   aprovados: 0,
   reprovados: 0,
