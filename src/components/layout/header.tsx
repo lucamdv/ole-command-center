@@ -42,6 +42,8 @@ export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
         <span className="text-[11px] font-mono text-foreground">{relativeTime(lastSync)}</span>
       </div>
 
+      <ThemeToggle />
+
       <div className="relative">
         <button
           onClick={() => setOpenNotif((v) => !v)}
