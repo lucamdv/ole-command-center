@@ -58,7 +58,7 @@ function AnalyticsPage() {
   const latest = latestQ.data ?? null;
   const history = historyQ.data ?? [];
   const policies = policiesQ.data ?? [];
-  const aggregates = aggregatesQ.data ?? { findingsByVigencia: [], revenueByMonth: [], policyPremiums: [], issuancesByMonth: [] };
+  const aggregates = aggregatesQ.data ?? { findingsByVigencia: [], revenueByMonth: [], policyPremiums: [], issuancesByMonth: [], repasseByMonth: [] };
 
   const kpis = useMemo(() => deriveKpis({ latest, history }), [latest, history]);
   const findings = latest?.findings ?? [];
@@ -69,11 +69,27 @@ function AnalyticsPage() {
   const endossoRank = useMemo(() => groupByEndosso(findings).slice(0, 8), [findings]);
   const monthly = aggregates.findingsByVigencia;
   const revenue = aggregates.revenueByMonth;
+  const repasse = aggregates.repasseByMonth;
   const issuances = aggregates.issuancesByMonth;
   const totalApolices = useMemo(() => issuances.reduce((s, r) => s + r.apolices, 0), [issuances]);
   const totalEndossos = useMemo(() => issuances.reduce((s, r) => s + r.endossosTotal, 0), [issuances]);
   const totalUsd = useMemo(() => revenue.reduce((s, r) => s + r.usd, 0), [revenue]);
+  const repasseTotals = useMemo(
+    () =>
+      repasse.reduce(
+        (acc, r) => ({
+          ole: acc.ole + r.ole,
+          excelsior: acc.excelsior + r.excelsior,
+          munich: acc.munich + r.munich,
+          impostos: acc.impostos + r.impostos,
+          bruto: acc.bruto + r.bruto,
+        }),
+        { ole: 0, excelsior: 0, munich: 0, impostos: 0, bruto: 0 },
+      ),
+    [repasse],
+  );
   const heatmap = useMemo(() => buildHeatmap(latest, history, 12), [latest, history]);
+
 
 
   // Distribuição por nº de endossos
