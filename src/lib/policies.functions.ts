@@ -52,7 +52,9 @@ export interface PolicySyncStatus {
   finished_at: string | null;
 }
 
-export const runPolicySync = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async () => {
+// Implementação interna (sem auth). Usada tanto pela serverFn protegida quanto
+// pelo hook público /api/public/hooks/policy-sync (que já valida shared-secret).
+export async function runPolicySyncImpl() {
   const url = process.env.N8N_MOTOR_POLICIES_URL;
   if (!url) {
     throw new Error(
@@ -123,7 +125,11 @@ export const runPolicySync = createServerFn({ method: "POST" }).middleware([requ
   }
 
   return { runId, status: "running" as const };
-});
+}
+
+export const runPolicySync = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => runPolicySyncImpl());
 
 export const getPolicySyncStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator((d: { runId: string }) => d)
