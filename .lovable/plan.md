@@ -1,53 +1,60 @@
-## Diagnóstico
+## Objetivo
 
-Para a apólice `056902026000213910016500000000` o payload do MOTOR OLÉ traz:
+Substituir o gráfico atual **"Receita OLÉ (USD) por mês de vigência"** (área única de prêmio bruto) por **"Distribuição contábil dos prêmios pagos (USD)"** — barras empilhadas com 4 camadas que refletem o Mapa de Repasses:
 
-```text
-dados[i] = {
-  numero_apolice: "0569…0000",
-  numero_endosso: "0",
-  data_emissao:   "2026-05-07T12:52:01.579-03:00",   ← emissão REAL da apólice
-  historico_endossos: [
-    { numero_endosso_seguradora: "000000", proposta: { datas, itens, partes, … } },   ← apólice
-    { proposta: { endosso_A: { data_emissao: "2026-06-05T07:01:31.999-03:00", … } } } ← endosso A
-  ]
-}
-```
+1. **Fica com Olé (líquido)** — Fee Olé (35%) + Custo de Aquisição (20%) − PIS/COFINS sobre comissões (4,65%)
+2. **Vai para Excelsior** — Fee Exc (5%) + Fixo Suplementar (piso USD 8.333,33) + Prêmio Retido (10% do prêmio direto)
+3. **Vai para Munich RE** — 90% do prêmio direto (40% do prêmio líquido)
+4. **Vai para impostos** — IOF (0,38%) + PIS/COFINS sobre comissões (4,65%)
 
-Dois bugs no `src/routes/api/public/policy-sync-callback.ts`:
+Mês com prêmio pago = 0 → camada 1, 3 e 4 ficam zeradas, mas **Excelsior aparece com USD 8.333,33** (piso contratual), espelhando o contrato.
 
-1. `currentEndNum = pickEnd(apolice)` devolve `"0"` (top-level), mas o item da apólice no `historico_endossos` tem `numero_endosso_seguradora = "000000"`. O `historico.find(...)` falha, cai no fallback `historico[length-1]` e **persiste o envelope do endosso A como `proposta` da apólice**. É por isso que a tela da apólice mostra a data do endosso (05/06/2026 07:01) em vez da emissão real (07/05/2026 12:52).
-2. O `data_emissao` da apólice vive no objeto top-level (`dados[i].data_emissao`) e nunca é gravado — `parseDatas` só lê `env.data_emissao`, que não existe quando a "proposta" da apólice é a proposta direta.
+## O que muda
 
-Há também um efeito colateral: `numero_endosso_atual` da apólice é gravado como `"0"` em vez de `"000000"`.
+### 1. `src/lib/analytics.functions.ts`
+- Trocar agregação por **mês de pagamento**. Para cada apólice/endosso, ler `itens[].pagamento.parcelas[].data_vencimento` (ou `data_pagamento` quando existir) em vez de `datas.inicio_vigencia`. Se a parcela não tiver data, fallback para `data_emissao` do envelope do endosso (FATURA MENSAL = emissão ≈ pagamento, como no mapa de maio).
+- Somar `valor_premio` (DIRETO/PREMIO) por mês de pagamento → `bruto`.
+- Garantir que TODO mês entre o 1º pagamento e o mês atual aparece, mesmo que `bruto = 0` (necessário para mostrar o piso de Excelsior em meses ociosos).
+- Calcular as 4 camadas para cada mês (constantes em `src/lib/analytics/repasse-rules.ts`):
+  ```ts
+  IOF_PCT = 0.0038
+  FEE_OLE_PCT = 0.35
+  CUSTO_AQUISICAO_PCT = 0.20
+  PIS_COFINS_PCT = 0.0465
+  FEE_EXC_PCT = 0.05
+  FIXO_SUPLEMENTAR_PISO = 8333.33
+  PREMIO_DIRETO_PCT = 0.40
+  PREMIO_RETIDO_EXC_PCT = 0.10  // do prêmio direto
+  PREMIO_CEDIDO_MUNICH_PCT = 0.90 // do prêmio direto
+  ```
+- Novo tipo `RepasseBucket { month, label, ole, excelsior, munich, impostos, bruto }`.
+- Manter `RevenueBucket` antigo para não quebrar o `oliver-chat.ts` (que consome `revenueByMonth`), mas adicionar campo paralelo `repasseByMonth: RepasseBucket[]` em `AnalyticsAggregates`.
 
-## Mudanças
+### 2. `src/routes/analytics.tsx`
+- Substituir o `<AreaChart>` do bloco "Receita OLÉ" por um `<BarChart>` empilhado com 4 séries (cores: `--success` Olé, `--primary` Excelsior, `--info` Munich, `--warning` Impostos).
+- Subtítulo passa a mostrar `Fica com Olé: USD X · Total movimentado: USD Y · N meses`.
+- Adicionar Legend e tooltip formatando USD com 2 casas. Tooltip somando o total da barra.
+- KPI `totalUsd` passa a refletir `bruto` total; novo KPI `oleLiquido` somando coluna Olé.
 
-### 1. `src/routes/api/public/policy-sync-callback.ts`
-- Normalizar comparações de endosso com `normalizeEndossoNum` (em `src/lib/excelsior/translate.ts`) — `"0"`, `"000000"`, `0` viram a mesma chave.
-- Reescrever a seleção do `currentEndo`:
-  - Se `pickEnd(apolice)` normalizado for `000000` → escolher o item de `historico_endossos` cujo `numero_endosso_seguradora` normalizado seja `000000` (a apólice em si).
-  - Caso contrário → buscar pela igualdade normalizada; só cair no `length-1` se nada bater (com `console.warn`).
-- Antes do `upsert` da `policies`, mesclar no `proposta` salvo o `data_emissao` top-level: `proposta = { ...currentEndo.proposta, data_emissao: apolice.data_emissao }` (só quando o `currentEndo` é a apólice base, para não sobrescrever envelope de endosso).
-- Gravar `numero_endosso_atual = normalizeEndossoNum(pickEnd(apolice))` (sempre 6 dígitos).
+### 3. Validação manual contra o mapa de maio
+Após implementar, verificar via `select` ou direto na UI: o mês 2026-05 deve mostrar valores próximos a:
+- bruto ≈ USD 1.861
+- Olé líquido ≈ USD 972
+- Excelsior ≈ USD 8.407 (Fee Exc 92,70 + Fixo Supl 8.240,63 + Retido 74,16)
+- Munich ≈ USD 667
+- Impostos ≈ USD 54 (IOF 7,07 + PIS/COFINS comissões 47,41)
 
-### 2. `src/lib/excelsior/translate.ts` (`parseDatas`)
-- Acrescentar fallback: `dataEmissao = asStr(env?.data_emissao) ?? asStr(p.data_emissao)`.
-  Isso cobre tanto o caso "proposta da apólice com `data_emissao` mesclado" quanto futuras variações em que o n8n entregue a chave direto na proposta.
-
-### 3. Backfill via migration
-Migration única que reprocessa o último `policy_sync_runs.raw` com `status='success'` para regravar `policies.proposta` e `numero_endosso_atual` corretos (sem precisar disparar o n8n de novo). Algoritmo idêntico ao do callback corrigido, em PL/pgSQL ou via `do $$ ... $$` com `jsonb`.
-
-Se preferir, posso pular a migration e só esperar o próximo run — me avisa no chat.
-
-## Validação
-
-Após aplicar:
-- `select proposta->>'data_emissao', numero_endosso_atual from policies where numero_apolice='0569…0000';`
-  deve retornar `2026-05-07T12:52:01…` e `000000`.
-- Abrir `/apolices/0569…0000` → campo "Data de emissão" mostra **07/05/2026 12:52**.
-- Abrir o endosso `0001` da mesma apólice → continua mostrando **05/06/2026 07:01** (vem do envelope, intacto).
+Se divergir > 5%, ajustar a fonte de "data de pagamento" (provavelmente cair no `data_emissao` do endosso de FATURA MENSAL).
 
 ## Fora de escopo
 
-Não vou mexer no resto da tradução (partes, coberturas, pagamento) — esse problema específico é só o pareamento da proposta da apólice + `data_emissao`. Se você notar outro campo errado em outra apólice, me manda exemplo que eu trato em separado.
+- Não vou alterar o Oléver Chat (continua usando `revenueByMonth` antigo para não quebrar perguntas existentes; posso atualizar depois se você pedir).
+- Não vou modelar sinistralidade variável (mantenho Fee Olé 35% e Fee Exc 5% — extremos do range, conservador para Olé e Excelsior).
+- Não vou criar tela de upload do Mapa de Repasses — o gráfico é 100% calculado a partir dos prêmios já sincronizados.
+
+## Detalhes técnicos
+
+- Constantes ficam em `src/lib/analytics/repasse-rules.ts` (exportadas) para facilitar tuning futuro e reuso no Oléver.
+- Função `computeRepasse(bruto: number): { ole, excelsior, munich, impostos }` pura, testável.
+- Loop por mês na agregação sempre chama `computeRepasse(bruto)`, mesmo quando `bruto = 0`, garantindo que Excelsior nunca caia abaixo do piso quando o mês está dentro da janela operacional.
+
