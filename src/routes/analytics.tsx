@@ -392,7 +392,7 @@ function AnalyticsPage() {
 
             <ChartCard
               title="Receita Excelsior (USD) por mês de pagamento"
-              subtitle={`Carregamento fixo (US$ 8.333,33) + Prêmio Direto − PIS/COFINS (4,65%) · Total: ${formatUSD(repasseTotals.excelsiorLiquido, { maximumFractionDigits: 0 })} · Média/mês: ${formatUSD(repasseAvg, { maximumFractionDigits: 0 })} · ${repasse.length} meses`}
+              subtitle={`Carregamento (US$ 8.333,33) + Prêmio Direto − PIS/COFINS · PIS/COFINS = 4,65% × comissões Olé (Fee 35% + Nomad 20%) sobre prêmio líquido de IOF · Total: ${formatUSD(repasseTotals.excelsiorLiquido, { maximumFractionDigits: 0 })} · Média/mês: ${formatUSD(repasseAvg, { maximumFractionDigits: 0 })} · ${repasse.length} meses`}
             >
               {repasse.length === 0 ? (
                 <EmptyMsg text="Sem prêmios pagos sincronizados." />
@@ -423,10 +423,7 @@ function AnalyticsPage() {
                       />
                       <Tooltip
                         {...tooltipProps}
-                        formatter={(v, name) => [
-                          formatUSD(Number(v), { maximumFractionDigits: 2 }),
-                          name as string,
-                        ]}
+                        content={<RepasseTooltip />}
                       />
                       <Legend wrapperStyle={{ fontSize: 11 }} />
                       <ReferenceLine
@@ -440,6 +437,7 @@ function AnalyticsPage() {
                           fontSize: 10,
                         }}
                       />
+                      <ReferenceLine y={0} stroke="var(--border)" />
                       <Bar
                         dataKey="carregamentoExcelsior"
                         name="Carregamento"
@@ -459,11 +457,11 @@ function AnalyticsPage() {
                         animationDuration={900}
                       />
                       <Bar
-                        dataKey="pisCofins"
-                        name="PIS/COFINS"
+                        dataKey="pisCofinsDeducao"
+                        name="PIS/COFINS (dedução)"
                         fill="var(--destructive)"
                         fillOpacity={0.85}
-                        radius={[4, 4, 0, 0]}
+                        radius={[0, 0, 4, 4]}
                         isAnimationActive
                         animationDuration={900}
                       />
@@ -855,6 +853,33 @@ function EmptyMsg({ text }: { text: string }) {
   return (
     <div className="h-[160px] flex items-center justify-center text-[12px] text-muted-foreground">
       {text}
+    </div>
+  );
+}
+
+function RepasseTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: Record<string, number> & { label: string } }> }) {
+  if (!active || !payload || payload.length === 0) return null;
+  const d = payload[0].payload;
+  const row = (label: string, value: number, tone?: string) => (
+    <div className="flex items-center justify-between gap-6 text-[11px]">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={`font-mono tabular-nums ${tone ?? "text-foreground"}`}>
+        {formatUSD(value, { maximumFractionDigits: 2 })}
+      </span>
+    </div>
+  );
+  return (
+    <div className="rounded-lg border border-border bg-surface/95 backdrop-blur p-3 shadow-elevated min-w-[240px]">
+      <div className="text-[12px] font-semibold mb-2">{d.label}</div>
+      <div className="space-y-1">
+        {row("Carregamento", d.carregamentoExcelsior)}
+        {row("Prêmio Direto", d.premioDireto, "text-success")}
+        {row("IOF (0,38%)", d.iof, "text-muted-foreground")}
+        {row("Base Olé+Nomad (55%)", d.comissoesOle, "text-muted-foreground")}
+        {row("PIS/COFINS (4,65%)", -d.pisCofins, "text-destructive")}
+        <div className="h-px bg-border my-1.5" />
+        {row("Total Excelsior", d.excelsiorLiquido, "text-info font-semibold")}
+      </div>
     </div>
   );
 }

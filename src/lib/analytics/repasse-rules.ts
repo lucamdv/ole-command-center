@@ -25,8 +25,14 @@ export interface RepasseBreakdown {
   carregamentoExcelsior: number;
   /** Prêmio direto pago no mês (bruto). */
   premioDireto: number;
+  /** IOF retido sobre o prêmio direto (0,38%). */
+  iof: number;
+  /** Base de comissões Olé + Nomad: (Prêmio − IOF) × 55%. */
+  comissoesOle: number;
   /** PIS/COFINS = 4,65% sobre comissões Olé (Fee Olé 35% + Nomad 20%). */
   pisCofins: number;
+  /** Mesmo valor de pisCofins com sinal negativo, para visualizar como abatimento. */
+  pisCofinsDeducao: number;
   /** Receita líquida Excelsior = carregamento + prêmio direto − PIS/COFINS. */
   excelsiorLiquido: number;
 }
@@ -57,7 +63,10 @@ export function computeRepasse(premioDiretoBruto: number): RepasseBreakdown {
   return {
     carregamentoExcelsior: round2(carregamentoExcelsior),
     premioDireto: round2(premioDireto),
+    iof: round2(iof),
+    comissoesOle: round2(comissoesOle),
     pisCofins: round2(pisCofins),
+    pisCofinsDeducao: round2(-pisCofins),
     excelsiorLiquido: round2(excelsiorLiquido),
   };
 }

@@ -1,28 +1,21 @@
 ## Plano
 
-1. **Corrigir a regra contábil da Excelsior**
-   - Trocar o cálculo atual para seguir exatamente a regra informada:
-     ```text
-     Receita Excelsior = 8.333,33 + Prêmio Direto - PIS/COFINS
-     ```
-   - Remover do gráfico o uso de “prêmio retido 10%” e qualquer divisão Olé/Munich/Impostos que não seja necessária para a visão da Excelsior.
-   - Manter a base mensal por **mês de pagamento/vencimento da parcela**.
+1. **Centralizar os dados do gráfico no cálculo oficial**
+   - Garantir que a série mensal usada pelo gráfico venha de `computeRepasse`, onde PIS/COFINS = 4,65% sobre as comissões Olé + Nomad.
+   - Evitar qualquer cálculo visual separado que trate PIS/COFINS como percentual do carregamento ou do prêmio bruto total.
 
-2. **Reestruturar os dados mensais do gráfico**
-   - Para cada mês, retornar os campos contábeis visíveis da Excelsior:
-     - `carregamentoExcelsior`: sempre `8.333,33`
-     - `premioDireto`: soma dos prêmios pagos no mês
-     - `pisCofins`: dedução calculada pela regra vigente
-     - `excelsiorLiquido`: total final
-   - Preservar meses sem prêmio pago, ainda aplicando o carregamento fixo.
+2. **Corrigir a representação do gráfico**
+   - Ajustar o gráfico de Receita Excelsior para deixar claro que:
+     - `Carregamento` é sempre US$ 8.333,33.
+     - `Prêmio Direto` é entrada positiva.
+     - `PIS/COFINS` é dedução calculada sobre `(Prêmio Direto − IOF) × 55%`.
+     - `Total Excelsior` é `Carregamento + Prêmio Direto − PIS/COFINS`.
+   - Se necessário, transformar a barra de PIS/COFINS em valor negativo/visual de abatimento para não parecer receita adicional.
 
-3. **Refazer o gráfico para ficar mais claro e mais dinâmico visualmente**
-   - Substituir a área quase plana por um gráfico composto:
-     - barras empilhadas para `Carregamento` e `Prêmio Direto`
-     - barra/linha negativa ou destaque visual para `PIS/COFINS`
-     - linha principal para `Total Excelsior`
-   - Ajustar tooltip para mostrar a conta mês a mês: `8.333,33 + prêmio direto - PIS/COFINS = total`.
-   - Atualizar título/subtítulo para deixar explícito que o gráfico mostra **somente a parte da Excelsior**.
+3. **Atualizar textos e tooltip**
+   - Atualizar subtítulo/legenda/tooltip para mencionar explicitamente: `PIS/COFINS = 4,65% sobre comissões Olé + Nomad`.
+   - Exibir no tooltip os componentes úteis para validação: prêmio direto, IOF, base de comissão Olé+Nomad e PIS/COFINS.
 
-4. **Validar visual e consistência**
-   - Conferir se o gráfico aparece em `/analytics`, se os valores mensais batem com a fórmula e se a variação do prêmio direto fica perceptível mesmo com o carregamento fixo alto.
+4. **Validar a coerência dos totais**
+   - Conferir que totais e média do card usam o mesmo `excelsiorLiquido` calculado pela regra oficial.
+   - Verificar visualmente que o gráfico fica dinâmico e que a dedução de PIS/COFINS acompanha os meses com prêmio direto.
