@@ -318,7 +318,9 @@ function parseDatas(p: Obj, env: Obj | null): DatasInfo {
     conclusaoSubscricao: asStr(d.conclusao_subscricao),
     registroOrigem: asStr(d.registro_origem),
     protocoloOrigem: asStr(d.protocolo_origem),
-    dataEmissao: asStr(env?.data_emissao ?? null),
+    // Em endossos o `data_emissao` vem no envelope (`endosso_X.data_emissao`);
+    // na apólice base ele é mesclado pelo callback diretamente na proposta.
+    dataEmissao: asStr(env?.data_emissao ?? null) ?? asStr(p.data_emissao),
   };
 }
 
