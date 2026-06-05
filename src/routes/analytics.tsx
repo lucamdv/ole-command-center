@@ -80,11 +80,12 @@ function AnalyticsPage() {
         (acc, r) => ({
           ole: acc.ole + r.ole,
           excelsior: acc.excelsior + r.excelsior,
+          excelsiorLiquido: acc.excelsiorLiquido + r.excelsiorLiquido,
           munich: acc.munich + r.munich,
           impostos: acc.impostos + r.impostos,
           bruto: acc.bruto + r.bruto,
         }),
-        { ole: 0, excelsior: 0, munich: 0, impostos: 0, bruto: 0 },
+        { ole: 0, excelsior: 0, excelsiorLiquido: 0, munich: 0, impostos: 0, bruto: 0 },
       ),
     [repasse],
   );
