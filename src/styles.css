@@ -63,11 +63,11 @@
 
   /* Brand */
   --brand-azul: oklch(0.31 0.16 277);          /* #2C2B7C */
-  --brand-azul-soft: oklch(0.48 0.16 275);
+  --brand-azul-soft: oklch(0.55 0.20 270);
   --brand-azul-strong: oklch(0.24 0.14 277);
-  --brand-verde: oklch(0.72 0.16 152);         /* #45B97C */
-  --brand-verde-soft: oklch(0.82 0.12 152);
-  --brand-verde-strong: oklch(0.58 0.16 152);
+  --brand-verde: oklch(0.66 0.20 152);         /* vívido */
+  --brand-verde-soft: oklch(0.78 0.15 152);
+  --brand-verde-strong: oklch(0.52 0.19 152);
 
   /* Surfaces */
   --background: oklch(0.985 0.003 250);
@@ -82,54 +82,55 @@
   /* Text */
   --foreground: oklch(0.18 0.02 270);
   --muted: oklch(0.94 0.005 250);
-  --muted-foreground: oklch(0.48 0.02 260);
+  --muted-foreground: oklch(0.42 0.03 260);
 
   /* Primary (Azul Excelsior) */
   --primary: var(--brand-azul);
   --primary-foreground: oklch(0.99 0 0);
   --primary-glow: var(--brand-azul-soft);
 
-  --secondary: oklch(0.94 0.01 260);
+  --secondary: oklch(0.93 0.04 270);
   --secondary-foreground: var(--brand-azul-strong);
-  --accent: oklch(0.95 0.03 152);
-  --accent-foreground: var(--brand-verde-strong);
+  --accent: oklch(0.92 0.09 152);
+  --accent-foreground: oklch(0.30 0.15 152);
 
   /* Status */
-  --success: var(--brand-verde);
-  --warning: oklch(0.78 0.17 75);
-  --destructive: oklch(0.6 0.22 25);
+  --success: oklch(0.60 0.19 152);
+  --warning: oklch(0.72 0.19 70);
+  --destructive: oklch(0.58 0.24 25);
   --destructive-foreground: oklch(0.99 0 0);
-  --info: var(--brand-azul-soft);
+  --info: oklch(0.55 0.20 270);
 
   /* Borders */
-  --border: oklch(0.18 0.02 270 / 0.1);
-  --input: oklch(0.18 0.02 270 / 0.14);
-  --ring: oklch(0.31 0.16 277 / 0.45);
+  --border: oklch(0.20 0.04 270 / 0.16);
+  --input: oklch(0.20 0.04 270 / 0.22);
+  --ring: oklch(0.31 0.16 277 / 0.6);
 
-  /* Charts — azul, verde, azul claro, verde escuro, cinza-azulado */
-  --chart-1: var(--brand-azul);
-  --chart-2: var(--brand-verde);
-  --chart-3: var(--brand-azul-soft);
-  --chart-4: var(--brand-verde-strong);
-  --chart-5: oklch(0.6 0.04 260);
+  /* Charts — séries distintas e vibrantes */
+  --chart-1: oklch(0.45 0.22 270);
+  --chart-2: oklch(0.66 0.20 152);
+  --chart-3: oklch(0.70 0.18 220);
+  --chart-4: oklch(0.62 0.22 30);
+  --chart-5: oklch(0.55 0.20 310);
 
   /* Sidebar */
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.18 0.02 270);
   --sidebar-primary: var(--brand-azul);
   --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.95 0.01 260);
+  --sidebar-accent: oklch(0.93 0.04 270);
   --sidebar-accent-foreground: var(--brand-azul-strong);
-  --sidebar-border: oklch(0.18 0.02 270 / 0.08);
+  --sidebar-border: oklch(0.18 0.02 270 / 0.12);
   --sidebar-ring: oklch(0.31 0.16 277 / 0.5);
 
   /* Gradients & effects */
-  --gradient-primary: linear-gradient(135deg, var(--brand-azul), var(--brand-verde));
+  --gradient-primary: linear-gradient(135deg, oklch(0.40 0.22 275), oklch(0.66 0.20 152));
   --gradient-surface: linear-gradient(180deg, oklch(1 0 0), oklch(0.97 0.004 250));
-  --gradient-glow: radial-gradient(circle at 50% 0%, oklch(0.31 0.16 277 / 0.1), transparent 60%);
-  --shadow-elevated: 0 12px 32px -16px oklch(0.18 0.02 270 / 0.18), 0 1px 0 0 oklch(1 0 0 / 0.5) inset;
-  --shadow-glow: 0 0 32px -8px oklch(0.31 0.16 277 / 0.35);
+  --gradient-glow: radial-gradient(circle at 50% 0%, oklch(0.45 0.22 270 / 0.18), transparent 60%);
+  --shadow-elevated: 0 12px 32px -16px oklch(0.18 0.02 270 / 0.22), 0 1px 0 0 oklch(1 0 0 / 0.5) inset;
+  --shadow-glow: 0 0 32px -8px oklch(0.45 0.22 270 / 0.4);
 }
+
 
 /* ===== DARK THEME ===== */
 .dark {
@@ -201,10 +202,11 @@
   }
   body {
     background-image:
-      radial-gradient(circle at 0% 0%, oklch(0.31 0.16 277 / 0.05), transparent 50%),
-      radial-gradient(circle at 100% 100%, oklch(0.72 0.16 152 / 0.04), transparent 50%);
+      radial-gradient(circle at 0% 0%, oklch(0.45 0.22 270 / 0.10), transparent 50%),
+      radial-gradient(circle at 100% 100%, oklch(0.66 0.20 152 / 0.08), transparent 50%);
     background-attachment: fixed;
   }
+
   .dark body {
     background-image:
       radial-gradient(circle at 0% 0%, oklch(0.55 0.18 277 / 0.08), transparent 50%),
