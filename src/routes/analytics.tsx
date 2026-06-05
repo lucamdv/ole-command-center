@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import type React from "react";
 import { useMemo, useRef, useState } from "react";
 import {
   Area,
