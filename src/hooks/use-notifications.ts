@@ -1,53 +1,51 @@
-import { useCallback, useEffect, useState } from "react";
-import { RECENT_ACTIVITIES } from "@/lib/mock/data";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  getNotifications,
+  type NotifKind,
+  type NotifSeverity,
+  type ServerNotification,
+} from "@/lib/notifications.functions";
+import { playNotifBeep, useNotifPrefs } from "@/hooks/use-settings";
 
-export type NotifSeverity = "critical" | "high" | "info" | "low";
+export type { NotifSeverity, NotifKind };
 
 export interface Notification {
   id: string;
+  kind: NotifKind;
+  severity: NotifSeverity;
   text: string;
   time: string;
   createdAt: number;
-  severity: NotifSeverity;
   read: boolean;
+  link?: string;
 }
 
-const STORAGE_KEY = "ole.notifications.v1";
+const READ_KEY = "ole.notif.read.v1";
+const DISMISSED_KEY = "ole.notif.dismissed.v1";
+const LAST_SEEN_KEY = "ole.notif.lastSeenAt.v1";
 
-type Listener = (items: Notification[]) => void;
-const listeners = new Set<Listener>();
-
-function seed(): Notification[] {
-  const now = Date.now();
-  return RECENT_ACTIVITIES.map((a, i) => ({
-    id: String(a.id),
-    text: a.text,
-    time: a.time,
-    createdAt: now - (i + 1) * 60_000,
-    severity: a.severity as NotifSeverity,
-    read: false,
-  }));
-}
-
-function load(): Notification[] {
-  if (typeof window === "undefined") return seed();
+function readSet(key: string): Set<string> {
+  if (typeof window === "undefined") return new Set();
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      const s = seed();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
-      return s;
-    }
-    return JSON.parse(raw) as Notification[];
+    const raw = localStorage.getItem(key);
+    if (!raw) return new Set();
+    return new Set(JSON.parse(raw) as string[]);
   } catch {
-    return seed();
+    return new Set();
   }
 }
-
-function save(items: Notification[]) {
+function writeSet(key: string, s: Set<string>) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  listeners.forEach((l) => l(items));
+  localStorage.setItem(key, JSON.stringify([...s]));
+}
+function readLastSeen(): string {
+  if (typeof window === "undefined") return new Date(Date.now() - 7 * 86400_000).toISOString();
+  return (
+    localStorage.getItem(LAST_SEEN_KEY) ??
+    new Date(Date.now() - 7 * 86400_000).toISOString()
+  );
 }
 
 function relTime(ts: number): string {
@@ -61,67 +59,113 @@ function relTime(ts: number): string {
   return `há ${d} d`;
 }
 
-const SAMPLE_EVENTS: Array<Omit<Notification, "id" | "createdAt" | "time" | "read">> = [
-  { text: "Novo endosso recebido — OLE-02400078", severity: "info" },
-  { text: "Inconsistência detectada em OLE-02400119 (Cobertura)", severity: "high" },
-  { text: "Sincronização com motor concluída", severity: "low" },
-  { text: "Alerta crítico: gap de vigência em BRK-0091", severity: "critical" },
-  { text: "Renovação processada com sucesso", severity: "low" },
-];
-
 export function useNotifications() {
-  const [items, setItems] = useState<Notification[]>(() => load());
+  const fetchFn = useServerFn(getNotifications);
+  const { prefs } = useNotifPrefs();
+  const [lastSeenAt] = useState<string>(() => readLastSeen());
+  const [readIds, setReadIds] = useState<Set<string>>(() => readSet(READ_KEY));
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => readSet(DISMISSED_KEY));
+  const seenIdsRef = useRef<Set<string>>(new Set());
 
-  useEffect(() => {
-    const l: Listener = (next) => setItems(next);
-    listeners.add(l);
-    return () => {
-      listeners.delete(l);
-    };
-  }, []);
+  const { data: serverItems = [] } = useQuery({
+    queryKey: ["notifications", lastSeenAt],
+    queryFn: () => fetchFn({ data: { lastSeenAt } }),
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+  });
 
-  // refresh relative times every 30s
+  // tick relative times every 30s
+  const [, setTick] = useState(0);
   useEffect(() => {
-    const i = setInterval(() => setItems((cur) => [...cur]), 30_000);
+    const i = setInterval(() => setTick((n) => n + 1), 30_000);
     return () => clearInterval(i);
   }, []);
 
-  // simulated incoming notifications every ~45s
+  // play sound on new critical/high
   useEffect(() => {
-    const i = setInterval(() => {
-      const sample = SAMPLE_EVENTS[Math.floor(Math.random() * SAMPLE_EVENTS.length)];
-      const next: Notification = {
-        ...sample,
-        id: crypto.randomUUID(),
-        createdAt: Date.now(),
-        time: "agora",
-        read: false,
-      };
-      const cur = load();
-      const updated = [next, ...cur].slice(0, 30);
-      save(updated);
-    }, 45_000);
-    return () => clearInterval(i);
-  }, []);
+    if (!prefs.som) {
+      // still track ids to avoid replaying when re-enabled later
+      for (const n of serverItems) seenIdsRef.current.add(n.id);
+      return;
+    }
+    if (seenIdsRef.current.size === 0) {
+      for (const n of serverItems) seenIdsRef.current.add(n.id);
+      return;
+    }
+    const fresh = serverItems.filter(
+      (n) =>
+        !seenIdsRef.current.has(n.id) &&
+        (n.severity === "critical" || n.severity === "high") &&
+        !readIds.has(n.id) &&
+        !dismissedIds.has(n.id),
+    );
+    if (fresh.length > 0) playNotifBeep();
+    for (const n of serverItems) seenIdsRef.current.add(n.id);
+  }, [serverItems, prefs.som, readIds, dismissedIds]);
+
+  const items: Notification[] = useMemo(() => {
+    return (serverItems as ServerNotification[])
+      .filter((n) => prefs[n.kind] !== false)
+      .filter((n) => !dismissedIds.has(n.id))
+      .map((n) => {
+        const ts = new Date(n.createdAt).getTime();
+        return {
+          id: n.id,
+          kind: n.kind,
+          severity: n.severity,
+          text: n.text,
+          createdAt: ts,
+          time: relTime(ts),
+          read: readIds.has(n.id),
+          link: n.link,
+        };
+      });
+  }, [serverItems, prefs, readIds, dismissedIds]);
+
+  const unread = items.filter((n) => !n.read).length;
 
   const markAllRead = useCallback(() => {
-    const updated = load().map((n) => ({ ...n, read: true }));
-    save(updated);
+    const next = new Set(readIds);
+    for (const n of items) next.add(n.id);
+    writeSet(READ_KEY, next);
+    setReadIds(next);
+    localStorage.setItem(LAST_SEEN_KEY, new Date().toISOString());
+  }, [items, readIds]);
+
+  const markRead = useCallback(
+    (id: string) => {
+      const next = new Set(readIds);
+      next.add(id);
+      writeSet(READ_KEY, next);
+      setReadIds(next);
+    },
+    [readIds],
+  );
+
+  const remove = useCallback(
+    (id: string) => {
+      const next = new Set(dismissedIds);
+      next.add(id);
+      writeSet(DISMISSED_KEY, next);
+      setDismissedIds(next);
+    },
+    [dismissedIds],
+  );
+
+  const clearAll = useCallback(() => {
+    const next = new Set(dismissedIds);
+    for (const n of items) next.add(n.id);
+    writeSet(DISMISSED_KEY, next);
+    setDismissedIds(next);
+  }, [items, dismissedIds]);
+
+  const resetReadHistory = useCallback(() => {
+    writeSet(READ_KEY, new Set());
+    writeSet(DISMISSED_KEY, new Set());
+    setReadIds(new Set());
+    setDismissedIds(new Set());
+    localStorage.removeItem(LAST_SEEN_KEY);
   }, []);
 
-  const markRead = useCallback((id: string) => {
-    const updated = load().map((n) => (n.id === id ? { ...n, read: true } : n));
-    save(updated);
-  }, []);
-
-  const remove = useCallback((id: string) => {
-    save(load().filter((n) => n.id !== id));
-  }, []);
-
-  const clearAll = useCallback(() => save([]), []);
-
-  const withRelTime = items.map((n) => ({ ...n, time: relTime(n.createdAt) }));
-  const unread = withRelTime.filter((n) => !n.read).length;
-
-  return { items: withRelTime, unread, markAllRead, markRead, remove, clearAll };
+  return { items, unread, markAllRead, markRead, remove, clearAll, resetReadHistory };
 }

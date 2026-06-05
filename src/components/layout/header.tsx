@@ -4,12 +4,14 @@ import { relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { useNotifications } from "@/hooks/use-notifications";
+import { getInitials, useProfile } from "@/hooks/use-settings";
 
 export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
   const [lastSync, setLastSync] = useState(new Date().toISOString());
   const [syncing, setSyncing] = useState(false);
   const [openNotif, setOpenNotif] = useState(false);
   const { items, unread, markAllRead, markRead, remove, clearAll } = useNotifications();
+  const { profile } = useProfile();
 
   useEffect(() => {
     const i = setInterval(() => {
@@ -161,11 +163,11 @@ export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
       </div>
 
       <div className="hidden sm:flex flex-col items-end leading-tight">
-        <span className="text-[12px] font-medium text-foreground">Luca Monteiro</span>
+        <span className="text-[12px] font-medium text-foreground">{profile.nome}</span>
         <span className="text-[10px] text-muted-foreground">Operações · Admin</span>
       </div>
-      <div className="h-8 w-8 rounded-full bg-linear-to-br from-primary to-info grid place-items-center text-[11px] font-semibold text-primary-foreground ring-2 ring-background" title="Luca Monteiro">
-        LM
+      <div className="h-8 w-8 rounded-full bg-linear-to-br from-primary to-info grid place-items-center text-[11px] font-semibold text-primary-foreground ring-2 ring-background" title={profile.nome}>
+        {getInitials(profile.nome) || "OL"}
       </div>
     </header>
   );

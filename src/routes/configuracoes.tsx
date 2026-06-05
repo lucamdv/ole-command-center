@@ -1,50 +1,63 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Bell, Database, KeyRound, Plug, User, Users } from "lucide-react";
+import { Bell, Database, Plug, User } from "lucide-react";
+import { useState } from "react";
+import { PerfilTab } from "@/components/settings/perfil-tab";
+import { NotificacoesTab } from "@/components/settings/notificacoes-tab";
+import { IntegracoesTab } from "@/components/settings/integracoes-tab";
+import { DadosTab } from "@/components/settings/dados-tab";
 
 export const Route = createFileRoute("/configuracoes")({
   head: () => ({
     meta: [
       { title: "Configurações · OLÉ COPILOT" },
-      { name: "description", content: "Preferências da plataforma, integrações e equipe." },
+      { name: "description", content: "Preferências da plataforma, integrações e retenção de dados." },
     ],
   }),
   component: ConfigPage,
 });
 
-const SECTIONS = [
-  { icon: User, title: "Perfil", desc: "Dados pessoais, idioma, fuso horário." },
-  { icon: Bell, title: "Notificações", desc: "Alertas em tempo real, e-mails, frequência." },
-  { icon: Users, title: "Equipe", desc: "Membros, papéis e permissões granulares." },
-  { icon: Plug, title: "Integrações", desc: "Supabase, N8N, motor de auditoria, APIs." },
-  { icon: Database, title: "Dados & retenção", desc: "Backups, arquivamento e políticas." },
-  { icon: KeyRound, title: "Segurança", desc: "MFA, sessões ativas, auditoria de acesso." },
-];
+const TABS = [
+  { id: "perfil", label: "Perfil", icon: User, Component: PerfilTab },
+  { id: "notificacoes", label: "Notificações", icon: Bell, Component: NotificacoesTab },
+  { id: "integracoes", label: "Integrações", icon: Plug, Component: IntegracoesTab },
+  { id: "dados", label: "Dados & Retenção", icon: Database, Component: DadosTab },
+] as const;
 
 function ConfigPage() {
+  const [active, setActive] = useState<(typeof TABS)[number]["id"]>("perfil");
+  const Active = TABS.find((t) => t.id === active)!.Component;
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-[24px] font-semibold tracking-tight">Configurações</h1>
-        <p className="text-[13px] text-muted-foreground mt-1">Preferências da plataforma e integrações.</p>
+        <p className="text-[13px] text-muted-foreground mt-1">
+          Preferências do operador, integrações com motores e gestão de dados.
+        </p>
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {SECTIONS.map((s) => {
-          const Icon = s.icon;
+      <div className="flex flex-wrap gap-1 border-b border-border">
+        {TABS.map((t) => {
+          const Icon = t.icon;
+          const isActive = active === t.id;
           return (
             <button
-              key={s.title}
-              className="rounded-xl border border-border bg-surface p-5 text-left hover:border-primary/40 hover:bg-surface-2/60 transition group"
+              key={t.id}
+              onClick={() => setActive(t.id)}
+              className={`inline-flex items-center gap-1.5 px-4 h-10 text-[13px] font-medium border-b-2 -mb-px transition ${
+                isActive
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
             >
-              <div className="h-9 w-9 rounded-lg bg-primary/15 grid place-items-center mb-3 group-hover:bg-primary/25 transition">
-                <Icon className="h-4 w-4 text-primary" />
-              </div>
-              <div className="text-[13.5px] font-semibold mb-1">{s.title}</div>
-              <div className="text-[12px] text-muted-foreground">{s.desc}</div>
+              <Icon className="h-3.5 w-3.5" />
+              {t.label}
             </button>
           );
         })}
       </div>
+
+      <Active />
     </div>
   );
 }
