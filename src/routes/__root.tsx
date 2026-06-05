@@ -49,7 +49,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "OLÉ COPILOT — Centro de Comando Operacional" },
       { name: "description", content: "Plataforma de inteligência operacional para emissão de seguros: monitoramento, auditoria e analytics em tempo real." },
-      { name: "theme-color", content: "#090F1F" },
+      { name: "theme-color", content: "#2C2B7C" },
       { property: "og:title", content: "OLÉ COPILOT — Centro de Comando Operacional" },
       { property: "og:description", content: "Plataforma de inteligência operacional para emissão de seguros: monitoramento, auditoria e analytics em tempo real." },
       { property: "og:type", content: "website" },
@@ -69,17 +69,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt-BR" className="dark">
+    <html lang="pt-BR">
       <head>
         <HeadContent />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
         />
       </head>
-      <body className="dark">
+      <body>
         {children}
         <Scripts />
       </body>

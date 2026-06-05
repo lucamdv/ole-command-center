@@ -2,7 +2,6 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Activity,
   AlertTriangle,
   BarChart3,
   FileText,
@@ -14,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getSystemStatus } from "@/lib/audit.functions";
+import { BrandMark } from "@/components/brand/brand-mark";
 
 const NAV = [
   { to: "/", label: "Visão Geral", icon: LayoutDashboard },
@@ -53,15 +53,14 @@ export function Sidebar() {
   return (
     <aside className="hidden md:flex w-[248px] shrink-0 flex-col border-r border-border bg-sidebar/80 backdrop-blur-xl">
       {/* Logo */}
-      <div className="px-5 pt-5 pb-6 border-b border-sidebar-border">
-        <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="relative h-9 w-9 rounded-lg bg-gradient-primary grid place-items-center shadow-glow">
-            <Activity className="h-4.5 w-4.5 text-primary-foreground" strokeWidth={2.5} />
-            <div className="absolute inset-0 rounded-lg ring-1 ring-inset ring-white/15" />
-          </div>
-          <div className="leading-tight">
-            <div className="text-[13px] font-semibold tracking-tight text-foreground">OLÉ COPILOT</div>
-            <div className="text-[10.5px] text-muted-foreground tracking-wide uppercase">Centro de Comando</div>
+      <div className="px-5 pt-5 pb-5 border-b border-sidebar-border">
+        <Link to="/" className="flex flex-col gap-1.5 group">
+          <BrandMark height={36} />
+          <div className="flex items-center gap-1.5 pl-0.5">
+            <span className="h-1 w-1 rounded-full bg-primary" />
+            <span className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted-foreground">
+              Olé Copilot · Centro de Comando
+            </span>
           </div>
         </Link>
       </div>
@@ -100,7 +99,7 @@ export function Sidebar() {
       {/* Footer */}
       <div className="border-t border-sidebar-border p-3 space-y-2">
         <div className="flex items-center gap-2.5 px-2 py-2 rounded-md hover:bg-sidebar-accent/40 transition cursor-pointer">
-          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-info grid place-items-center text-[11px] font-semibold text-primary-foreground">
+          <div className="h-8 w-8 rounded-full bg-linear-to-br from-primary to-info grid place-items-center text-[11px] font-semibold text-primary-foreground">
             LM
           </div>
           <div className="leading-tight min-w-0 flex-1">

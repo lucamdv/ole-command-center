@@ -1,38 +1,51 @@
-Ajustar o cálculo do gráfico de Receita Excelsior para seguir exatamente a planilha anexada de maio.
+## Rebrand Excelsior — Olé Copilot
 
-Ponto identificado:
-- A planilha de maio tem prêmio total pago de US$ 1.861,00.
-- O PIS/COFINS está correto como US$ 47,41: `4,65% × ((prêmio total − IOF) × 55%)`.
-- O erro está no gráfico somando o prêmio bruto inteiro como componente da Excelsior.
-- Na planilha, o componente de “Prêmio Direto Seguradora e Resseguradora” é apenas `40% do prêmio líquido de IOF`, não 100% do prêmio pago.
-- Por isso o total correto de maio é aproximadamente US$ 9.027,49:
-  - Carregamento Excelsior: US$ 8.333,33
-  - Prêmio direto seguradora/resseguradora: US$ 741,57
-  - PIS/COFINS: -US$ 47,41
-  - Total: US$ 9.027,49
+Aplico a identidade visual da Excelsior Seguros (azul #2C2B7C, verde #45B97C, Montserrat + Inter Tight) em toda a plataforma, com co-branding Excelsior + "Olé Copilot" no shell e suporte a tema claro (padrão) e escuro (opcional).
 
-Plano de implementação:
-1. Atualizar `computeRepasse` para refletir a fórmula da planilha:
-   - `premioTotalPago = prêmio bruto pago no mês`
-   - `iof = premioTotalPago × 0,38%`
-   - `premioLiquidoIof = premioTotalPago − iof`
-   - `comissoesOleNomad = premioLiquidoIof × 55%`
-   - `pisCofins = comissoesOleNomad × 4,65%`
-   - `feeExcelsior = premioLiquidoIof × 5%`
-   - `fixoSuplementar = 8.333,33 − feeExcelsior`
-   - `carregamentoExcelsior = feeExcelsior + fixoSuplementar`, mantendo US$ 8.333,33
-   - `premioDiretoSeguradoraResseguradora = premioLiquidoIof − comissoesOleNomad − feeExcelsior`, equivalente a 40% do líquido de IOF
-   - `totalRepasseExcelsior = carregamentoExcelsior + premioDiretoSeguradoraResseguradora − pisCofins`
+### 1. Tokens & tipografia (`src/styles.css`)
+- Substituo a paleta atual por:
+  - `--primary` = azul Excelsior `#2C2B7C` (oklch equivalente)
+  - `--accent` / `--success` derivados do verde `#45B97C`
+  - `--primary-glow` em azul mais claro para hovers/gradientes
+  - Charts: chart-1 azul, chart-2 verde, chart-3 azul claro, chart-4 verde escuro, chart-5 cinza-azulado
+- Defino tema claro como `:root` padrão (fundo `#FAFAFB`, surfaces brancas, bordas sutis cinza), e tema escuro mantido sob `.dark` (mesma paleta mas com fundo navy quase-preto derivado do azul Excelsior).
+- Atualizo `--font-sans` para `"Montserrat"` e adiciono `--font-display` Montserrat / `--font-support` `"Inter Tight"`. Mantenho `--font-mono` JetBrains.
+- Gradientes/sombras recalibrados para a nova paleta.
 
-2. Ajustar os campos usados pelo gráfico:
-   - Renomear/explicitar o campo do prêmio no gráfico para não representar o prêmio bruto inteiro.
-   - Usar o componente calculado de 40% líquido de IOF na barra de “Prêmio Direto”.
-   - Manter PIS/COFINS como dedução negativa.
-   - Manter a linha de total usando o total do repasse corrigido.
+### 2. Carregamento de fontes (`src/routes/__root.tsx`)
+- Adiciono `<link>` preconnect + stylesheet do Google Fonts para Montserrat (400/500/600/700) e Inter Tight (400/500/600). Removo Inter antigo se carregado.
 
-3. Atualizar tooltip e subtítulo do gráfico:
-   - Mostrar prêmio total pago, IOF, prêmio líquido de IOF, comissões Olé + Nomad, PIS/COFINS, carregamento Excelsior, prêmio direto seguradora/resseguradora e total.
-   - Deixar explícito que o valor do gráfico deve bater com o “Total do Repasse à Excelsior” da planilha.
+### 3. Logos como assets CDN
+- Subo `Logo_azul_1.png` e `Logo_branca_1.png` via `lovable-assets` e gero `.asset.json` em `src/assets/`.
+- Crio componente `BrandMark` (substituindo o ícone `Activity` no `Sidebar`) que exibe a logo Excelsior (variante azul no tema claro, branca no tema escuro) com o subtítulo "OLÉ COPILOT · Centro de Comando".
+- Atualizo `Header` (avatar/identidade) e `command-palette` para a nova marca.
 
-4. Validar contra maio:
-   - Com `premioTotalPago = 1.861,00`, o cálculo deve retornar total próximo de `US$ 9.027,49`, igual à planilha anexada.
+### 4. Theme toggle
+- Removo o `dark` hard-coded em `src/components/layout/app-shell.tsx`.
+- Adiciono provider simples de tema (localStorage, default `light`) e um botão sol/lua no `Header` ao lado do sino.
+- Garante que componentes shadcn (badges, cards, dialogs, charts) renderizam corretamente em ambos os modos via tokens semânticos.
+
+### 5. Ajustes finos de componentes
+- Revisão de uso de cores hard-coded nas rotas (`analytics`, `apolices`, `operacao`, `intelligence`, `ferramentas`, etc.) substituindo por tokens semânticos quando encontradas.
+- Atualização de gradientes do KPI/cards para azul→verde Excelsior.
+- Recharts: cores via tokens `--chart-*` já atualizados; nenhum valor de dado é alterado.
+
+### 6. Verificação
+- Build automático + checagem visual no preview em tema claro e escuro (sidebar, header, dashboard, analytics, apólices).
+
+### Não muda
+- Lógica de negócio, fórmulas (PIS/COFINS, repasse), dados, rotas, server functions.
+
+### Arquivos principais editados
+```
+src/styles.css
+src/routes/__root.tsx
+src/components/layout/app-shell.tsx
+src/components/layout/sidebar.tsx
+src/components/layout/header.tsx
+src/components/brand/brand-mark.tsx        (novo)
+src/components/theme/theme-provider.tsx    (novo)
+src/components/theme/theme-toggle.tsx      (novo)
+src/assets/excelsior-azul.png.asset.json   (novo)
+src/assets/excelsior-branca.png.asset.json (novo)
+```

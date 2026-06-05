@@ -3,6 +3,7 @@ import { Bell, Command, RefreshCw, Search } from "lucide-react";
 import { relativeTime } from "@/lib/format";
 import { RECENT_ACTIVITIES } from "@/lib/mock/data";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
   const [lastSync, setLastSync] = useState(new Date().toISOString());
@@ -40,6 +41,8 @@ export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
         <span className="text-[11px] text-muted-foreground">Sync</span>
         <span className="text-[11px] font-mono text-foreground">{relativeTime(lastSync)}</span>
       </div>
+
+      <ThemeToggle />
 
       <div className="relative">
         <button
@@ -89,7 +92,7 @@ export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
         <span className="text-[12px] font-medium text-foreground">Luca Monteiro</span>
         <span className="text-[10px] text-muted-foreground">Operações · Admin</span>
       </div>
-      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-info grid place-items-center text-[11px] font-semibold text-primary-foreground ring-2 ring-background" title="Luca Monteiro">
+      <div className="h-8 w-8 rounded-full bg-linear-to-br from-primary to-info grid place-items-center text-[11px] font-semibold text-primary-foreground ring-2 ring-background" title="Luca Monteiro">
         LM
       </div>
     </header>

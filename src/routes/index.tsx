@@ -101,9 +101,9 @@ function PageHeader({
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-surface via-surface to-surface-2 px-6 py-5 shadow-elevated">
+    <div className="relative overflow-hidden rounded-2xl border border-border bg-linear-to-br from-surface via-surface to-surface-2 px-6 py-5 shadow-elevated">
       <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-primary/40 to-transparent" />
       <div className="relative flex items-start justify-between gap-6 flex-wrap">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -224,7 +224,7 @@ function Dashboard({
 
       {/* Pulso real: tendência + distribuição */}
       <div className="rounded-2xl border border-border bg-surface/80 backdrop-blur overflow-hidden shadow-elevated">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-gradient-to-r from-surface to-surface-2">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-linear-to-r from-surface to-surface-2">
           <div>
             <div className="text-[14px] font-semibold tracking-tight">Pulso Operacional</div>
             <div className="text-[11px] text-muted-foreground">Evolução das auditorias e distribuição de erros por tipo</div>
@@ -307,7 +307,7 @@ function Dashboard({
       {/* Heatmap real */}
       {heatmap.rows.length > 0 && (
         <div className="rounded-2xl border border-border bg-surface/80 backdrop-blur shadow-elevated overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-gradient-to-r from-surface to-surface-2">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-linear-to-r from-surface to-surface-2">
             <div>
               <div className="text-[14px] font-semibold tracking-tight">Matriz de Risco Operacional</div>
               <div className="text-[11px] text-muted-foreground">Incidência de cada regra ao longo das últimas {heatmap.runs.length} auditorias</div>
@@ -480,7 +480,7 @@ function ConsolidatedBanner({
   grouped: number;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-gradient-to-r from-surface to-surface-2 px-5 py-4 flex flex-wrap items-center gap-x-6 gap-y-2 shadow-elevated">
+    <div className="rounded-2xl border border-border bg-linear-to-r from-surface to-surface-2 px-5 py-4 flex flex-wrap items-center gap-x-6 gap-y-2 shadow-elevated">
       <div className="flex items-center gap-2">
         <span className="text-[18px]">📊</span>
         <div>

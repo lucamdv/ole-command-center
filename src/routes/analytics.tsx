@@ -563,7 +563,7 @@ function AnalyticsPage() {
                           </div>
                           <div className="h-1 rounded-full bg-background overflow-hidden">
                             <div
-                              className="h-full bg-gradient-to-r from-destructive to-warning transition-all"
+                              className="h-full bg-linear-to-r from-destructive to-warning transition-all"
                               style={{ width: `${(g.total / max) * 100}%` }}
                             />
                           </div>
@@ -602,7 +602,7 @@ function AnalyticsPage() {
                           </div>
                           <div className="h-1 rounded-full bg-background overflow-hidden">
                             <div
-                              className="h-full bg-gradient-to-r from-warning to-destructive transition-all"
+                              className="h-full bg-linear-to-r from-warning to-destructive transition-all"
                               style={{ width: `${(e.total / max) * 100}%` }}
                             />
                           </div>

@@ -125,7 +125,7 @@ export function FindingsListDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-6xl w-[95vw] max-h-[92vh] flex flex-col p-0 gap-0">
         {/* Banner topo */}
-        <DialogHeader className="px-6 py-4 border-b border-border bg-gradient-to-r from-surface-2 to-surface">
+        <DialogHeader className="px-6 py-4 border-b border-border bg-linear-to-r from-surface-2 to-surface">
           <DialogTitle className="text-[15px] flex items-center gap-2">
             <span>📊</span> Relatório Consolidado de Auditoria
           </DialogTitle>
