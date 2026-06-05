@@ -52,7 +52,7 @@ export interface PolicySyncStatus {
 }
 
 export const runPolicySync = createServerFn({ method: "POST" }).handler(async () => {
-  const url = process.env.N8N_MOTOR_POLICIES_URL || DEFAULT_WEBHOOK;
+  const url = process.env.N8N_MOTOR_POLICIES_URL;
   if (!url) {
     throw new Error(
       "Secret N8N_MOTOR_POLICIES_URL ainda não configurada. Cole a URL do webhook do MOTOR OLÉ.",
