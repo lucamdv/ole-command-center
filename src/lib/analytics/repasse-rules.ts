@@ -21,8 +21,10 @@ export const REPASSE_RULES = {
 export interface RepasseBreakdown {
   /** Líquido para Olé (Fee Olé + Custo Aquisição − PIS/COFINS sobre comissões). */
   ole: number;
-  /** Excelsior: Fee Exc + Fixo Suplementar + Prêmio Retido (10% do prêmio direto). */
+  /** Excelsior bruto: Fee Exc + Fixo Suplementar + Prêmio Retido (10% do prêmio direto). */
   excelsior: number;
+  /** Excelsior líquido: Carregamento (Fee Exc + Fixo Suplementar) + Prêmio Direto Retido − PIS/COFINS sobre carregamento. */
+  excelsiorLiquido: number;
   /** Munich RE: 90% do prêmio direto (40% do prêmio líquido de IOF). */
   munich: number;
   /** Governo: IOF + PIS/COFINS sobre comissões. */
@@ -50,9 +52,12 @@ export function computeRepasse(bruto: number): RepasseBreakdown {
 
   const feeExc = liquido * r.FEE_EXC_PCT;
   const fixoSuplementar = Math.max(0, r.FIXO_SUPLEMENTAR_PISO - feeExc);
+  const carregamentoExc = feeExc + fixoSuplementar;
   const premioDireto = liquido * r.PREMIO_DIRETO_PCT;
   const premioRetidoExc = premioDireto * r.PREMIO_RETIDO_EXC_PCT;
-  const excelsior = feeExc + fixoSuplementar + premioRetidoExc;
+  const excelsior = carregamentoExc + premioRetidoExc;
+  const pisCofinsExc = carregamentoExc * r.PIS_COFINS_PCT;
+  const excelsiorLiquido = carregamentoExc + premioRetidoExc - pisCofinsExc;
 
   const munich = premioDireto * r.PREMIO_CEDIDO_MUNICH_PCT;
   const impostos = iof + pisCofinsComissoes;
@@ -60,11 +65,13 @@ export function computeRepasse(bruto: number): RepasseBreakdown {
   return {
     ole: round2(ole),
     excelsior: round2(excelsior),
+    excelsiorLiquido: round2(excelsiorLiquido),
     munich: round2(munich),
     impostos: round2(impostos),
     total: round2(ole + excelsior + munich + impostos),
   };
 }
+
 
 function round2(n: number) {
   return Math.round(n * 100) / 100;
