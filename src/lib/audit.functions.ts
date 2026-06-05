@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import type { AuditHistoryItem, LatestAudit } from "./audit/types";
 
@@ -27,7 +28,7 @@ const PRODUCTION_PUBLIC_URL = `https://project--${LOVABLE_PROJECT_ID}.lovable.ap
  *     com o header x-callback-secret = AUDIT_CALLBACK_SECRET.
  *  3. Retorna o run_id imediatamente. O frontend faz polling.
  */
-export const runAudit = createServerFn({ method: "POST" }).handler(async () => {
+export const runAudit = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async () => {
   const url = process.env.N8N_AUDIT_WEBHOOK_URL;
   if (!url) {
     throw new Error(
@@ -116,7 +117,7 @@ export const runAudit = createServerFn({ method: "POST" }).handler(async () => {
   return { runId, status: "running" as const };
 });
 
-export const getAuditRunStatus = createServerFn({ method: "GET" })
+export const getAuditRunStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator((d: { runId: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -137,7 +138,7 @@ export const getAuditRunStatus = createServerFn({ method: "GET" })
     } | null;
   });
 
-export const getLatestAudit = createServerFn({ method: "GET" }).handler(async () => {
+export const getLatestAudit = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   const { data: runs, error: runErr } = await supabaseAdmin
@@ -162,7 +163,7 @@ export const getLatestAudit = createServerFn({ method: "GET" }).handler(async ()
   return { run, findings: findings ?? [] } as unknown as LatestAudit;
 });
 
-export const getAuditHistory = createServerFn({ method: "GET" }).handler(async () => {
+export const getAuditHistory = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   const { data, error } = await supabaseAdmin
@@ -216,7 +217,7 @@ export const CallbackPayloadSchema = z.object({
     .default([]),
 });
 
-export const getSystemStatus = createServerFn({ method: "GET" }).handler(async () => {
+export const getSystemStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   const [{ data: lastRun }, { data: lastSync }] = await Promise.all([

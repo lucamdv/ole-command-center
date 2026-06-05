@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 // URL do webhook MOTOR OLÉ. DEVE ser configurada via secret N8N_MOTOR_POLICIES_URL
@@ -51,7 +52,7 @@ export interface PolicySyncStatus {
   finished_at: string | null;
 }
 
-export const runPolicySync = createServerFn({ method: "POST" }).handler(async () => {
+export const runPolicySync = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async () => {
   const url = process.env.N8N_MOTOR_POLICIES_URL;
   if (!url) {
     throw new Error(
@@ -124,7 +125,7 @@ export const runPolicySync = createServerFn({ method: "POST" }).handler(async ()
   return { runId, status: "running" as const };
 });
 
-export const getPolicySyncStatus = createServerFn({ method: "GET" })
+export const getPolicySyncStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator((d: { runId: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -137,7 +138,7 @@ export const getPolicySyncStatus = createServerFn({ method: "GET" })
     return row as PolicySyncStatus | null;
   });
 
-export const getLatestPolicySync = createServerFn({ method: "GET" }).handler(async () => {
+export const getLatestPolicySync = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("policy_sync_runs")
@@ -156,7 +157,7 @@ export const getLatestPolicySync = createServerFn({ method: "GET" }).handler(asy
   } | null;
 });
 
-export const getPolicies = createServerFn({ method: "GET" }).handler(async () => {
+export const getPolicies = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { findSeguradoNome, computePremioLiquido, normalizeEndossoNum } = await import(
     "@/lib/excelsior/translate"
@@ -198,7 +199,7 @@ export const getPolicies = createServerFn({ method: "GET" }).handler(async () =>
   }) as PolicyListItem[];
 });
 
-export const getPolicyByNumero = createServerFn({ method: "GET" })
+export const getPolicyByNumero = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator((d: { numero: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -271,7 +272,7 @@ export const getPolicyByNumero = createServerFn({ method: "GET" })
     } as unknown as PolicyDetail;
   });
 
-export const getEndorsement = createServerFn({ method: "GET" })
+export const getEndorsement = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator((d: { numero: string; endosso: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
