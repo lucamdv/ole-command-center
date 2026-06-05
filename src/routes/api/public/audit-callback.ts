@@ -31,11 +31,16 @@ export const Route = createFileRoute("/api/public/audit-callback")({
       OPTIONS: async () => new Response(null, { status: 204, headers: CORS }),
 
       POST: async ({ request }) => {
+        const url = new URL(request.url);
+        const runIdQS = url.searchParams.get("run_id");
         // 1. Valida secret (aceita ambos os nomes de header para compatibilidade com fluxos n8n existentes)
         const expected = process.env.AUDIT_CALLBACK_SECRET;
         const provided =
           request.headers.get("x-callback-secret") ||
           request.headers.get("x-audit-secret");
+        console.log(
+          `[audit-callback] hit run_id=${runIdQS ?? "(missing)"} secret_present=${!!provided} secret_match=${!!expected && provided === expected}`,
+        );
         if (!expected || provided !== expected) {
           return json({ error: "Unauthorized" }, 401);
         }
