@@ -7,11 +7,13 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  ComposedChart,
   Legend,
   Line,
   LineChart,
   Pie,
   PieChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -34,6 +36,7 @@ import {
 import { exportAuditPdf } from "@/lib/audit/export-pdf";
 import { exportChartsPdf } from "@/lib/analytics/export-charts";
 import { formatBRL, formatCompact, formatInt, formatPct, formatUSD, relativeTime } from "@/lib/format";
+import { REPASSE_RULES } from "@/lib/analytics/repasse-rules";
 
 export const Route = createFileRoute("/analytics")({
   head: () => ({
@@ -78,17 +81,17 @@ function AnalyticsPage() {
     () =>
       repasse.reduce(
         (acc, r) => ({
-          ole: acc.ole + r.ole,
-          excelsior: acc.excelsior + r.excelsior,
+          carregamentoExcelsior: acc.carregamentoExcelsior + r.carregamentoExcelsior,
+          premioDireto: acc.premioDireto + r.premioDireto,
+          pisCofins: acc.pisCofins + r.pisCofins,
           excelsiorLiquido: acc.excelsiorLiquido + r.excelsiorLiquido,
-          munich: acc.munich + r.munich,
-          impostos: acc.impostos + r.impostos,
           bruto: acc.bruto + r.bruto,
         }),
-        { ole: 0, excelsior: 0, excelsiorLiquido: 0, munich: 0, impostos: 0, bruto: 0 },
+        { carregamentoExcelsior: 0, premioDireto: 0, pisCofins: 0, excelsiorLiquido: 0, bruto: 0 },
       ),
     [repasse],
   );
+  const repasseAvg = repasse.length > 0 ? repasseTotals.excelsiorLiquido / repasse.length : 0;
   const heatmap = useMemo(() => buildHeatmap(latest, history, 12), [latest, history]);
 
 
@@ -389,18 +392,26 @@ function AnalyticsPage() {
 
             <ChartCard
               title="Receita Excelsior (USD) por mês de pagamento"
-              subtitle={`Carregamento + Prêmio Direto Retido − PIS/COFINS · Total: ${formatUSD(repasseTotals.excelsiorLiquido, { maximumFractionDigits: 0 })} · ${repasse.length} meses`}
+              subtitle={`Carregamento fixo (US$ 8.333,33) + Prêmio Direto − PIS/COFINS (4,65%) · Total: ${formatUSD(repasseTotals.excelsiorLiquido, { maximumFractionDigits: 0 })} · Média/mês: ${formatUSD(repasseAvg, { maximumFractionDigits: 0 })} · ${repasse.length} meses`}
             >
               {repasse.length === 0 ? (
                 <EmptyMsg text="Sem prêmios pagos sincronizados." />
               ) : (
-                <div className="h-[320px]">
+                <div className="h-[360px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={repasse} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+                    <ComposedChart data={repasse} margin={{ top: 12, right: 12, left: -4, bottom: 0 }}>
                       <defs>
-                        <linearGradient id="gExc" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.5} />
-                          <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
+                        <linearGradient id="gCarregamento" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.95} />
+                          <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.55} />
+                        </linearGradient>
+                        <linearGradient id="gPremioDireto" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--success)" stopOpacity={0.95} />
+                          <stop offset="100%" stopColor="var(--success)" stopOpacity={0.55} />
+                        </linearGradient>
+                        <linearGradient id="gLiquido" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="var(--info)" stopOpacity={1} />
+                          <stop offset="100%" stopColor="var(--primary)" stopOpacity={1} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
@@ -412,16 +423,62 @@ function AnalyticsPage() {
                       />
                       <Tooltip
                         {...tooltipProps}
-                        formatter={(v) => [formatUSD(Number(v), { maximumFractionDigits: 2 }), "Excelsior"]}
+                        formatter={(v, name) => [
+                          formatUSD(Number(v), { maximumFractionDigits: 2 }),
+                          name as string,
+                        ]}
                       />
-                      <Area
+                      <Legend wrapperStyle={{ fontSize: 11 }} />
+                      <ReferenceLine
+                        y={REPASSE_RULES.FIXO_SUPLEMENTAR_PISO}
+                        stroke="var(--muted-foreground)"
+                        strokeDasharray="4 4"
+                        label={{
+                          value: "Piso · US$ 8.333,33",
+                          position: "insideTopRight",
+                          fill: "var(--muted-foreground)",
+                          fontSize: 10,
+                        }}
+                      />
+                      <Bar
+                        dataKey="carregamentoExcelsior"
+                        name="Carregamento"
+                        stackId="rec"
+                        fill="url(#gCarregamento)"
+                        radius={[0, 0, 0, 0]}
+                        isAnimationActive
+                        animationDuration={900}
+                      />
+                      <Bar
+                        dataKey="premioDireto"
+                        name="Prêmio Direto"
+                        stackId="rec"
+                        fill="url(#gPremioDireto)"
+                        radius={[6, 6, 0, 0]}
+                        isAnimationActive
+                        animationDuration={900}
+                      />
+                      <Bar
+                        dataKey="pisCofins"
+                        name="PIS/COFINS"
+                        fill="var(--destructive)"
+                        fillOpacity={0.85}
+                        radius={[4, 4, 0, 0]}
+                        isAnimationActive
+                        animationDuration={900}
+                      />
+                      <Line
                         type="monotone"
                         dataKey="excelsiorLiquido"
-                        stroke="var(--primary)"
-                        fill="url(#gExc)"
-                        name="Excelsior"
+                        name="Total Excelsior"
+                        stroke="url(#gLiquido)"
+                        strokeWidth={2.5}
+                        dot={{ fill: "var(--info)", r: 3.5, strokeWidth: 0 }}
+                        activeDot={{ r: 5 }}
+                        isAnimationActive
+                        animationDuration={1200}
                       />
-                    </AreaChart>
+                    </ComposedChart>
                   </ResponsiveContainer>
                 </div>
               )}
