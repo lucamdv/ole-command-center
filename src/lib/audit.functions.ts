@@ -28,7 +28,12 @@ const PRODUCTION_PUBLIC_URL = `https://project--${LOVABLE_PROJECT_ID}.lovable.ap
  *  3. Retorna o run_id imediatamente. O frontend faz polling.
  */
 export const runAudit = createServerFn({ method: "POST" }).handler(async () => {
-  const url = process.env.N8N_AUDIT_WEBHOOK_URL || DEFAULT_WEBHOOK;
+  const url = process.env.N8N_AUDIT_WEBHOOK_URL;
+  if (!url) {
+    throw new Error(
+      "Secret N8N_AUDIT_WEBHOOK_URL não configurada. Cole a URL de produção do webhook n8n (/webhook/...) nos secrets do projeto.",
+    );
+  }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   // 1. Cria o run em status 'running'
