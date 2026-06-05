@@ -388,15 +388,21 @@ function AnalyticsPage() {
             </div>
 
             <ChartCard
-              title="Distribuição contábil dos prêmios pagos (USD)"
-              subtitle={`Fica com Olé: ${formatUSD(repasseTotals.ole, { maximumFractionDigits: 0 })} · Excelsior: ${formatUSD(repasseTotals.excelsior, { maximumFractionDigits: 0 })} · Munich: ${formatUSD(repasseTotals.munich, { maximumFractionDigits: 0 })} · Impostos: ${formatUSD(repasseTotals.impostos, { maximumFractionDigits: 0 })} · Bruto: ${formatUSD(repasseTotals.bruto, { maximumFractionDigits: 0 })}`}
+              title="Receita Excelsior (USD) por mês de pagamento"
+              subtitle={`Carregamento + Prêmio Direto Retido − PIS/COFINS · Total: ${formatUSD(repasseTotals.excelsiorLiquido, { maximumFractionDigits: 0 })} · ${repasse.length} meses`}
             >
               {repasse.length === 0 ? (
                 <EmptyMsg text="Sem prêmios pagos sincronizados." />
               ) : (
                 <div className="h-[320px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={repasse} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+                    <AreaChart data={repasse} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="gExc" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.5} />
+                          <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
                       <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
                       <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={11} />
                       <YAxis
@@ -406,25 +412,16 @@ function AnalyticsPage() {
                       />
                       <Tooltip
                         {...tooltipProps}
-                        formatter={(v, k) => [
-                          formatUSD(Number(v), { maximumFractionDigits: 2 }),
-                          k === "ole"
-                            ? "Olé (líquido)"
-                            : k === "excelsior"
-                              ? "Excelsior"
-                              : k === "munich"
-                                ? "Munich RE"
-                                : k === "impostos"
-                                  ? "Impostos (IOF + PIS/COFINS)"
-                                  : String(k),
-                        ]}
+                        formatter={(v) => [formatUSD(Number(v), { maximumFractionDigits: 2 }), "Excelsior"]}
                       />
-                      <Legend wrapperStyle={{ fontSize: 11 }} />
-                      <Bar dataKey="ole" stackId="r" name="Olé" fill="var(--success)" />
-                      <Bar dataKey="excelsior" stackId="r" name="Excelsior" fill="var(--primary)" />
-                      <Bar dataKey="munich" stackId="r" name="Munich RE" fill="var(--info)" />
-                      <Bar dataKey="impostos" stackId="r" name="Impostos" fill="var(--warning)" radius={[4, 4, 0, 0]} />
-                    </BarChart>
+                      <Area
+                        type="monotone"
+                        dataKey="excelsiorLiquido"
+                        stroke="var(--primary)"
+                        fill="url(#gExc)"
+                        name="Excelsior"
+                      />
+                    </AreaChart>
                   </ResponsiveContainer>
                 </div>
               )}
