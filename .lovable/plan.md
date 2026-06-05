@@ -1,21 +1,38 @@
-## Plano
+Ajustar o cálculo do gráfico de Receita Excelsior para seguir exatamente a planilha anexada de maio.
 
-1. **Centralizar os dados do gráfico no cálculo oficial**
-   - Garantir que a série mensal usada pelo gráfico venha de `computeRepasse`, onde PIS/COFINS = 4,65% sobre as comissões Olé + Nomad.
-   - Evitar qualquer cálculo visual separado que trate PIS/COFINS como percentual do carregamento ou do prêmio bruto total.
+Ponto identificado:
+- A planilha de maio tem prêmio total pago de US$ 1.861,00.
+- O PIS/COFINS está correto como US$ 47,41: `4,65% × ((prêmio total − IOF) × 55%)`.
+- O erro está no gráfico somando o prêmio bruto inteiro como componente da Excelsior.
+- Na planilha, o componente de “Prêmio Direto Seguradora e Resseguradora” é apenas `40% do prêmio líquido de IOF`, não 100% do prêmio pago.
+- Por isso o total correto de maio é aproximadamente US$ 9.027,49:
+  - Carregamento Excelsior: US$ 8.333,33
+  - Prêmio direto seguradora/resseguradora: US$ 741,57
+  - PIS/COFINS: -US$ 47,41
+  - Total: US$ 9.027,49
 
-2. **Corrigir a representação do gráfico**
-   - Ajustar o gráfico de Receita Excelsior para deixar claro que:
-     - `Carregamento` é sempre US$ 8.333,33.
-     - `Prêmio Direto` é entrada positiva.
-     - `PIS/COFINS` é dedução calculada sobre `(Prêmio Direto − IOF) × 55%`.
-     - `Total Excelsior` é `Carregamento + Prêmio Direto − PIS/COFINS`.
-   - Se necessário, transformar a barra de PIS/COFINS em valor negativo/visual de abatimento para não parecer receita adicional.
+Plano de implementação:
+1. Atualizar `computeRepasse` para refletir a fórmula da planilha:
+   - `premioTotalPago = prêmio bruto pago no mês`
+   - `iof = premioTotalPago × 0,38%`
+   - `premioLiquidoIof = premioTotalPago − iof`
+   - `comissoesOleNomad = premioLiquidoIof × 55%`
+   - `pisCofins = comissoesOleNomad × 4,65%`
+   - `feeExcelsior = premioLiquidoIof × 5%`
+   - `fixoSuplementar = 8.333,33 − feeExcelsior`
+   - `carregamentoExcelsior = feeExcelsior + fixoSuplementar`, mantendo US$ 8.333,33
+   - `premioDiretoSeguradoraResseguradora = premioLiquidoIof − comissoesOleNomad − feeExcelsior`, equivalente a 40% do líquido de IOF
+   - `totalRepasseExcelsior = carregamentoExcelsior + premioDiretoSeguradoraResseguradora − pisCofins`
 
-3. **Atualizar textos e tooltip**
-   - Atualizar subtítulo/legenda/tooltip para mencionar explicitamente: `PIS/COFINS = 4,65% sobre comissões Olé + Nomad`.
-   - Exibir no tooltip os componentes úteis para validação: prêmio direto, IOF, base de comissão Olé+Nomad e PIS/COFINS.
+2. Ajustar os campos usados pelo gráfico:
+   - Renomear/explicitar o campo do prêmio no gráfico para não representar o prêmio bruto inteiro.
+   - Usar o componente calculado de 40% líquido de IOF na barra de “Prêmio Direto”.
+   - Manter PIS/COFINS como dedução negativa.
+   - Manter a linha de total usando o total do repasse corrigido.
 
-4. **Validar a coerência dos totais**
-   - Conferir que totais e média do card usam o mesmo `excelsiorLiquido` calculado pela regra oficial.
-   - Verificar visualmente que o gráfico fica dinâmico e que a dedução de PIS/COFINS acompanha os meses com prêmio direto.
+3. Atualizar tooltip e subtítulo do gráfico:
+   - Mostrar prêmio total pago, IOF, prêmio líquido de IOF, comissões Olé + Nomad, PIS/COFINS, carregamento Excelsior, prêmio direto seguradora/resseguradora e total.
+   - Deixar explícito que o valor do gráfico deve bater com o “Total do Repasse à Excelsior” da planilha.
+
+4. Validar contra maio:
+   - Com `premioTotalPago = 1.861,00`, o cálculo deve retornar total próximo de `US$ 9.027,49`, igual à planilha anexada.
