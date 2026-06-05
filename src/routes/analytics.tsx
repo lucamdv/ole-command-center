@@ -387,21 +387,15 @@ function AnalyticsPage() {
             </div>
 
             <ChartCard
-              title="Receita OLÉ (USD) por mês de vigência"
-              subtitle={`Prêmio direto faturado · ${formatUSD(totalUsd)} acumulado em ${revenue.length} meses`}
+              title="Distribuição contábil dos prêmios pagos (USD)"
+              subtitle={`Fica com Olé: ${formatUSD(repasseTotals.ole, { maximumFractionDigits: 0 })} · Excelsior: ${formatUSD(repasseTotals.excelsior, { maximumFractionDigits: 0 })} · Munich: ${formatUSD(repasseTotals.munich, { maximumFractionDigits: 0 })} · Impostos: ${formatUSD(repasseTotals.impostos, { maximumFractionDigits: 0 })} · Bruto: ${formatUSD(repasseTotals.bruto, { maximumFractionDigits: 0 })}`}
             >
-              {revenue.length === 0 ? (
-                <EmptyMsg text="Sem dados de prêmio em USD." />
+              {repasse.length === 0 ? (
+                <EmptyMsg text="Sem prêmios pagos sincronizados." />
               ) : (
-                <div className="h-[300px]">
+                <div className="h-[320px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={revenue}>
-                      <defs>
-                        <linearGradient id="gUsd" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="var(--success)" stopOpacity={0.5} />
-                          <stop offset="100%" stopColor="var(--success)" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
+                    <BarChart data={repasse} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
                       <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
                       <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={11} />
                       <YAxis
@@ -411,27 +405,30 @@ function AnalyticsPage() {
                       />
                       <Tooltip
                         {...tooltipProps}
-                        formatter={(v, k) =>
-                          k === "usd"
-                            ? formatUSD(Number(v), { maximumFractionDigits: 2 })
-                            : k === "policies"
-                              ? `${formatInt(Number(v))} apólices`
-                              : String(v)
-                        }
+                        formatter={(v, k) => [
+                          formatUSD(Number(v), { maximumFractionDigits: 2 }),
+                          k === "ole"
+                            ? "Olé (líquido)"
+                            : k === "excelsior"
+                              ? "Excelsior"
+                              : k === "munich"
+                                ? "Munich RE"
+                                : k === "impostos"
+                                  ? "Impostos (IOF + PIS/COFINS)"
+                                  : String(k),
+                        ]}
                       />
-                      <Area
-                        type="monotone"
-                        dataKey="usd"
-                        name="USD"
-                        stroke="var(--success)"
-                        strokeWidth={2}
-                        fill="url(#gUsd)"
-                      />
-                    </AreaChart>
+                      <Legend wrapperStyle={{ fontSize: 11 }} />
+                      <Bar dataKey="ole" stackId="r" name="Olé" fill="var(--success)" />
+                      <Bar dataKey="excelsior" stackId="r" name="Excelsior" fill="var(--primary)" />
+                      <Bar dataKey="munich" stackId="r" name="Munich RE" fill="var(--info)" />
+                      <Bar dataKey="impostos" stackId="r" name="Impostos" fill="var(--warning)" radius={[4, 4, 0, 0]} />
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
               )}
             </ChartCard>
+
 
 
             <ChartCard
