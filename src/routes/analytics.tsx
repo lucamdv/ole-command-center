@@ -503,7 +503,7 @@ function AnalyticsPage() {
                           offset={10}
                           fontSize={10}
                           fill="var(--muted-foreground)"
-                          formatter={(v: number) => `$${formatCompact(Number(v))}`}
+                          formatter={(v: React.ReactNode) => `$${formatCompact(Number(v))}`}
                         />
                       </Line>
                     </ComposedChart>
