@@ -14,6 +14,9 @@
 export const REPASSE_RULES = {
   FIXO_SUPLEMENTAR_PISO: 8333.33,
   PIS_COFINS_PCT: 0.0465,
+  IOF_PCT: 0.0038,
+  FEE_OLE_PCT: 0.35,
+  CUSTO_AQUISICAO_PCT: 0.20,
 } as const;
 
 export interface RepasseBreakdown {
@@ -21,7 +24,7 @@ export interface RepasseBreakdown {
   carregamentoExcelsior: number;
   /** Prêmio direto pago no mês (bruto). */
   premioDireto: number;
-  /** PIS/COFINS calculado sobre carregamento + prêmio direto. */
+  /** PIS/COFINS = 4,65% sobre comissões Olé (Fee Olé + Custo Aquisição). */
   pisCofins: number;
   /** Receita líquida Excelsior = carregamento + prêmio direto − PIS/COFINS. */
   excelsiorLiquido: number;
@@ -31,16 +34,24 @@ export interface RepasseBreakdown {
  * Recebe o prêmio direto bruto pago no mês e devolve a composição da
  * receita Excelsior.
  *
- * Mesmo com `premioDiretoBruto = 0`, o carregamento de USD 8.333,33 é
- * aplicado — é a garantia contratual mínima.
+ * PIS/COFINS é calculado sobre as comissões da Olé:
+ *   comissões Olé = (Prêmio − IOF) × (Fee Olé 35% + Custo Aquisição 20%)
+ *   PIS/COFINS    = 4,65% × comissões Olé
+ *
+ * Mesmo com `premioDiretoBruto = 0`, o carregamento de USD 8.333,33
+ * continua sendo aplicado (garantia contratual mínima).
  */
 export function computeRepasse(premioDiretoBruto: number): RepasseBreakdown {
   const r = REPASSE_RULES;
   const carregamentoExcelsior = r.FIXO_SUPLEMENTAR_PISO;
   const premioDireto = Math.max(0, premioDiretoBruto);
-  const baseTributavel = carregamentoExcelsior + premioDireto;
-  const pisCofins = baseTributavel * r.PIS_COFINS_PCT;
-  const excelsiorLiquido = baseTributavel - pisCofins;
+
+  const iof = premioDireto * r.IOF_PCT;
+  const liquidoDeIof = premioDireto - iof;
+  const comissoesOle = liquidoDeIof * (r.FEE_OLE_PCT + r.CUSTO_AQUISICAO_PCT);
+  const pisCofins = comissoesOle * r.PIS_COFINS_PCT;
+
+  const excelsiorLiquido = carregamentoExcelsior + premioDireto - pisCofins;
 
   return {
     carregamentoExcelsior: round2(carregamentoExcelsior),
