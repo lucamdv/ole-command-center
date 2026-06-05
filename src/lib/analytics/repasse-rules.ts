@@ -16,7 +16,8 @@ export const REPASSE_RULES = {
   PIS_COFINS_PCT: 0.0465,
   IOF_PCT: 0.0038,
   FEE_OLE_PCT: 0.35,
-  CUSTO_AQUISICAO_PCT: 0.20,
+  /** Comissão Nomad (custo de aquisição) — 20% do prêmio líquido de IOF. */
+  NOMAD_PCT: 0.20,
 } as const;
 
 export interface RepasseBreakdown {
@@ -24,7 +25,7 @@ export interface RepasseBreakdown {
   carregamentoExcelsior: number;
   /** Prêmio direto pago no mês (bruto). */
   premioDireto: number;
-  /** PIS/COFINS = 4,65% sobre comissões Olé (Fee Olé + Custo Aquisição). */
+  /** PIS/COFINS = 4,65% sobre comissões Olé (Fee Olé 35% + Nomad 20%). */
   pisCofins: number;
   /** Receita líquida Excelsior = carregamento + prêmio direto − PIS/COFINS. */
   excelsiorLiquido: number;
@@ -35,7 +36,7 @@ export interface RepasseBreakdown {
  * receita Excelsior.
  *
  * PIS/COFINS é calculado sobre as comissões da Olé:
- *   comissões Olé = (Prêmio − IOF) × (Fee Olé 35% + Custo Aquisição 20%)
+ *   comissões Olé = (Prêmio − IOF) × (Fee Olé 35% + Nomad 20%)
  *   PIS/COFINS    = 4,65% × comissões Olé
  *
  * Mesmo com `premioDiretoBruto = 0`, o carregamento de USD 8.333,33
@@ -48,7 +49,7 @@ export function computeRepasse(premioDiretoBruto: number): RepasseBreakdown {
 
   const iof = premioDireto * r.IOF_PCT;
   const liquidoDeIof = premioDireto - iof;
-  const comissoesOle = liquidoDeIof * (r.FEE_OLE_PCT + r.CUSTO_AQUISICAO_PCT);
+  const comissoesOle = liquidoDeIof * (r.FEE_OLE_PCT + r.NOMAD_PCT);
   const pisCofins = comissoesOle * r.PIS_COFINS_PCT;
 
   const excelsiorLiquido = carregamentoExcelsior + premioDireto - pisCofins;
