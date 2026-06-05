@@ -1,4 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
+import { computeRepasse, type RepasseBreakdown } from "@/lib/analytics/repasse-rules";
+
 
 export interface MonthBucket {
   month: string; // YYYY-MM
@@ -32,12 +34,20 @@ export interface IssuanceBucket {
   total: number;
 }
 
+export interface RepasseBucket extends RepasseBreakdown {
+  month: string;
+  label: string;
+  bruto: number;
+}
+
 export interface AnalyticsAggregates {
   findingsByVigencia: MonthBucket[];
   revenueByMonth: RevenueBucket[];
   policyPremiums: PolicyPremium[];
   issuancesByMonth: IssuanceBucket[];
+  repasseByMonth: RepasseBucket[];
 }
+
 
 
 function monthLabel(month: string): string {
@@ -168,6 +178,9 @@ export const getAnalyticsAggregates = createServerFn({ method: "GET" }).handler(
     if (eErr) throw eErr;
 
     const issMap = new Map<string, IssuanceBucket>();
+    // bruto pago por mês (USD) — base para o gráfico contábil de repasses
+    const brutoByMonth = new Map<string, number>();
+
     for (const e of emissions ?? []) {
       const raw =
         typeof e.proposta === "string"
@@ -185,7 +198,7 @@ export const getAnalyticsAggregates = createServerFn({ method: "GET" }).handler(
         }
       }
 
-      // resolver data de emissão
+      // resolver data de emissão (para o gráfico de emissões)
       let iso: string | null = null;
       if (isApolice) {
         const datas = (raw.datas ?? {}) as Record<string, unknown>;
@@ -208,6 +221,56 @@ export const getAnalyticsAggregates = createServerFn({ method: "GET" }).handler(
             null;
         }
       }
+
+      // === bruto pago (USD) por mês de vencimento da parcela ===
+      const proposta = resolveProposta(raw);
+      const pagamento = (proposta.pagamento ?? {}) as Record<string, unknown>;
+      const parcelas = Array.isArray(pagamento.parcelas) ? pagamento.parcelas : [];
+      let pagamentoMatched = false;
+      for (const parc of parcelas as Array<Record<string, unknown>>) {
+        const venc =
+          typeof parc.data_vencimento === "string" ? parc.data_vencimento : null;
+        const mes = pickMonth(venc) ?? pickMonth(iso);
+        if (!mes) continue;
+        const comp = Array.isArray(parc.composicao_premio_parcela)
+          ? parc.composicao_premio_parcela
+          : [];
+        let valor = 0;
+        for (const c of comp as Array<Record<string, unknown>>) {
+          if (c.tipo_premio === "DIRETO" && c.natureza_premio === "PREMIO") {
+            valor += Number(c.valor_premio) || 0;
+          }
+        }
+        if (valor > 0) {
+          brutoByMonth.set(mes, (brutoByMonth.get(mes) ?? 0) + valor);
+          pagamentoMatched = true;
+        }
+      }
+      // fallback: sem parcelas → soma coberturas no mês de emissão
+      if (!pagamentoMatched) {
+        const mes = pickMonth(iso);
+        if (mes) {
+          let valor = 0;
+          const itens = Array.isArray(proposta.itens) ? proposta.itens : [];
+          for (const it of itens as Array<Record<string, unknown>>) {
+            const cobs = Array.isArray(it.coberturas) ? it.coberturas : [];
+            for (const cob of cobs as Array<Record<string, unknown>>) {
+              const comps = Array.isArray(cob.composicao_premio_cobertura)
+                ? cob.composicao_premio_cobertura
+                : [];
+              for (const c of comps as Array<Record<string, unknown>>) {
+                if (c.tipo_premio === "DIRETO" && c.natureza_premio === "PREMIO") {
+                  valor += Number(c.valor_premio) || 0;
+                }
+              }
+            }
+          }
+          if (valor > 0) {
+            brutoByMonth.set(mes, (brutoByMonth.get(mes) ?? 0) + valor);
+          }
+        }
+      }
+
       const month = pickMonth(iso);
       if (!month) continue;
 
@@ -234,7 +297,6 @@ export const getAnalyticsAggregates = createServerFn({ method: "GET" }).handler(
         else if (endossoKey === "D") cur.endossoD += 1;
         cur.endossosTotal += 1;
       } else {
-        // endosso sem wrapper identificável — conta no total de endossos
         cur.endossosTotal += 1;
       }
       cur.total += 1;
@@ -245,7 +307,18 @@ export const getAnalyticsAggregates = createServerFn({ method: "GET" }).handler(
       (a, b) => a.month.localeCompare(b.month),
     );
 
-    return { findingsByVigencia, revenueByMonth, policyPremiums, issuancesByMonth };
+    // === Repasse contábil mensal: preenche TODOS os meses entre o primeiro
+    // pagamento/emissão e o mês atual com o piso de Excelsior (mesmo bruto = 0).
+    const repasseByMonth = buildRepasseByMonth(brutoByMonth);
+
+    return {
+      findingsByVigencia,
+      revenueByMonth,
+      policyPremiums,
+      issuancesByMonth,
+      repasseByMonth,
+    };
+
   },
 );
 
@@ -277,3 +350,31 @@ function resolveProposta(raw: Record<string, unknown>): Record<string, unknown> 
 function round2(n: number) {
   return Math.round(n * 100) / 100;
 }
+
+function buildRepasseByMonth(brutoByMonth: Map<string, number>): RepasseBucket[] {
+  if (brutoByMonth.size === 0) return [];
+  const months = Array.from(brutoByMonth.keys()).sort();
+  const first = months[0];
+  const now = new Date();
+  const currentMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+  const last = currentMonth.localeCompare(months[months.length - 1]) > 0
+    ? currentMonth
+    : months[months.length - 1];
+
+  const out: RepasseBucket[] = [];
+  let [y, m] = first.split("-").map(Number);
+  const [yLast, mLast] = last.split("-").map(Number);
+  while (y < yLast || (y === yLast && m <= mLast)) {
+    const key = `${y}-${String(m).padStart(2, "0")}`;
+    const bruto = round2(brutoByMonth.get(key) ?? 0);
+    const breakdown = computeRepasse(bruto);
+    out.push({ month: key, label: monthLabel(key), bruto, ...breakdown });
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
+  }
+  return out;
+}
+
