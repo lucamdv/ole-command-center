@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
-import { Bell, Check, CheckCheck, Command, RefreshCw, Search, Trash2, X } from "lucide-react";
+import { Bell, Check, CheckCheck, Command, LogOut, RefreshCw, Search, Trash2, X } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { useNotifications } from "@/hooks/use-notifications";
 import { getInitials, useProfile } from "@/hooks/use-settings";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
   const [lastSync, setLastSync] = useState(new Date().toISOString());
@@ -12,6 +16,19 @@ export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
   const [openNotif, setOpenNotif] = useState(false);
   const { items, unread, markAllRead, markRead, remove, clearAll } = useNotifications();
   const { profile } = useProfile();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  async function handleSignOut() {
+    try {
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      await supabase.auth.signOut();
+      navigate({ to: "/auth", replace: true });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao sair");
+    }
+  }
 
   useEffect(() => {
     const i = setInterval(() => {
@@ -169,6 +186,14 @@ export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
       <div className="h-8 w-8 rounded-full bg-linear-to-br from-primary to-info grid place-items-center text-[11px] font-semibold text-primary-foreground ring-2 ring-background" title={profile.nome}>
         {getInitials(profile.nome) || "OL"}
       </div>
+      <button
+        onClick={handleSignOut}
+        className="h-9 w-9 grid place-items-center rounded-md border border-border bg-surface/60 hover:bg-destructive/10 hover:border-destructive/40 hover:text-destructive text-muted-foreground transition"
+        title="Sair"
+        aria-label="Sair"
+      >
+        <LogOut className="h-4 w-4" />
+      </button>
     </header>
   );
 }
