@@ -392,7 +392,7 @@ function AnalyticsPage() {
 
             <ChartCard
               title="Receita Excelsior (USD) por mês de pagamento"
-              subtitle={`Carregamento (US$ 8.333,33) + Prêmio Direto − PIS/COFINS · PIS/COFINS = 4,65% × comissões Olé (Fee 35% + Nomad 20%) sobre prêmio líquido de IOF · Total: ${formatUSD(repasseTotals.excelsiorLiquido, { maximumFractionDigits: 0 })} · Média/mês: ${formatUSD(repasseAvg, { maximumFractionDigits: 0 })} · ${repasse.length} meses`}
+              subtitle={`Total Repasse = Carregamento (US$ 8.333,33) + Prêmio Direto (40% líquido IOF) − PIS/COFINS (4,65% × comissões Olé+Nomad) · espelha o Mapa de Repasses · Total: ${formatUSD(repasseTotals.excelsiorLiquido, { maximumFractionDigits: 0 })} · Média/mês: ${formatUSD(repasseAvg, { maximumFractionDigits: 0 })} · ${repasse.length} meses`}
             >
               {repasse.length === 0 ? (
                 <EmptyMsg text="Sem prêmios pagos sincronizados." />
@@ -869,16 +869,19 @@ function RepasseTooltip({ active, payload }: { active?: boolean; payload?: Array
     </div>
   );
   return (
-    <div className="rounded-lg border border-border bg-surface/95 backdrop-blur p-3 shadow-elevated min-w-[240px]">
+    <div className="rounded-lg border border-border bg-surface/95 backdrop-blur p-3 shadow-elevated min-w-[260px]">
       <div className="text-[12px] font-semibold mb-2">{d.label}</div>
       <div className="space-y-1">
-        {row("Carregamento", d.carregamentoExcelsior)}
-        {row("Prêmio Direto", d.premioDireto, "text-success")}
-        {row("IOF (0,38%)", d.iof, "text-muted-foreground")}
-        {row("Base Olé+Nomad (55%)", d.comissoesOle, "text-muted-foreground")}
-        {row("PIS/COFINS (4,65%)", -d.pisCofins, "text-destructive")}
+        {row("Prêmio Total Pago", d.premioTotalPago, "text-muted-foreground")}
+        {row("(−) IOF (0,38%)", -d.iof, "text-muted-foreground")}
+        {row("(=) Prêmio Líquido IOF", d.premioLiquidoIof, "text-muted-foreground")}
         <div className="h-px bg-border my-1.5" />
-        {row("Total Excelsior", d.excelsiorLiquido, "text-info font-semibold")}
+        {row("Carregamento Excelsior", d.carregamentoExcelsior)}
+        {row("Prêmio Direto (40%)", d.premioDireto, "text-success")}
+        {row("Comissões Olé+Nomad (55%)", d.comissoesOle, "text-muted-foreground")}
+        {row("(−) PIS/COFINS (4,65%)", -d.pisCofins, "text-destructive")}
+        <div className="h-px bg-border my-1.5" />
+        {row("Total Repasse Excelsior", d.excelsiorLiquido, "text-info font-semibold")}
       </div>
     </div>
   );
