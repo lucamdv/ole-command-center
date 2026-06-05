@@ -178,7 +178,8 @@ export const getAnalyticsAggregates = createServerFn({ method: "GET" }).handler(
     if (eErr) throw eErr;
 
     const issMap = new Map<string, IssuanceBucket>();
-    // bruto pago por mês (USD) — base para o gráfico contábil de repasses
+    // valor total pago por mês (USD) — igual à coluna I do Mapa de Repasses:
+    // soma todos os componentes da parcela, não apenas DIRETO/PREMIO.
     const brutoByMonth = new Map<string, number>();
 
     for (const e of emissions ?? []) {
@@ -237,9 +238,7 @@ export const getAnalyticsAggregates = createServerFn({ method: "GET" }).handler(
           : [];
         let valor = 0;
         for (const c of comp as Array<Record<string, unknown>>) {
-          if (c.tipo_premio === "DIRETO" && c.natureza_premio === "PREMIO") {
-            valor += Number(c.valor_premio) || 0;
-          }
+          valor += Number(c.valor_premio) || 0;
         }
         if (valor > 0) {
           brutoByMonth.set(mes, (brutoByMonth.get(mes) ?? 0) + valor);
@@ -259,9 +258,7 @@ export const getAnalyticsAggregates = createServerFn({ method: "GET" }).handler(
                 ? cob.composicao_premio_cobertura
                 : [];
               for (const c of comps as Array<Record<string, unknown>>) {
-                if (c.tipo_premio === "DIRETO" && c.natureza_premio === "PREMIO") {
-                  valor += Number(c.valor_premio) || 0;
-                }
+                valor += Number(c.valor_premio) || 0;
               }
             }
           }
