@@ -368,7 +368,7 @@ function GroupedView({
   );
 }
 
-function FindingBullet({ f }: { f: AuditFindingRow }) {
+function FindingBullet({ f, onIgnore }: { f: AuditFindingRow; onIgnore: (apolice: string, tipo_erro?: string) => void }) {
   const sev = severityOf(f);
   const Icon = sev === "erro" ? XCircle : AlertTriangle;
   const n = normalizeFinding(f);
