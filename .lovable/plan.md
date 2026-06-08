@@ -1,107 +1,76 @@
 ## Objetivo
-1. Substituir notificações simuladas por **notificações reais** derivadas dos dados de operação (auditoria, sincronização, achados críticos, apólices novas/atualizadas).
-2. Tornar `Configurações` **100% funcional** em 4 áreas: Perfil & Preferências (local), Notificações (toggles), Integrações (status real dos webhooks), Dados & Retenção (purgar/exportar).
 
----
+Permitir que o operador "ignore" achados específicos da auditoria (um erro específico de uma apólice, ou uma apólice inteira), de forma persistente. Em execuções futuras, esses itens ficam ocultos do relatório. As decisões podem ser revertidas em **Configurações → Exceções de Auditoria**.
 
-## 1) Notificações reais
+## Escopo das exceções
 
-### Fonte (sem nova tabela)
-Derivar notificações sob demanda das tabelas existentes via um único server fn `getNotifications` (limite 50, últimas 7 dias):
+Três níveis, todos por usuário autenticado (`auth.uid()`):
 
-- **`audit_runs`** (status ∈ success/error) → 1 notificação por run
-  - `success` + reprovados=0 → severidade `low`
-  - `success` + reprovados>0 → `high` (texto: "X de Y apólices com inconsistências")
-  - `error` → `critical` (texto: error_message)
-- **`policy_sync_runs`** (status ∈ success/error) → 1 notificação por run
-  - sucesso → `info` ("Carteira sincronizada — N apólices")
-  - erro → `critical`
-- **`audit_findings`** filtrando `tipo_erro` em lista crítica (gap_vigencia, duplicidade, sobreposicao) das **últimas 3 runs** → 1 notificação por finding crítico (`high`)
-- **`policies`** com `updated_at` > `lastSeenAt` (vindo do cliente via param) → 1 notificação agregada ("N apólices atualizadas desde sua última visita")
+1. **Apólice + tipo de erro** — oculta um achado específico naquela apólice (ex.: apólice `123.456` + `ENDOSSO_SEM_VIGENCIA`).
+2. **Apólice inteira** — oculta todos os achados daquela apólice.
+3. *(opcional, fora deste escopo)* tipo de erro global — não incluído agora para evitar mascarar problemas em massa.
 
-Cada item tem `id` estável (ex.: `audit:{run_id}`, `sync:{run_id}`, `finding:{finding_id}`, `policies_updated:{lastSeenAt}`) → usado para o estado read/unread.
+Não vamos mexer no n8n: o motor continua retornando tudo. O filtro é aplicado na leitura (`getLatestAudit`) e a UI já recebe a lista filtrada — assim o histórico bruto fica preservado para auditoria.
 
-### Estado read/dismissed (cliente)
-- `localStorage`: `ole.notif.read` = `string[]` de ids lidos, `ole.notif.dismissed` = ids dispensados, `ole.notif.lastSeenAt` = ISO timestamp.
-- "Marcar todas como lidas" / "Limpar" continuam funcionais; "Limpar" só esconde (adiciona em `dismissed`), nunca apaga banco.
-- Toggles por tipo (de `Configurações > Notificações`) filtram o que aparece.
+## Mudanças
 
-### Frontend
-- Trocar `useNotifications` para usar TanStack Query (`queryKey: ["notifications", lastSeenAt]`) + `refetchInterval: 30s`.
-- Remover totalmente o seed/SAMPLE_EVENTS/setInterval de simulação.
-- Manter UI atual do header (badge unread, marcar lidas, dispensar, limpar).
+### 1. Banco (migration)
 
-### Arquivos
-- **Novo** `src/lib/notifications.functions.ts` — `getNotifications` server fn.
-- **Edit** `src/hooks/use-notifications.ts` — passa a consumir o server fn + localStorage só para read/dismissed/toggles.
+Nova tabela `public.audit_ignores`:
 
----
+- `user_id uuid` → `auth.uid()`
+- `scope text` → `'apolice'` ou `'apolice_tipo'`
+- `apolice text` (obrigatório)
+- `tipo_erro text` (null quando `scope='apolice'`)
+- `motivo text` (opcional — anotação do operador)
+- `created_at`
+- Unique `(user_id, apolice, coalesce(tipo_erro,''))`
+- RLS: usuário só lê/escreve as próprias linhas; GRANT para `authenticated` + `service_role`.
 
-## 2) Configurações 100% funcional
+### 2. Server functions — `src/lib/audit-ignores.functions.ts` (novo)
 
-Rota `/configuracoes` vira layout com **abas** (Perfil · Notificações · Integrações · Dados). Cada aba é um componente.
+Todas com `requireSupabaseAuth` (RLS aplica):
 
-### 2a. Perfil & Preferências (local)
-Persistido em `localStorage` via `useSettings` hook, contexto disponibilizado no `AppShell`:
-- Nome do operador (default "Luca Monteiro") → reflete no Header (chip avatar + saudação).
-- E-mail (rótulo informativo).
-- Fuso horário (select com fusos BR + UTC) → usado em `formatDateTime`/`relativeTime` futuras chamadas (passamos via param onde já é usado).
-- Idioma (pt-BR / en-US) — por ora apenas armazena; UI permanece pt-BR (label "em breve" se en-US).
-- Tema (light/dark/system) — integra ao `ThemeProvider` existente.
+- `listAuditIgnores()` — lista do usuário.
+- `addAuditIgnore({ apolice, tipo_erro?, motivo? })` — upsert.
+- `removeAuditIgnore({ id })` — delete.
 
-### 2b. Notificações
-Toggles persistidos em localStorage (`ole.notif.prefs`):
-- `auditoria_concluida` (default on)
-- `auditoria_erro` (default on)
-- `sync_carteira` (default on)
-- `achados_criticos` (default on)
-- `apolices_atualizadas` (default on)
-- `som` (default off) — toca um beep curto WebAudio em notificações `critical`/`high` novas.
-- Botão "Resetar histórico de leitura" limpa `read`/`dismissed`.
+### 3. `getLatestAudit` (filtragem)
 
-### 2c. Integrações
-Cards reais para cada webhook + status de execução, consumindo um novo server fn `getIntegrationsStatus`:
-- **MOTOR OLÉ (sincronização)**: ✅/⚠️/❌ se `N8N_MOTOR_POLICIES_URL` está set, último `policy_sync_runs` (status, finished_at, total_apolices, error_message), botão **"Testar conexão"** → server fn `pingMotorPolicies` (faz `HEAD`/`POST` leve só para checar HTTP 2xx, sem disparar workflow real — envia body `{ ping: true }`).
-- **N8N Auditoria**: idem, com `N8N_AUDIT_WEBHOOK_URL` e último `audit_runs` + `pingAuditWebhook`.
-- **Callback de auditoria**: mostra `AUDIT_CALLBACK_SECRET` configurado (sim/não), e exibe a URL pública de callback para copiar.
-- Link "Gerenciar secrets" abre painel de backend (presentation tag).
+Após carregar `findings`, busca os ignores do usuário e remove achados que casem com `apolice` (scope apólice) ou `apolice + tipo_erro` (scope par). Também recalcula `aprovados`/`reprovados`/`total_processado` exibidos derivando de findings filtrados — mantemos os números do `run` originais como `raw` mas expomos os ajustados em `LatestAudit.run` (campo novo opcional `adjusted: true`).
 
-### 2d. Dados & Retenção
-Ações reais via server fns admin (`supabaseAdmin`):
-- **Contadores ao vivo**: nº de threads do Olíver, mensagens, audit_runs, audit_findings, policies, endorsements.
-- **Limpar histórico do Olíver** (apaga `oliver_threads` + `oliver_messages`) com diálogo de confirmação.
-- **Limpar histórico de auditoria > 90 dias** (apaga `audit_runs` com `created_at < now() - interval '90 days'` e cascateia findings via FK — verificar; se não houver FK on delete, apagar findings primeiro).
-- **Exportar carteira (CSV)** — server fn que retorna CSV das `policies` (numero_apolice, premio_liquido, segurado, updated_at), download via `URL.createObjectURL`.
-- **Exportar auditoria (JSON)** — última run completa.
+### 4. UI — diálogo de achados (`findings-list-dialog.tsx`)
 
-### Arquivos
-- **Edit** `src/routes/configuracoes.tsx` — vira layout com Tabs (shadcn).
-- **Novos**
-  - `src/components/settings/perfil-tab.tsx`
-  - `src/components/settings/notificacoes-tab.tsx`
-  - `src/components/settings/integracoes-tab.tsx`
-  - `src/components/settings/dados-tab.tsx`
-  - `src/hooks/use-settings.ts` (perfil + prefs notif + som)
-  - `src/lib/settings.functions.ts` — `getIntegrationsStatus`, `pingAuditWebhook`, `pingMotorPolicies`, `getDataCounters`, `purgeOliver`, `purgeOldAudits`, `exportPoliciesCSV`, `exportLatestAuditJSON`.
-- **Edit** `src/components/layout/header.tsx` — usa nome do operador de `useSettings`.
+- Botão **"Ignorar"** (ícone EyeOff) em cada `FindingBullet` e em cada linha da tabela → abre confirm rápido (popover/AlertDialog) com escolha:
+  - "Ignorar **este erro** nesta apólice"
+  - "Ignorar **todos os erros** desta apólice"
+  - Campo opcional "Motivo".
+- Botão **"Ignorar apólice"** no header de cada grupo.
+- Ao confirmar: chama `addAuditIgnore`, invalida `['audit']` no React Query, mostra toast com ação **"Desfazer"** (chama `removeAuditIgnore`).
+- Banner sutil no topo do diálogo quando há ignores ativos: `"X exceções aplicadas — gerenciar em Configurações"`.
 
----
+### 5. Configurações — nova aba **"Exceções"**
 
-## Detalhes técnicos relevantes
+`src/routes/_authenticated/configuracoes.tsx` ganha aba `Exceções` (ícone `EyeOff`), e novo componente `src/components/settings/excecoes-tab.tsx`:
 
-- Server fns admin: `supabaseAdmin` importado dentro do handler (regra do template).
-- Sem novas tabelas, sem migrations.
-- `getNotifications` calcula `time` no servidor com base em `created_at`; cliente só formata como "há X min".
-- "Apólices atualizadas" usa `lastSeenAt` enviado pelo cliente; o badge fica zero após abrir o painel (mark all read também atualiza `lastSeenAt = now`).
-- `pingAuditWebhook` / `pingMotorPolicies` enviam body `{ ping: true, source: "ole-config-test" }` com timeout 8s — o usuário deve garantir que o workflow n8n trate `ping=true` como no-op; documentamos isso no card. Alternativa: apenas verificar HTTP 200/204; se 4xx/5xx, mostrar status.
-- Toggles de notificação aplicam filtro no cliente (não no server fn) para evitar acoplar prefs a sessão.
-- Tema: já existe `ThemeProvider`; aba Perfil só consome `useTheme`.
+- Tabela: Apólice · Tipo de erro (ou "Todos") · Motivo · Criado em · Ação `Remover`.
+- Busca por apólice/tipo.
+- Botão "Remover" → confirma → `removeAuditIgnore` → invalida queries de audit.
+- Estado vazio amigável.
+
+### 6. Hook — `src/hooks/use-audit-ignores.ts`
+
+`useAuditIgnores()` (lista), `useAddAuditIgnore()`, `useRemoveAuditIgnore()` com invalidações encadeadas (`['audit-ignores']` + `['audit']`).
 
 ## Fora de escopo
-- Auth/multi-usuário, Equipe, Segurança/MFA, sessões.
-- Edição de webhooks pelo usuário (continuam em secrets).
-- Persistência server-side de prefs (sem auth, fica em localStorage).
 
-## Verificação
-- Header: badge reflete eventos reais; ao rodar uma auditoria (ou simular um insert em `audit_runs`), a notificação aparece em ≤30s.
-- Configurações: cada aba funciona end-to-end — alterar nome reflete no header; toggle de notificação filtra o painel; "Testar conexão" mostra resultado real; "Limpar Olíver" zera contagem.
+- Não muda o fluxo n8n nem o callback.
+- Não muda `audit_findings` no banco (filtro é em runtime).
+- Compartilhamento entre usuários (exceções são por usuário). Se preferir global por workspace, ajusto.
+
+## Detalhes técnicos
+
+- Filtro é feito server-side em `getLatestAudit` para que o PDF / export reflitam o mesmo conteúdo.
+- A reconta de `aprovados/reprovados` considera apólices que ficaram **sem** findings após o filtro como aprovadas (incrementa aprovados, decrementa reprovados).
+- `unique (user_id, apolice, coalesce(tipo_erro,''))` evita duplicatas; `addAuditIgnore` faz upsert idempotente.
+- O toast "Desfazer" usa `sonner` com `action`.

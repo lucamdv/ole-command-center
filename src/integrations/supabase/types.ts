@@ -58,6 +58,36 @@ export type Database = {
           },
         ]
       }
+      audit_ignores: {
+        Row: {
+          apolice: string
+          created_at: string
+          id: string
+          motivo: string | null
+          scope: string
+          tipo_erro: string | null
+          user_id: string
+        }
+        Insert: {
+          apolice: string
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          scope: string
+          tipo_erro?: string | null
+          user_id: string
+        }
+        Update: {
+          apolice?: string
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          scope?: string
+          tipo_erro?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       audit_runs: {
         Row: {
           aprovados: number
