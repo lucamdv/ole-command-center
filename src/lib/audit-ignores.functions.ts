@@ -42,12 +42,12 @@ export const addAuditIgnore = createServerFn({ method: "POST" })
       motivo: data.motivo ?? null,
     };
     // Upsert idempotente sobre (user_id, apolice, coalesce(tipo_erro,''))
-    const { data: existing, error: selErr } = await context.supabase
+    let q = context.supabase
       .from("audit_ignores")
       .select("id")
-      .eq("apolice", data.apolice)
-      .is("tipo_erro", data.tipo_erro ?? null)
-      .maybeSingle();
+      .eq("apolice", data.apolice);
+    q = data.tipo_erro ? q.eq("tipo_erro", data.tipo_erro) : q.is("tipo_erro", null);
+    const { data: existing, error: selErr } = await q.maybeSingle();
     if (selErr) throw new Error(selErr.message);
     if (existing) return { id: (existing as { id: string }).id, alreadyExists: true };
 
