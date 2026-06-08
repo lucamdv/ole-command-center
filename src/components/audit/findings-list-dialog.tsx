@@ -416,6 +416,7 @@ function FindingBullet({ f, onIgnore }: { f: AuditFindingRow; onIgnore: (apolice
             title="Ignorar este erro em futuras auditorias"
           >
             <EyeOff className="h-3 w-3" /> Ignorar
+          </button>
         </div>
 
         {n.motivo && (
