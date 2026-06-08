@@ -529,12 +529,26 @@ function TableView({
                   );
                 })()}
               </TableCell>
+              <TableCell className="align-top">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm(`Ignorar "${f.tipo_erro}" na apólice ${f.apolice}?`)) {
+                      onIgnore(f.apolice, f.tipo_erro);
+                    }
+                  }}
+                  className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+                  title="Ignorar este erro"
+                >
+                  <EyeOff className="h-3.5 w-3.5" />
+                </button>
+              </TableCell>
             </TableRow>
           );
         })}
         {findings.length === 0 && (
           <TableRow>
-            <TableCell colSpan={7} className="text-center py-8 text-[12px] text-muted-foreground">
+            <TableCell colSpan={8} className="text-center py-8 text-[12px] text-muted-foreground">
               Nenhum achado para o filtro atual.
             </TableCell>
           </TableRow>
