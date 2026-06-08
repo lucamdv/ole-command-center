@@ -4,6 +4,7 @@ import {
   ChevronDown,
   ChevronRight,
   Copy,
+  EyeOff,
   FileDown,
   LayoutList,
   Search,
@@ -45,6 +46,7 @@ import {
 } from "@/lib/audit/derive";
 import { exportAuditPdf } from "@/lib/audit/export-pdf";
 import { useAuditHistory } from "@/hooks/use-audit";
+import { useAddAuditIgnore, useAuditIgnores } from "@/hooks/use-audit-ignores";
 import type { AuditFindingRow, LatestAudit } from "@/lib/audit/types";
 import { formatDate, formatDateTime, formatInt } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -61,10 +63,16 @@ export function FindingsListDialog({
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const { data: history = [] } = useAuditHistory();
+  const { data: ignores = [] } = useAuditIgnores();
+  const addIgnore = useAddAuditIgnore();
   const [tipo, setTipo] = useState<string>("__all__");
   const [sev, setSev] = useState<Severity | "__all__">("__all__");
   const [view, setView] = useState<View>("agrupado");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  const handleIgnore = (apolice: string, tipo_erro?: string) => {
+    addIgnore.mutate({ apolice, tipo_erro: tipo_erro ?? null });
+  };
 
   const tipos = useMemo(
     () => Array.from(new Set(latest.findings.map((f) => f.tipo_erro))).sort(),
@@ -218,6 +226,16 @@ export function FindingsListDialog({
           </Button>
         </div>
 
+        {ignores.length > 0 && (
+          <div className="px-6 py-2 border-b border-border bg-muted/30 text-[11.5px] text-muted-foreground flex items-center gap-2">
+            <EyeOff className="h-3.5 w-3.5" />
+            {ignores.length} {ignores.length === 1 ? "exceção aplicada" : "exceções aplicadas"} ·{" "}
+            <Link to="/configuracoes" className="text-primary hover:underline">
+              gerenciar em Configurações
+            </Link>
+          </div>
+        )}
+
         {/* Body */}
         <div className="flex-1 overflow-auto bg-background/40">
           {view === "agrupado" ? (
@@ -226,9 +244,10 @@ export function FindingsListDialog({
               collapsed={collapsed}
               onToggle={(k) => setCollapsed((s) => ({ ...s, [k]: !s[k] }))}
               onCopy={copy}
+              onIgnore={handleIgnore}
             />
           ) : (
-            <TableView findings={filtered} onCopy={copy} />
+            <TableView findings={filtered} onCopy={copy} onIgnore={handleIgnore} />
           )}
         </div>
       </DialogContent>
@@ -264,11 +283,13 @@ function GroupedView({
   collapsed,
   onToggle,
   onCopy,
+  onIgnore,
 }: {
   groups: ReturnType<typeof groupByApolice>;
   collapsed: Record<string, boolean>;
   onToggle: (apolice: string) => void;
   onCopy: (txt: string, msg?: string) => void;
+  onIgnore: (apolice: string, tipo_erro?: string) => void;
 }) {
   if (groups.length === 0) {
     return (
@@ -318,12 +339,25 @@ function GroupedView({
                   </Link>
                 </div>
               </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 text-[11px] gap-1 text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  if (confirm(`Ignorar TODOS os erros da apólice ${g.apolice} em execuções futuras?`)) {
+                    onIgnore(g.apolice);
+                  }
+                }}
+                title="Ignorar apólice em futuras auditorias"
+              >
+                <EyeOff className="h-3.5 w-3.5" /> Ignorar apólice
+              </Button>
             </header>
 
             {!isCollapsed && (
               <ul className="px-5 py-3 space-y-2.5">
                 {g.findings.map((f) => (
-                  <FindingBullet key={f.id} f={f} />
+                  <FindingBullet key={f.id} f={f} onIgnore={onIgnore} />
                 ))}
               </ul>
             )}
@@ -334,7 +368,7 @@ function GroupedView({
   );
 }
 
-function FindingBullet({ f }: { f: AuditFindingRow }) {
+function FindingBullet({ f, onIgnore }: { f: AuditFindingRow; onIgnore: (apolice: string, tipo_erro?: string) => void }) {
   const sev = severityOf(f);
   const Icon = sev === "erro" ? XCircle : AlertTriangle;
   const n = normalizeFinding(f);
@@ -371,6 +405,18 @@ function FindingBullet({ f }: { f: AuditFindingRow }) {
               Anterior {n.endossoAnterior}
             </span>
           )}
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm(`Ignorar "${f.tipo_erro}" na apólice ${f.apolice} em execuções futuras?`)) {
+                onIgnore(f.apolice, f.tipo_erro);
+              }
+            }}
+            className="ml-auto inline-flex items-center gap-1 text-[10.5px] text-muted-foreground hover:text-foreground opacity-70 hover:opacity-100 transition"
+            title="Ignorar este erro em futuras auditorias"
+          >
+            <EyeOff className="h-3 w-3" /> Ignorar
+          </button>
         </div>
 
         {n.motivo && (
@@ -405,9 +451,11 @@ function FindingBullet({ f }: { f: AuditFindingRow }) {
 function TableView({
   findings,
   onCopy,
+  onIgnore,
 }: {
   findings: AuditFindingRow[];
   onCopy: (txt: string, msg?: string) => void;
+  onIgnore: (apolice: string, tipo_erro?: string) => void;
 }) {
   return (
     <Table>
@@ -420,6 +468,7 @@ function TableView({
           <TableHead className="text-[11px]">Início</TableHead>
           <TableHead className="text-[11px]">Fim</TableHead>
           <TableHead className="text-[11px]">Detalhe</TableHead>
+          <TableHead className="text-[11px] w-[80px]" />
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -480,12 +529,26 @@ function TableView({
                   );
                 })()}
               </TableCell>
+              <TableCell className="align-top">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm(`Ignorar "${f.tipo_erro}" na apólice ${f.apolice}?`)) {
+                      onIgnore(f.apolice, f.tipo_erro);
+                    }
+                  }}
+                  className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+                  title="Ignorar este erro"
+                >
+                  <EyeOff className="h-3.5 w-3.5" />
+                </button>
+              </TableCell>
             </TableRow>
           );
         })}
         {findings.length === 0 && (
           <TableRow>
-            <TableCell colSpan={7} className="text-center py-8 text-[12px] text-muted-foreground">
+            <TableCell colSpan={8} className="text-center py-8 text-[12px] text-muted-foreground">
               Nenhum achado para o filtro atual.
             </TableCell>
           </TableRow>
