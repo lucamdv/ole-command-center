@@ -226,6 +226,16 @@ export function FindingsListDialog({
           </Button>
         </div>
 
+        {ignores.length > 0 && (
+          <div className="px-6 py-2 border-b border-border bg-muted/30 text-[11.5px] text-muted-foreground flex items-center gap-2">
+            <EyeOff className="h-3.5 w-3.5" />
+            {ignores.length} {ignores.length === 1 ? "exceção aplicada" : "exceções aplicadas"} ·{" "}
+            <Link to="/configuracoes" className="text-primary hover:underline">
+              gerenciar em Configurações
+            </Link>
+          </div>
+        )}
+
         {/* Body */}
         <div className="flex-1 overflow-auto bg-background/40">
           {view === "agrupado" ? (
@@ -234,9 +244,10 @@ export function FindingsListDialog({
               collapsed={collapsed}
               onToggle={(k) => setCollapsed((s) => ({ ...s, [k]: !s[k] }))}
               onCopy={copy}
+              onIgnore={handleIgnore}
             />
           ) : (
-            <TableView findings={filtered} onCopy={copy} />
+            <TableView findings={filtered} onCopy={copy} onIgnore={handleIgnore} />
           )}
         </div>
       </DialogContent>
