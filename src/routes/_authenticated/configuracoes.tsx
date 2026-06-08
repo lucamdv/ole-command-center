@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Bell, Database, Plug, User } from "lucide-react";
+import { Bell, Database, EyeOff, Plug, User } from "lucide-react";
 import { useState } from "react";
 import { PerfilTab } from "@/components/settings/perfil-tab";
 import { NotificacoesTab } from "@/components/settings/notificacoes-tab";
 import { IntegracoesTab } from "@/components/settings/integracoes-tab";
 import { DadosTab } from "@/components/settings/dados-tab";
+import { ExcecoesTab } from "@/components/settings/excecoes-tab";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/_authenticated/configuracoes")({
 const TABS = [
   { id: "perfil", label: "Perfil", icon: User, Component: PerfilTab },
   { id: "notificacoes", label: "Notificações", icon: Bell, Component: NotificacoesTab },
+  { id: "excecoes", label: "Exceções", icon: EyeOff, Component: ExcecoesTab },
   { id: "integracoes", label: "Integrações", icon: Plug, Component: IntegracoesTab },
   { id: "dados", label: "Dados & Retenção", icon: Database, Component: DadosTab },
 ] as const;
