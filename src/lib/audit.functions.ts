@@ -138,7 +138,7 @@ export const getAuditRunStatus = createServerFn({ method: "GET" }).middleware([r
     } | null;
   });
 
-export const getLatestAudit = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
+export const getLatestAudit = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   const { data: runs, error: runErr } = await supabaseAdmin
@@ -151,16 +151,43 @@ export const getLatestAudit = createServerFn({ method: "GET" }).middleware([requ
   if (runErr) throw new Error(runErr.message);
   if (!runs || runs.length === 0) return null as LatestAudit | null;
 
-  const run = runs[0];
+  const run = runs[0] as Record<string, unknown> & {
+    id: string;
+    aprovados: number;
+    reprovados: number;
+    total_processado: number;
+  };
   const { data: findings, error: findErr } = await supabaseAdmin
     .from("audit_findings")
     .select("*")
-    .eq("run_id", (run as { id: string }).id)
+    .eq("run_id", run.id)
     .order("apolice", { ascending: true });
 
   if (findErr) throw new Error(findErr.message);
 
-  return { run, findings: findings ?? [] } as unknown as LatestAudit;
+  const { data: ignores } = await context.supabase
+    .from("audit_ignores")
+    .select("apolice, tipo_erro");
+  const ignoreList = (ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>;
+  const apoliceWhole = new Set(ignoreList.filter((i) => !i.tipo_erro).map((i) => i.apolice));
+  const apolicePlusTipo = new Set(
+    ignoreList.filter((i) => i.tipo_erro).map((i) => `${i.apolice}::${i.tipo_erro}`),
+  );
+
+  const all = (findings ?? []) as Array<{ apolice: string; tipo_erro: string }>;
+  const filtered = all.filter(
+    (f) => !apoliceWhole.has(f.apolice) && !apolicePlusTipo.has(`${f.apolice}::${f.tipo_erro}`),
+  );
+
+  const apolicesAntes = new Set(all.map((f) => f.apolice));
+  const apolicesDepois = new Set(filtered.map((f) => f.apolice));
+  const reprovadosAjustado = apolicesDepois.size;
+  const aprovadosAjustado = (run.aprovados ?? 0) + (apolicesAntes.size - apolicesDepois.size);
+
+  return {
+    run: { ...run, aprovados: aprovadosAjustado, reprovados: reprovadosAjustado },
+    findings: filtered,
+  } as unknown as LatestAudit;
 });
 
 export const getAuditHistory = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
