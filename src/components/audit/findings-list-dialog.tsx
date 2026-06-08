@@ -405,6 +405,17 @@ function FindingBullet({ f, onIgnore }: { f: AuditFindingRow; onIgnore: (apolice
               Anterior {n.endossoAnterior}
             </span>
           )}
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm(`Ignorar "${f.tipo_erro}" na apólice ${f.apolice} em execuções futuras?`)) {
+                onIgnore(f.apolice, f.tipo_erro);
+              }
+            }}
+            className="ml-auto inline-flex items-center gap-1 text-[10.5px] text-muted-foreground hover:text-foreground opacity-70 hover:opacity-100 transition"
+            title="Ignorar este erro em futuras auditorias"
+          >
+            <EyeOff className="h-3 w-3" /> Ignorar
         </div>
 
         {n.motivo && (
