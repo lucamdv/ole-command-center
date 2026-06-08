@@ -74,21 +74,9 @@ export async function runPolicySyncImpl() {
   }
   const runId = (runRow as { id: string }).id;
 
-  const { getRequestHost, getRequestHeader } = await import("@tanstack/react-start/server");
-  const reqHost = getRequestHost();
-  const proto = getRequestHeader("x-forwarded-proto") || "https";
-  const isLocal =
-    !reqHost ||
-    reqHost.includes("localhost") ||
-    reqHost.startsWith("127.") ||
-    reqHost.startsWith("0.");
   const base =
     process.env.PUBLIC_APP_URL ||
-    (isLocal
-      ? process.env.NODE_ENV === "production"
-        ? PRODUCTION_PUBLIC_URL
-        : PREVIEW_PUBLIC_URL
-      : `${proto}://${reqHost}`);
+    (process.env.NODE_ENV === "production" ? PRODUCTION_PUBLIC_URL : PREVIEW_PUBLIC_URL);
   const callbackUrl = `${base.replace(/\/$/, "")}/api/public/policy-sync-callback?run_id=${runId}`;
 
   try {
