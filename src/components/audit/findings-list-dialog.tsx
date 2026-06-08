@@ -451,9 +451,11 @@ function FindingBullet({ f, onIgnore }: { f: AuditFindingRow; onIgnore: (apolice
 function TableView({
   findings,
   onCopy,
+  onIgnore,
 }: {
   findings: AuditFindingRow[];
   onCopy: (txt: string, msg?: string) => void;
+  onIgnore: (apolice: string, tipo_erro?: string) => void;
 }) {
   return (
     <Table>
@@ -466,6 +468,7 @@ function TableView({
           <TableHead className="text-[11px]">Início</TableHead>
           <TableHead className="text-[11px]">Fim</TableHead>
           <TableHead className="text-[11px]">Detalhe</TableHead>
+          <TableHead className="text-[11px] w-[80px]" />
         </TableRow>
       </TableHeader>
       <TableBody>
