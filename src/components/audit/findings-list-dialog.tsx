@@ -63,10 +63,16 @@ export function FindingsListDialog({
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const { data: history = [] } = useAuditHistory();
+  const { data: ignores = [] } = useAuditIgnores();
+  const addIgnore = useAddAuditIgnore();
   const [tipo, setTipo] = useState<string>("__all__");
   const [sev, setSev] = useState<Severity | "__all__">("__all__");
   const [view, setView] = useState<View>("agrupado");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  const handleIgnore = (apolice: string, tipo_erro?: string) => {
+    addIgnore.mutate({ apolice, tipo_erro: tipo_erro ?? null });
+  };
 
   const tipos = useMemo(
     () => Array.from(new Set(latest.findings.map((f) => f.tipo_erro))).sort(),
