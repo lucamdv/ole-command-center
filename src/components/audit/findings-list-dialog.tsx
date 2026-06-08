@@ -283,11 +283,13 @@ function GroupedView({
   collapsed,
   onToggle,
   onCopy,
+  onIgnore,
 }: {
   groups: ReturnType<typeof groupByApolice>;
   collapsed: Record<string, boolean>;
   onToggle: (apolice: string) => void;
   onCopy: (txt: string, msg?: string) => void;
+  onIgnore: (apolice: string, tipo_erro?: string) => void;
 }) {
   if (groups.length === 0) {
     return (
@@ -337,12 +339,25 @@ function GroupedView({
                   </Link>
                 </div>
               </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 text-[11px] gap-1 text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  if (confirm(`Ignorar TODOS os erros da apólice ${g.apolice} em execuções futuras?`)) {
+                    onIgnore(g.apolice);
+                  }
+                }}
+                title="Ignorar apólice em futuras auditorias"
+              >
+                <EyeOff className="h-3.5 w-3.5" /> Ignorar apólice
+              </Button>
             </header>
 
             {!isCollapsed && (
               <ul className="px-5 py-3 space-y-2.5">
                 {g.findings.map((f) => (
-                  <FindingBullet key={f.id} f={f} />
+                  <FindingBullet key={f.id} f={f} onIgnore={onIgnore} />
                 ))}
               </ul>
             )}
