@@ -1,76 +1,33 @@
-## Objetivo
+## Problema
 
-Permitir que o operador "ignore" achados específicos da auditoria (um erro específico de uma apólice, ou uma apólice inteira), de forma persistente. Em execuções futuras, esses itens ficam ocultos do relatório. As decisões podem ser revertidas em **Configurações → Exceções de Auditoria**.
+Quando a auditoria é disparada pela preview, o backend monta o `callback_url` usando o host do request (`id-preview--{id}.lovable.app`). Esse host pertence ao iframe da sandbox e responde **302** para POSTs externos no `/api/public/*` — então o n8n entrega o callback no destino errado e o resultado nunca chega ao banco.
 
-## Escopo das exceções
+As URLs estáveis `project--{id}-dev.lovable.app` (preview) e `project--{id}.lovable.app` (produção) respondem corretamente (401 sem secret, 200 com).
 
-Três níveis, todos por usuário autenticado (`auth.uid()`):
+## Mudança
 
-1. **Apólice + tipo de erro** — oculta um achado específico naquela apólice (ex.: apólice `123.456` + `ENDOSSO_SEM_VIGENCIA`).
-2. **Apólice inteira** — oculta todos os achados daquela apólice.
-3. *(opcional, fora deste escopo)* tipo de erro global — não incluído agora para evitar mascarar problemas em massa.
+Em `src/lib/audit.functions.ts`, simplificar a montagem do `callbackUrl` para nunca usar `reqHost`:
 
-Não vamos mexer no n8n: o motor continua retornando tudo. O filtro é aplicado na leitura (`getLatestAudit`) e a UI já recebe a lista filtrada — assim o histórico bruto fica preservado para auditoria.
+1. Remover o import dinâmico de `@tanstack/react-start/server` e o uso de `getRequestHost` / `getRequestHeader` / `proto` / `isLocal`.
+2. Calcular `base` em ordem de prioridade:
+   - `process.env.PUBLIC_APP_URL` (override manual, ex. domínio final)
+   - `PRODUCTION_PUBLIC_URL` quando `process.env.NODE_ENV === "production"`
+   - senão `PREVIEW_PUBLIC_URL`
+3. Manter o restante intacto: `callbackUrl = `${base}/api/public/audit-callback?run_id=${runId}`` é enviado no body para o n8n, que já reposta com `x-callback-secret`.
 
-## Mudanças
+## Por que isso resolve
 
-### 1. Banco (migration)
-
-Nova tabela `public.audit_ignores`:
-
-- `user_id uuid` → `auth.uid()`
-- `scope text` → `'apolice'` ou `'apolice_tipo'`
-- `apolice text` (obrigatório)
-- `tipo_erro text` (null quando `scope='apolice'`)
-- `motivo text` (opcional — anotação do operador)
-- `created_at`
-- Unique `(user_id, apolice, coalesce(tipo_erro,''))`
-- RLS: usuário só lê/escreve as próprias linhas; GRANT para `authenticated` + `service_role`.
-
-### 2. Server functions — `src/lib/audit-ignores.functions.ts` (novo)
-
-Todas com `requireSupabaseAuth` (RLS aplica):
-
-- `listAuditIgnores()` — lista do usuário.
-- `addAuditIgnore({ apolice, tipo_erro?, motivo? })` — upsert.
-- `removeAuditIgnore({ id })` — delete.
-
-### 3. `getLatestAudit` (filtragem)
-
-Após carregar `findings`, busca os ignores do usuário e remove achados que casem com `apolice` (scope apólice) ou `apolice + tipo_erro` (scope par). Também recalcula `aprovados`/`reprovados`/`total_processado` exibidos derivando de findings filtrados — mantemos os números do `run` originais como `raw` mas expomos os ajustados em `LatestAudit.run` (campo novo opcional `adjusted: true`).
-
-### 4. UI — diálogo de achados (`findings-list-dialog.tsx`)
-
-- Botão **"Ignorar"** (ícone EyeOff) em cada `FindingBullet` e em cada linha da tabela → abre confirm rápido (popover/AlertDialog) com escolha:
-  - "Ignorar **este erro** nesta apólice"
-  - "Ignorar **todos os erros** desta apólice"
-  - Campo opcional "Motivo".
-- Botão **"Ignorar apólice"** no header de cada grupo.
-- Ao confirmar: chama `addAuditIgnore`, invalida `['audit']` no React Query, mostra toast com ação **"Desfazer"** (chama `removeAuditIgnore`).
-- Banner sutil no topo do diálogo quando há ignores ativos: `"X exceções aplicadas — gerenciar em Configurações"`.
-
-### 5. Configurações — nova aba **"Exceções"**
-
-`src/routes/_authenticated/configuracoes.tsx` ganha aba `Exceções` (ícone `EyeOff`), e novo componente `src/components/settings/excecoes-tab.tsx`:
-
-- Tabela: Apólice · Tipo de erro (ou "Todos") · Motivo · Criado em · Ação `Remover`.
-- Busca por apólice/tipo.
-- Botão "Remover" → confirma → `removeAuditIgnore` → invalida queries de audit.
-- Estado vazio amigável.
-
-### 6. Hook — `src/hooks/use-audit-ignores.ts`
-
-`useAuditIgnores()` (lista), `useAddAuditIgnore()`, `useRemoveAuditIgnore()` com invalidações encadeadas (`['audit-ignores']` + `['audit']`).
+- A URL `project--{id}-dev.lovable.app` é estável, pública, acessível pelo n8n na nuvem, e serve o build de preview com as rotas `/api/public/*` reais.
+- A `id-preview--…` é específica da sandbox de edição e tem auth no meio, por isso o POST do n8n cai em 302.
+- Em produção, `NODE_ENV=production` faz cair em `project--{id}.lovable.app` (= `olelifecockpit.lovable.app` via alias) que também é estável.
 
 ## Fora de escopo
 
-- Não muda o fluxo n8n nem o callback.
-- Não muda `audit_findings` no banco (filtro é em runtime).
-- Compartilhamento entre usuários (exceções são por usuário). Se preferir global por workspace, ajusto.
+- Sem mudanças no fluxo n8n, no schema, no handler do callback, ou na UI.
+- O secret `AUDIT_CALLBACK_SECRET` continua sendo validado no `/api/public/audit-callback`.
 
-## Detalhes técnicos
+## Validação
 
-- Filtro é feito server-side em `getLatestAudit` para que o PDF / export reflitam o mesmo conteúdo.
-- A reconta de `aprovados/reprovados` considera apólices que ficaram **sem** findings após o filtro como aprovadas (incrementa aprovados, decrementa reprovados).
-- `unique (user_id, apolice, coalesce(tipo_erro,''))` evita duplicatas; `addAuditIgnore` faz upsert idempotente.
-- O toast "Desfazer" usa `sonner` com `action`.
+Após aplicar, rodar a auditoria pela preview. Esperado:
+- `audit_runs` muda de `running` → `success` (ou `error` com detalhes do n8n) em até alguns minutos.
+- Logs do callback (`[audit-callback] hit run_id=…`) aparecem nos server logs.
