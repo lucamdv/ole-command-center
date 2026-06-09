@@ -57,19 +57,13 @@ export const runAudit = createServerFn({ method: "POST" }).middleware([requireSu
 
   const runId = (runRow as { id: string }).id;
 
-  // Monta callback URL pública (n8n na nuvem precisa de URL acessível externamente).
-  // Prioridade: PUBLIC_APP_URL (secret) → host do request se não-localhost → URL estável do Lovable.
-  const { getRequestHost, getRequestHeader } = await import("@tanstack/react-start/server");
-  const reqHost = getRequestHost();
-  const proto = getRequestHeader("x-forwarded-proto") || "https";
-  const isLocal = !reqHost || reqHost.includes("localhost") || reqHost.startsWith("127.") || reqHost.startsWith("0.");
+  // Monta callback URL pública. SEMPRE usa o domínio estável do Lovable
+  // (project--{id}[-dev].lovable.app) — NUNCA o host do request, porque a
+  // preview da sandbox (id-preview--...) tem auth no meio e responde 302
+  // para POSTs externos, fazendo o callback do n8n se perder.
   const base =
     process.env.PUBLIC_APP_URL ||
-    (isLocal
-      ? process.env.NODE_ENV === "production"
-        ? PRODUCTION_PUBLIC_URL
-        : PREVIEW_PUBLIC_URL
-      : `${proto}://${reqHost}`);
+    (process.env.NODE_ENV === "production" ? PRODUCTION_PUBLIC_URL : PREVIEW_PUBLIC_URL);
   const callbackUrl = `${base.replace(/\/$/, "")}/api/public/audit-callback?run_id=${runId}`;
 
   // 2. Dispara o webhook do n8n (espera resposta imediata)
