@@ -353,7 +353,252 @@ const tools = {
     },
   }),
 
-  render_chart: tool({
+  getRepasseByMonth: tool({
+    description:
+      "Série mensal de repasse calculado (faixas % sobre prêmio bruto). Retorna por mês: bruto, percentuais aplicados, líquido OLÉ.",
+    inputSchema: z.object({}),
+    execute: async () => {
+      const agg = await getAnalyticsAggregates();
+      return { repasseByMonth: agg.repasseByMonth };
+    },
+  }),
+
+  getTopPoliciesByPremium: tool({
+    description: "Top N apólices por prêmio líquido (R$). Padrão 10.",
+    inputSchema: z.object({ limit: z.number().int().min(1).max(50).optional() }),
+    execute: async ({ limit }) => {
+      const sb = await getSupabase();
+      const { data, error } = await sb
+        .from("policies")
+        .select("numero_apolice, numero_endosso_atual, premio_liquido, updated_at")
+        .order("premio_liquido", { ascending: false })
+        .limit(limit ?? 10);
+      if (error) throw error;
+      return { top: data ?? [] };
+    },
+  }),
+
+  getEndorsementBreakdown: tool({
+    description:
+      "Distribuição de endossos por tipo (000000=base, demais=A/B/C/D). Global ou filtrado por apólice.",
+    inputSchema: z.object({ apolice: z.string().optional() }),
+    execute: async ({ apolice }) => {
+      const sb = await getSupabase();
+      let q = sb.from("endorsements").select("numero_endosso, numero_apolice");
+      if (apolice) q = q.eq("numero_apolice", apolice);
+      const { data, error } = await q;
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      for (const r of data ?? []) {
+        const n = (r.numero_endosso as string) ?? "";
+        const k = n === "000000" ? "BASE" : "ENDOSSO";
+        counts[k] = (counts[k] ?? 0) + 1;
+      }
+      return { total: data?.length ?? 0, breakdown: counts };
+    },
+  }),
+
+  getAuditRunHistory: tool({
+    description:
+      "Últimas N rodadas de auditoria com status, duração, contagens e taxa de aprovação. Padrão 10.",
+    inputSchema: z.object({ limit: z.number().int().min(1).max(50).optional() }),
+    execute: async ({ limit }) => {
+      const sb = await getSupabase();
+      const { data, error } = await sb
+        .from("audit_runs")
+        .select(
+          "id, created_at, status, status_geral, total_processado, aprovados, reprovados, duration_ms, error_message",
+        )
+        .order("created_at", { ascending: false })
+        .limit(limit ?? 10);
+      if (error) throw error;
+      const runs = (data ?? []).map((r) => ({
+        ...r,
+        approvalPct:
+          (r.total_processado ?? 0) > 0
+            ? Math.round(((r.aprovados ?? 0) / (r.total_processado as number)) * 100)
+            : null,
+      }));
+      return { runs };
+    },
+  }),
+
+  getAuditRunDetail: tool({
+    description: "Detalhe de uma rodada: findings agrupados por tipo_erro e top apólices afetadas.",
+    inputSchema: z.object({ runId: z.string().uuid() }),
+    execute: async ({ runId }) => {
+      const sb = await getSupabase();
+      const [{ data: run }, { data: findings }] = await Promise.all([
+        sb
+          .from("audit_runs")
+          .select(
+            "id, created_at, status, status_geral, total_processado, aprovados, reprovados, duration_ms, mensagem_geral",
+          )
+          .eq("id", runId)
+          .maybeSingle(),
+        sb.from("audit_findings").select("apolice, tipo_erro").eq("run_id", runId),
+      ]);
+      if (!run) return { found: false };
+      const byTipo: Record<string, number> = {};
+      const byApolice: Record<string, number> = {};
+      for (const f of findings ?? []) {
+        const t = (f.tipo_erro as string) ?? "?";
+        const a = (f.apolice as string) ?? "?";
+        byTipo[t] = (byTipo[t] ?? 0) + 1;
+        byApolice[a] = (byApolice[a] ?? 0) + 1;
+      }
+      const topApolices = Object.entries(byApolice)
+        .map(([apolice, count]) => ({ apolice, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+      return { found: true, run, byTipo, topApolices, totalFindings: findings?.length ?? 0 };
+    },
+  }),
+
+  getPolicySyncHealth: tool({
+    description:
+      "Últimas N rodadas de sincronização de apólices (n8n motor) com status, duração e total processado. Padrão 10.",
+    inputSchema: z.object({ limit: z.number().int().min(1).max(50).optional() }),
+    execute: async ({ limit }) => {
+      const sb = await getSupabase();
+      const { data, error } = await sb
+        .from("policy_sync_runs")
+        .select("id, status, total_apolices, duration_ms, created_at, finished_at, error_message")
+        .order("created_at", { ascending: false })
+        .limit(limit ?? 10);
+      if (error) throw error;
+      return { runs: data ?? [] };
+    },
+  }),
+
+  listAuditIgnoresGlobal: tool({
+    description:
+      "Resumo agregado de exceções de auditoria ativas (todos os usuários): conta por escopo e por tipo_erro. Sem PII.",
+    inputSchema: z.object({}),
+    execute: async () => {
+      const sb = await getSupabase();
+      const { data, error } = await sb.from("audit_ignores").select("scope, tipo_erro, apolice");
+      if (error) throw error;
+      const byScope: Record<string, number> = {};
+      const byTipo: Record<string, number> = {};
+      const apolicesIgnoradas = new Set<string>();
+      for (const r of data ?? []) {
+        byScope[r.scope as string] = (byScope[r.scope as string] ?? 0) + 1;
+        if (r.tipo_erro) byTipo[r.tipo_erro as string] = (byTipo[r.tipo_erro as string] ?? 0) + 1;
+        if (r.scope === "apolice") apolicesIgnoradas.add(r.apolice as string);
+      }
+      return {
+        total: data?.length ?? 0,
+        byScope,
+        byTipo,
+        apolicesIgnoradasCount: apolicesIgnoradas.size,
+      };
+    },
+  }),
+
+  getSystemHealth: tool({
+    description:
+      "Saúde dos sistemas integrados: webhook de sincronização (n8n motor), webhook de auditoria, secrets configurados, último sync e último audit run.",
+    inputSchema: z.object({}),
+    execute: async () => {
+      const sb = await getSupabase();
+      const [{ data: lastSync }, { data: lastAudit }] = await Promise.all([
+        sb
+          .from("policy_sync_runs")
+          .select("created_at, status, total_apolices")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        sb
+          .from("audit_runs")
+          .select("created_at, status, status_geral")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+      return {
+        secrets: {
+          N8N_MOTOR_POLICIES_URL: !!process.env.N8N_MOTOR_POLICIES_URL,
+          N8N_AUDIT_WEBHOOK_URL: !!process.env.N8N_AUDIT_WEBHOOK_URL,
+          AUDIT_CALLBACK_SECRET: !!process.env.AUDIT_CALLBACK_SECRET,
+          POLICY_SYNC_HOOK_SECRET: !!process.env.POLICY_SYNC_HOOK_SECRET,
+          LOVABLE_API_KEY: !!process.env.LOVABLE_API_KEY,
+        },
+        lastPolicySync: lastSync ?? null,
+        lastAuditRun: lastAudit ?? null,
+      };
+    },
+  }),
+
+  getNotifications: tool({
+    description:
+      "Notificações abertas / alertas operacionais (rodadas recentes, falhas de integração).",
+    inputSchema: z.object({}),
+    execute: async () => {
+      const sb = await getSupabase();
+      const { data: lastAudit } = await sb
+        .from("audit_runs")
+        .select("id, created_at, status, status_geral, error_message")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      return { recentRuns: lastAudit ?? [] };
+    },
+  }),
+
+  lookupExcelsiorCode: tool({
+    description:
+      "Traduz códigos do dicionário Excelsior (sistema origem, natureza_premio).",
+    inputSchema: z.object({
+      tipo: z.enum(["sistema_origem", "natureza_premio"]),
+      codigo: z.string(),
+    }),
+    execute: ({ tipo, codigo }) => {
+      const dict = tipo === "sistema_origem" ? SISTEMAS_ORIGEM : NATUREZA_PREMIO_LABEL;
+      return { codigo, label: dict[codigo] ?? null };
+    },
+  }),
+
+  explainRepasseFor: tool({
+    description:
+      "Dado um prêmio bruto (R$), retorna o breakdown de repasse usando as regras OLÉ (faixas %).",
+    inputSchema: z.object({ premioBrutoBRL: z.number().positive() }),
+    execute: ({ premioBrutoBRL }) => computeRepasse(premioBrutoBRL),
+  }),
+
+  searchKnowledge: tool({
+    description:
+      "Busca semântica (RAG) sobre apólices, findings e memória do Oléver. Use para perguntas em linguagem natural quando filtros exatos não bastam.",
+    inputSchema: z.object({
+      query: z.string().min(3).max(500),
+      kind: z.enum(["policy", "finding", "memory", "audit_run"]).optional(),
+      limit: z.number().int().min(1).max(20).optional(),
+    }),
+    execute: async ({ query, kind, limit }) => {
+      const { searchKnowledge } = await import("@/lib/oliver-rag.server");
+      try {
+        const matches = await searchKnowledge({ query, kind, limit });
+        return {
+          count: matches.length,
+          matches: matches.map((m) => ({
+            kind: m.kind,
+            ref_id: m.ref_id,
+            title: m.title,
+            content: m.content.slice(0, 800),
+            similarity: Math.round(m.similarity * 1000) / 1000,
+            metadata: m.metadata,
+          })),
+        };
+      } catch (err) {
+        return {
+          count: 0,
+          matches: [],
+          error: `Busca semântica indisponível: ${(err as Error).message}. Reindexe em Configurações → Dados.`,
+        };
+      }
+    },
+  }),
+
+
     description:
       "Renderiza um gráfico inline na resposta (linha, barra, pizza, área, scatter ou auto). Use SEMPRE que uma visualização ajudar a comunicar a resposta ou quando o usuário pedir um gráfico. Forneça os dados já agregados.",
     inputSchema: z.object({
