@@ -129,6 +129,18 @@ export function DadosTab() {
         />
       </Section>
 
+      <Section title="Inteligência do Oléver">
+        <Action
+          icon={Sparkles}
+          title="Reindexar base de conhecimento"
+          desc="Gera embeddings de apólices, findings e memória para o Oléver responder com busca semântica. Roda em background."
+          actionLabel={reindexMut.isPending ? "Indexando…" : "Reindexar"}
+          disabled={reindexMut.isPending}
+          onClick={() => reindexMut.mutate()}
+        />
+      </Section>
+
+
       <Section title="Retenção & limpeza">
         <Action
           icon={Trash2}
