@@ -598,7 +598,7 @@ const tools = {
     },
   }),
 
-
+  render_chart: tool({
     description:
       "Renderiza um gráfico inline na resposta (linha, barra, pizza, área, scatter ou auto). Use SEMPRE que uma visualização ajudar a comunicar a resposta ou quando o usuário pedir um gráfico. Forneça os dados já agregados.",
     inputSchema: z.object({
