@@ -8,8 +8,11 @@ import {
 } from "ai";
 import { z } from "zod";
 import { getAnalyticsAggregates } from "@/lib/analytics.functions";
+import { computeRepasse } from "@/lib/analytics/repasse-rules";
+import { SISTEMAS_ORIGEM, NATUREZA_PREMIO_LABEL } from "@/lib/excelsior/codes";
 
 const MEMORY_ID = "00000000-0000-0000-0000-000000000001";
+const OLIVER_MODEL = "google/gemini-3.1-pro-preview";
 
 async function getSupabase() {
   const mod = await import("@/integrations/supabase/client.server");
@@ -29,40 +32,71 @@ async function loadMemoryContent(): Promise<string> {
 function buildSystemPrompt(memory: string): string {
   return `Você é o **Oléver**, copiloto de inteligência da operação de seguros OLÉ.
 
-PERSONA
-- Sempre responde em PT-BR, tom profissional, direto, com tom de "head de operações".
-- É observador, preditivo, propositivo: além de explicar números, sugere causas-raiz e ações concretas.
-- Quando a pergunta exige dados, **use as ferramentas** disponíveis antes de afirmar qualquer número. Nunca invente estatísticas.
-- Quando aprender uma regra de negócio, terminologia OLÉ, preferência do usuário, ou padrão recorrente, chame \`appendToMemory\` para gravá-la — sem pedir permissão (a operação é aditiva e segura).
+# PERSONA
+- Sempre responde em PT-BR, tom profissional, direto, com voz de "head de operações".
+- Observador, preditivo, propositivo: além de números, sempre indica causa-raiz provável e próxima ação.
+- **Nunca invente estatísticas.** Se a pergunta exige dados, chame ferramentas antes de responder.
+- Quando aprender uma regra de negócio, terminologia OLÉ, preferência do usuário ou padrão recorrente, chame \`appendToMemory\` — operação aditiva, sem precisar de confirmação.
+- Para perguntas amplas/qualitativas ("como anda a operação?", "onde está o gargalo?"), encadeie 3-5 tools antes de responder (visão geral + tendências + risco + busca semântica).
 
-DOMÍNIO
-- Tabelas no banco: \`policies\` (apólices), \`endorsements\` (apólice base + endossos A/B/C/D), \`audit_runs\` (rodadas de auditoria), \`audit_findings\` (problemas encontrados por apólice/endosso, com \`tipo_erro\` e datas).
-- Apólices têm um JSON \`proposta\` rico (datas, itens, coberturas, composicao_premio_cobertura com tipo_premio=DIRETO e natureza_premio=PREMIO → valor em USD/BRL).
-- Endossos: \`numero_endosso = '000000'\` indica a apólice base; demais valores indicam o tipo do endosso (A/B/C/D) presente em \`proposta.endosso_A|B|C|D\`.
-- A data de emissão de endosso vem em \`proposta.endosso_X.data_emissao\`; da apólice base, em \`proposta.datas.assinatura\`/\`conclusao_subscricao\`/\`registro_origem\`.
+# MAPA DA PLATAFORMA (rotas que você pode citar ao usuário)
+- \`/\` Dashboard executivo: KPIs, pulso operacional, heatmap de risco.
+- \`/apolices\` Carteira de apólices · \`/apolices/:id\` Detalhe · \`/apolices/:id/endossos/:num\` Endosso.
+- \`/endossos\` Linha do tempo de endossos.
+- \`/operacao\` Operação ao vivo (sync, auditoria).
+- \`/alertas\` Alertas críticos/altos abertos.
+- \`/analytics\` Receita, emissões, repasse (séries mensais).
+- \`/ferramentas\` Ferramentas internas.
+- \`/intelligence\` Você (Oléver).
+- \`/configuracoes\` com abas **Perfil**, **Integrações** (n8n), **Dados** (export/limpeza/reindex Oléver), **Notificações**, **Exceções** (ignorar findings).
 
-CAPACIDADES
-- Diagnóstico: causa raiz de findings, padrões de reprovação, gargalos.
-- Previsão: tendências (↑/↓ por tipo de erro), projeção do próximo mês, score de risco por apólice.
-- Recomendação: sugestões acionáveis ("revisar produto X", "treinar corretor Y", "ajustar regra Z").
+# SCHEMA DAS TABELAS (Supabase)
+- \`policies\`: numero_apolice (PK lógico), numero_endosso_atual, premio_liquido, proposta JSONB rica.
+- \`endorsements\`: numero_apolice + numero_endosso (000000 = base; 000001+ = endossos A/B/C/D presentes em proposta.endosso_A|B|C|D), ordem, premio_liquido, proposta.
+- \`audit_runs\`: id, status (running|success|error), status_geral, total_processado, aprovados, reprovados, duration_ms, created_at.
+- \`audit_findings\`: run_id, apolice, endosso, tipo_erro, data_inicio, data_fim, detalhes JSONB.
+- \`audit_ignores\`: exceções por usuário (scope=apolice|tipo, apolice, tipo_erro). \`getLatestAudit\` filtra usando essa tabela e recalcula aprovados/reprovados.
+- \`policy_sync_runs\`: status, total_apolices, duration_ms, finished_at, raw.
+- \`oliver_threads\`/\`oliver_messages\`/\`oliver_memory\`/\`oliver_knowledge\` (RAG vetorial 3072-d).
 
-MEMÓRIA PERSISTENTE (markdown global do Oléver)
+# FLUXOS DE BACKEND
+- **Sync de apólices**: front chama \`enqueuePolicySync\` → hook interno → n8n (\`N8N_MOTOR_POLICIES_URL\`) → callback \`/api/public/policy-sync-callback\` (header \`x-callback-secret\` = \`AUDIT_CALLBACK_SECRET\`) → upsert em policies/endorsements.
+- **Auditoria**: \`runAudit\` cria \`audit_runs(status=running)\`, dispara \`N8N_AUDIT_WEBHOOK_URL\` com \`callback_url\` estável (\`project--…lovable.app/api/public/audit-callback\`) → n8n responde e insere \`audit_findings\`.
+- **Exceções**: usuário marca "Ignorar" em um finding ou apólice inteira; futuras leituras de \`getLatestAudit\` ocultam essas linhas e ajustam contagens. Reverter em **Configurações → Exceções**.
+- **Repasse**: regras em \`repasse-rules.ts\` (faixas % sobre prêmio bruto). Use \`explainRepasseFor\` quando o usuário quiser quebrar um valor.
+- **Códigos Excelsior**: dicionário interno (sistema origem, natureza prêmio). Use \`lookupExcelsiorCode\`.
+
+# GLOSSÁRIO OLÉ
+- **Apólice base**: numero_endosso = "000000".
+- **Endosso A/B/C/D**: tipos definidos em \`proposta.endosso_X\`. Letra indica natureza (cancelamento, cobrança, reativação etc).
+- **Prêmio direto**: \`composicao_premio_cobertura\` com tipo_premio=DIRETO e natureza_premio=PREMIO → valor USD/BRL.
+- **Finding**: linha de \`audit_findings\` (problema detectado).
+- **Run**: rodada de auditoria (\`audit_runs\`).
+
+# FERRAMENTAS DISPONÍVEIS (selecione a melhor cadeia)
+- **Visão geral**: \`getOperationOverview\`, \`getSystemHealth\`.
+- **Apólices**: \`queryPolicies\`, \`getPolicyDetail\`, \`getTopPoliciesByPremium\`, \`getEndorsementBreakdown\`.
+- **Auditoria**: \`queryAuditFindings\`, \`listErrorTypes\`, \`detectErrorTrends\`, \`getAuditRunHistory\`, \`getAuditRunDetail\`, \`scoreRiskyPolicies\`, \`listAuditIgnoresGlobal\`.
+- **Sync**: \`getPolicySyncHealth\`.
+- **Financeiro**: \`getRevenueByMonth\`, \`getRepasseByMonth\`, \`explainRepasseFor\`.
+- **Operação**: \`getIssuancesByMonth\`, \`forecastNextMonth\`, \`getNotifications\`.
+- **Dicionário**: \`lookupExcelsiorCode\`.
+- **Memória semântica (RAG)**: \`searchKnowledge\` — busca livre por similaridade sobre apólices, findings e memória. Use para perguntas em linguagem natural ("apólices com problema de vigência sobreposta", "findings relacionados a X").
+- **Visualização**: \`render_chart\` (line/bar/pie/area/scatter/auto).
+- **Aprendizado**: \`appendToMemory\`.
+
+# MEMÓRIA PERSISTENTE (markdown global do Oléver)
 ---
 ${memory || "(vazia — comece a aprender sobre a operação registrando descobertas aqui)"}
 ---
 
-VISUALIZAÇÕES (GRÁFICOS)
-- Quando o usuário pedir explicitamente um gráfico, ou quando uma visualização tornar a resposta mais clara (séries temporais, comparações, distribuições, projeções), **chame a tool \`render_chart\`**.
-- Primeiro obtenha os dados com as tools de consulta (ex.: \`listErrorTypes\`, \`getRevenueByMonth\`, \`getIssuancesByMonth\`, \`detectErrorTrends\`, \`forecastNextMonth\`, \`scoreRiskyPolicies\`); depois transforme o resultado em \`{ data, xKey, series }\` e chame \`render_chart\`.
-- Se o usuário indicar o tipo (barra, linha, pizza, área, scatter), respeite. Caso contrário use \`type: "auto"\` ou escolha o mais adequado.
-- Após gerar o gráfico, escreva uma análise curta (📊 leitura + 💡 sugestão).
-- Não cole os dados como tabela markdown quando já vão virar gráfico — o gráfico já mostra.
-
-REGRAS DE OURO
-1. Se a pergunta é sobre dados, **chame uma ferramenta antes de responder**.
-2. Estruture respostas com cabeçalhos curtos e bullets quando útil.
-3. Termine respostas analíticas com uma seção "🔍 Diagnóstico" e/ou "💡 Sugestão" quando fizer sentido.
-4. Para registros novos na memória, prefira anexar regras objetivas e datadas.`;
+# REGRAS DE OURO
+1. Pergunta sobre dados → **tool antes de responder**.
+2. Pergunta aberta ("como anda X?") → cadeia: visão geral → tendências → risco/RAG → diagnóstico.
+3. Estruture respostas com cabeçalhos curtos, bullets, e quando útil termine com **🔍 Diagnóstico** e **💡 Sugestão**.
+4. Sempre que existir uma tela onde o usuário pode agir, **cite a rota** ("vá em Configurações → Exceções").
+5. Para gráficos: chame tools de dados primeiro, depois \`render_chart\`. Não cole tabela markdown quando já vai virar gráfico.
+6. Para memória nova: títulos curtos, conteúdo objetivo e datado.`;
 }
 
 // ============== TOOLS ==============
@@ -319,6 +353,251 @@ const tools = {
     },
   }),
 
+  getRepasseByMonth: tool({
+    description:
+      "Série mensal de repasse calculado (faixas % sobre prêmio bruto). Retorna por mês: bruto, percentuais aplicados, líquido OLÉ.",
+    inputSchema: z.object({}),
+    execute: async () => {
+      const agg = await getAnalyticsAggregates();
+      return { repasseByMonth: agg.repasseByMonth };
+    },
+  }),
+
+  getTopPoliciesByPremium: tool({
+    description: "Top N apólices por prêmio líquido (R$). Padrão 10.",
+    inputSchema: z.object({ limit: z.number().int().min(1).max(50).optional() }),
+    execute: async ({ limit }) => {
+      const sb = await getSupabase();
+      const { data, error } = await sb
+        .from("policies")
+        .select("numero_apolice, numero_endosso_atual, premio_liquido, updated_at")
+        .order("premio_liquido", { ascending: false })
+        .limit(limit ?? 10);
+      if (error) throw error;
+      return { top: data ?? [] };
+    },
+  }),
+
+  getEndorsementBreakdown: tool({
+    description:
+      "Distribuição de endossos por tipo (000000=base, demais=A/B/C/D). Global ou filtrado por apólice.",
+    inputSchema: z.object({ apolice: z.string().optional() }),
+    execute: async ({ apolice }) => {
+      const sb = await getSupabase();
+      let q = sb.from("endorsements").select("numero_endosso, numero_apolice");
+      if (apolice) q = q.eq("numero_apolice", apolice);
+      const { data, error } = await q;
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      for (const r of data ?? []) {
+        const n = (r.numero_endosso as string) ?? "";
+        const k = n === "000000" ? "BASE" : "ENDOSSO";
+        counts[k] = (counts[k] ?? 0) + 1;
+      }
+      return { total: data?.length ?? 0, breakdown: counts };
+    },
+  }),
+
+  getAuditRunHistory: tool({
+    description:
+      "Últimas N rodadas de auditoria com status, duração, contagens e taxa de aprovação. Padrão 10.",
+    inputSchema: z.object({ limit: z.number().int().min(1).max(50).optional() }),
+    execute: async ({ limit }) => {
+      const sb = await getSupabase();
+      const { data, error } = await sb
+        .from("audit_runs")
+        .select(
+          "id, created_at, status, status_geral, total_processado, aprovados, reprovados, duration_ms, error_message",
+        )
+        .order("created_at", { ascending: false })
+        .limit(limit ?? 10);
+      if (error) throw error;
+      const runs = (data ?? []).map((r) => ({
+        ...r,
+        approvalPct:
+          (r.total_processado ?? 0) > 0
+            ? Math.round(((r.aprovados ?? 0) / (r.total_processado as number)) * 100)
+            : null,
+      }));
+      return { runs };
+    },
+  }),
+
+  getAuditRunDetail: tool({
+    description: "Detalhe de uma rodada: findings agrupados por tipo_erro e top apólices afetadas.",
+    inputSchema: z.object({ runId: z.string().uuid() }),
+    execute: async ({ runId }) => {
+      const sb = await getSupabase();
+      const [{ data: run }, { data: findings }] = await Promise.all([
+        sb
+          .from("audit_runs")
+          .select(
+            "id, created_at, status, status_geral, total_processado, aprovados, reprovados, duration_ms, mensagem_geral",
+          )
+          .eq("id", runId)
+          .maybeSingle(),
+        sb.from("audit_findings").select("apolice, tipo_erro").eq("run_id", runId),
+      ]);
+      if (!run) return { found: false };
+      const byTipo: Record<string, number> = {};
+      const byApolice: Record<string, number> = {};
+      for (const f of findings ?? []) {
+        const t = (f.tipo_erro as string) ?? "?";
+        const a = (f.apolice as string) ?? "?";
+        byTipo[t] = (byTipo[t] ?? 0) + 1;
+        byApolice[a] = (byApolice[a] ?? 0) + 1;
+      }
+      const topApolices = Object.entries(byApolice)
+        .map(([apolice, count]) => ({ apolice, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+      return { found: true, run, byTipo, topApolices, totalFindings: findings?.length ?? 0 };
+    },
+  }),
+
+  getPolicySyncHealth: tool({
+    description:
+      "Últimas N rodadas de sincronização de apólices (n8n motor) com status, duração e total processado. Padrão 10.",
+    inputSchema: z.object({ limit: z.number().int().min(1).max(50).optional() }),
+    execute: async ({ limit }) => {
+      const sb = await getSupabase();
+      const { data, error } = await sb
+        .from("policy_sync_runs")
+        .select("id, status, total_apolices, duration_ms, created_at, finished_at, error_message")
+        .order("created_at", { ascending: false })
+        .limit(limit ?? 10);
+      if (error) throw error;
+      return { runs: data ?? [] };
+    },
+  }),
+
+  listAuditIgnoresGlobal: tool({
+    description:
+      "Resumo agregado de exceções de auditoria ativas (todos os usuários): conta por escopo e por tipo_erro. Sem PII.",
+    inputSchema: z.object({}),
+    execute: async () => {
+      const sb = await getSupabase();
+      const { data, error } = await sb.from("audit_ignores").select("scope, tipo_erro, apolice");
+      if (error) throw error;
+      const byScope: Record<string, number> = {};
+      const byTipo: Record<string, number> = {};
+      const apolicesIgnoradas = new Set<string>();
+      for (const r of data ?? []) {
+        byScope[r.scope as string] = (byScope[r.scope as string] ?? 0) + 1;
+        if (r.tipo_erro) byTipo[r.tipo_erro as string] = (byTipo[r.tipo_erro as string] ?? 0) + 1;
+        if (r.scope === "apolice") apolicesIgnoradas.add(r.apolice as string);
+      }
+      return {
+        total: data?.length ?? 0,
+        byScope,
+        byTipo,
+        apolicesIgnoradasCount: apolicesIgnoradas.size,
+      };
+    },
+  }),
+
+  getSystemHealth: tool({
+    description:
+      "Saúde dos sistemas integrados: webhook de sincronização (n8n motor), webhook de auditoria, secrets configurados, último sync e último audit run.",
+    inputSchema: z.object({}),
+    execute: async () => {
+      const sb = await getSupabase();
+      const [{ data: lastSync }, { data: lastAudit }] = await Promise.all([
+        sb
+          .from("policy_sync_runs")
+          .select("created_at, status, total_apolices")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        sb
+          .from("audit_runs")
+          .select("created_at, status, status_geral")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+      return {
+        secrets: {
+          N8N_MOTOR_POLICIES_URL: !!process.env.N8N_MOTOR_POLICIES_URL,
+          N8N_AUDIT_WEBHOOK_URL: !!process.env.N8N_AUDIT_WEBHOOK_URL,
+          AUDIT_CALLBACK_SECRET: !!process.env.AUDIT_CALLBACK_SECRET,
+          POLICY_SYNC_HOOK_SECRET: !!process.env.POLICY_SYNC_HOOK_SECRET,
+          LOVABLE_API_KEY: !!process.env.LOVABLE_API_KEY,
+        },
+        lastPolicySync: lastSync ?? null,
+        lastAuditRun: lastAudit ?? null,
+      };
+    },
+  }),
+
+  getNotifications: tool({
+    description:
+      "Notificações abertas / alertas operacionais (rodadas recentes, falhas de integração).",
+    inputSchema: z.object({}),
+    execute: async () => {
+      const sb = await getSupabase();
+      const { data: lastAudit } = await sb
+        .from("audit_runs")
+        .select("id, created_at, status, status_geral, error_message")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      return { recentRuns: lastAudit ?? [] };
+    },
+  }),
+
+  lookupExcelsiorCode: tool({
+    description:
+      "Traduz códigos do dicionário Excelsior (sistema origem, natureza_premio).",
+    inputSchema: z.object({
+      tipo: z.enum(["sistema_origem", "natureza_premio"]),
+      codigo: z.string(),
+    }),
+    execute: ({ tipo, codigo }) => {
+      const dict = tipo === "sistema_origem" ? SISTEMAS_ORIGEM : NATUREZA_PREMIO_LABEL;
+      return { codigo, label: dict[codigo] ?? null };
+    },
+  }),
+
+  explainRepasseFor: tool({
+    description:
+      "Dado um prêmio bruto (R$), retorna o breakdown de repasse usando as regras OLÉ (faixas %).",
+    inputSchema: z.object({ premioBrutoBRL: z.number().positive() }),
+    execute: ({ premioBrutoBRL }) => computeRepasse(premioBrutoBRL),
+  }),
+
+  searchKnowledge: tool({
+    description:
+      "Busca semântica (RAG) sobre apólices, findings e memória do Oléver. Use para perguntas em linguagem natural quando filtros exatos não bastam.",
+    inputSchema: z.object({
+      query: z.string().min(3).max(500),
+      kind: z.enum(["policy", "finding", "memory", "audit_run"]).optional(),
+      limit: z.number().int().min(1).max(20).optional(),
+    }),
+    execute: async ({ query, kind, limit }) => {
+      const { searchKnowledge } = await import("@/lib/oliver-rag.server");
+      try {
+        const matches = await searchKnowledge({ query, kind, limit });
+        return {
+          count: matches.length,
+          matches: matches.map((m) => ({
+            kind: m.kind,
+            ref_id: m.ref_id,
+            title: m.title,
+            content: m.content.slice(0, 800),
+            similarity: Math.round(m.similarity * 1000) / 1000,
+            metadata: m.metadata,
+          })),
+        };
+      } catch (err) {
+        return {
+          count: 0,
+          matches: [],
+          error: `Busca semântica indisponível: ${(err as Error).message}. Reindexe em Configurações → Dados.`,
+        };
+      }
+    },
+  }),
+
   render_chart: tool({
     description:
       "Renderiza um gráfico inline na resposta (linha, barra, pizza, área, scatter ou auto). Use SEMPRE que uma visualização ajudar a comunicar a resposta ou quando o usuário pedir um gráfico. Forneça os dados já agregados.",
@@ -417,7 +696,7 @@ export const Route = createFileRoute("/api/oliver-chat")({
         const memory = await loadMemoryContent();
         const { createLovableAiGatewayProvider } = await import("@/lib/ai-gateway.server");
         const gateway = createLovableAiGatewayProvider(key);
-        const model = gateway("google/gemini-3-flash-preview");
+        const model = gateway(OLIVER_MODEL);
 
         const sb = await getSupabase();
 

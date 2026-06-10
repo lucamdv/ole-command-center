@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Download, Trash2, Database, MessageSquare, FileSearch, FileText } from "lucide-react";
+import { Download, Trash2, Database, MessageSquare, FileSearch, FileText, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import {
   getDataCounters,
@@ -10,6 +10,7 @@ import {
   exportPoliciesCSV,
   exportLatestAuditJSON,
 } from "@/lib/settings.functions";
+import { reindexOliverKnowledge } from "@/lib/oliver.functions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,6 +47,13 @@ export function DadosTab() {
   const auditFn = useServerFn(purgeOldAudits);
   const exportCSVFn = useServerFn(exportPoliciesCSV);
   const exportAuditFn = useServerFn(exportLatestAuditJSON);
+  const reindexFn = useServerFn(reindexOliverKnowledge);
+
+  const reindexMut = useMutation({
+    mutationFn: () => reindexFn(),
+    onSuccess: (r) => toast.success(`Oléver reindexado: ${r.policies} apólices, ${r.findings} findings, ${r.memorySections} seções de memória`),
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const [confirm, setConfirm] = useState<null | "oliver" | "audit">(null);
 
@@ -120,6 +128,18 @@ export function DadosTab() {
           onClick={() => exportAuditMut.mutate()}
         />
       </Section>
+
+      <Section title="Inteligência do Oléver">
+        <Action
+          icon={Sparkles}
+          title="Reindexar base de conhecimento"
+          desc="Gera embeddings de apólices, findings e memória para o Oléver responder com busca semântica. Roda em background."
+          actionLabel={reindexMut.isPending ? "Indexando…" : "Reindexar"}
+          disabled={reindexMut.isPending}
+          onClick={() => reindexMut.mutate()}
+        />
+      </Section>
+
 
       <Section title="Retenção & limpeza">
         <Action

@@ -174,6 +174,39 @@ export type Database = {
           },
         ]
       }
+      oliver_knowledge: {
+        Row: {
+          content: string
+          embedding: string
+          id: string
+          kind: string
+          metadata: Json
+          ref_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          embedding: string
+          id?: string
+          kind: string
+          metadata?: Json
+          ref_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          embedding?: string
+          id?: string
+          kind?: string
+          metadata?: Json
+          ref_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       oliver_memory: {
         Row: {
           content: string
@@ -324,7 +357,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      match_oliver_knowledge: {
+        Args: {
+          kind_filter?: string
+          match_count?: number
+          query_embedding: string
+        }
+        Returns: {
+          content: string
+          id: string
+          kind: string
+          metadata: Json
+          ref_id: string
+          similarity: number
+          title: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

@@ -95,5 +95,20 @@ export const replaceMemory = createServerFn({ method: "POST" }).middleware([requ
       .from("oliver_memory")
       .upsert({ id: MEMORY_ID, content: data.content });
     if (error) throw error;
+    // best-effort: reindex memory for RAG
+    try {
+      const { indexMemoryDoc } = await import("@/lib/oliver-rag.server");
+      await indexMemoryDoc();
+    } catch (e) {
+      console.error("[oliver] indexMemoryDoc failed", e);
+    }
     return { ok: true };
   });
+
+export const reindexOliverKnowledge = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { reindexAll } = await import("@/lib/oliver-rag.server");
+    return await reindexAll();
+  });
+
