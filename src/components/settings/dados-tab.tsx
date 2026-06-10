@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Download, Trash2, Database, MessageSquare, FileSearch, FileText } from "lucide-react";
+import { Download, Trash2, Database, MessageSquare, FileSearch, FileText, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import {
   getDataCounters,
@@ -10,6 +10,7 @@ import {
   exportPoliciesCSV,
   exportLatestAuditJSON,
 } from "@/lib/settings.functions";
+import { reindexOliverKnowledge } from "@/lib/oliver.functions";
 import {
   AlertDialog,
   AlertDialogAction,
