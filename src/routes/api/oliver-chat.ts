@@ -8,8 +8,11 @@ import {
 } from "ai";
 import { z } from "zod";
 import { getAnalyticsAggregates } from "@/lib/analytics.functions";
+import { computeRepasse } from "@/lib/analytics/repasse-rules";
+import { SISTEMAS_ORIGEM, NATUREZA_PREMIO_LABEL } from "@/lib/excelsior/codes";
 
 const MEMORY_ID = "00000000-0000-0000-0000-000000000001";
+const OLIVER_MODEL = "google/gemini-3.1-pro-preview";
 
 async function getSupabase() {
   const mod = await import("@/integrations/supabase/client.server");
