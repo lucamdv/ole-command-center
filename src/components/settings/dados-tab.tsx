@@ -47,6 +47,13 @@ export function DadosTab() {
   const auditFn = useServerFn(purgeOldAudits);
   const exportCSVFn = useServerFn(exportPoliciesCSV);
   const exportAuditFn = useServerFn(exportLatestAuditJSON);
+  const reindexFn = useServerFn(reindexOliverKnowledge);
+
+  const reindexMut = useMutation({
+    mutationFn: () => reindexFn(),
+    onSuccess: (r) => toast.success(`Oléver reindexado: ${r.policies} apólices, ${r.findings} findings, ${r.memorySections} seções de memória`),
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const [confirm, setConfirm] = useState<null | "oliver" | "audit">(null);
 
