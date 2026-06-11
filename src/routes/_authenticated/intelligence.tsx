@@ -108,10 +108,10 @@ function OleverPage() {
                 onClick={() => setActiveId(t.id)}
               >
                 <MessageSquare className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                <span className="flex-1 truncate">{t.title}</span>
+                <span className="flex-1 min-w-0 truncate">{t.title}</span>
                 <button
                   type="button"
-                  className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded-md hover:bg-destructive/10"
+                  className="shrink-0 text-muted-foreground hover:text-destructive transition-colors p-1 rounded-md hover:bg-destructive/10"
                   onClick={(e) => {
                     e.stopPropagation();
                     setDeleteConfirmId(t.id);
