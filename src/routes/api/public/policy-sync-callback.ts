@@ -131,12 +131,24 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
           // (numero_endosso do topo, normalizado p/ 6 dígitos).
           const { normalizeEndossoNum } = await import("@/lib/excelsior/translate");
           const currentEndNumRaw = pickEnd(apolice);
-          const currentEndNum = currentEndNumRaw ? normalizeEndossoNum(currentEndNumRaw) : null;
+          // Normaliza todos os endossos do histórico para podermos descobrir o maior número
+          // mesmo quando o topo do payload não traz o "endosso atual".
+          const normalizedHistorico = historico.map((e) => {
+            const raw = pickEnd(e);
+            return { e, n: raw ? normalizeEndossoNum(raw) : null };
+          });
+          const maxFromHistorico =
+            normalizedHistorico
+              .map((x) => x.n)
+              .filter((n): n is string => !!n)
+              .sort()
+              .pop() ?? null;
+          // Fallback: usa o número do topo quando vier; caso contrário, o maior do histórico.
+          const currentEndNum = currentEndNumRaw
+            ? normalizeEndossoNum(currentEndNumRaw)
+            : maxFromHistorico;
           let currentEndo = currentEndNum
-            ? historico.find((e) => {
-                const v = pickEnd(e);
-                return v ? normalizeEndossoNum(v) === currentEndNum : false;
-              })
+            ? normalizedHistorico.find((x) => x.n === currentEndNum)?.e
             : undefined;
           if (!currentEndo) {
             console.warn(
