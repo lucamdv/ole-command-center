@@ -111,12 +111,13 @@ function OleverPage() {
                 <span className="flex-1 truncate">{t.title}</span>
                 <button
                   type="button"
-                  className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                  className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded-md hover:bg-destructive/10"
                   onClick={(e) => {
                     e.stopPropagation();
                     setDeleteConfirmId(t.id);
                   }}
                   aria-label="Excluir conversa"
+                  title="Excluir conversa"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
