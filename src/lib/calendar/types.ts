@@ -2,11 +2,13 @@ export type ActivityStatus = "not_started" | "in_progress" | "waiting_approval" 
 export type ActivityPriority = "low" | "medium" | "high" | "critical";
 export type ViewMode = "month" | "week" | "day" | "list";
 
+export type JsonValue = string | number | boolean | null | { [k: string]: JsonValue } | JsonValue[];
+
 export interface CalendarActivity {
   id: string;
   user_id: string;
   title: string;
-  description: unknown;
+  description: JsonValue;
   start_at: string;
   end_at: string;
   all_day: boolean;
@@ -21,7 +23,7 @@ export interface CalendarActivity {
   recurrence_until: string | null;
   recurrence_count: number | null;
   parent_activity_id: string | null;
-  series_exception: unknown | null;
+  series_exception: JsonValue;
   completed_at: string | null;
   created_at: string;
   updated_at: string;

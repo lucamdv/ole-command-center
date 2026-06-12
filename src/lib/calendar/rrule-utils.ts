@@ -89,7 +89,9 @@ export function parseRRule(ruleStr: string | null | undefined): RecurrenceConfig
   try {
     const r = rrulestr(ruleStr) as RRule;
     const o = r.origOptions;
-    const freqStr = (["YEARLY", "MONTHLY", "WEEKLY", "DAILY"] as const)[o.freq ?? 3] ?? "DAILY";
+    const freqArr = ["YEARLY", "MONTHLY", "WEEKLY", "DAILY"] as const;
+    const freqIdx = (o.freq ?? 3) as number;
+    const freqStr: RecurrenceConfig["freq"] = freqArr[freqIdx] ?? "DAILY";
     return {
       freq: freqStr,
       interval: o.interval ?? 1,
