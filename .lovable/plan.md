@@ -1,114 +1,97 @@
-# Plano: Oléver com inteligência profunda
 
-Evolução do copiloto em 4 frentes, todas no arquivo `src/routes/api/oliver-chat.ts` (+ um helper de embeddings e uma migration para RAG).
+# Calendário Inteligente de Atividades
 
-## 1. Modelo mais forte + raciocínio profundo
+Ferramenta nova em `/ferramentas/calendario`, acessada como card dentro da página Ferramentas. Uso individual (escopo por `user_id` via RLS), entregue completo: visualizações, recorrência, anexos, notificações in-app + e-mail, filtros salvos, dashboard de indicadores.
 
-- Trocar o modelo padrão para `google/gemini-3.1-pro-preview`.
-- Manter `stepCountIs(50)` (já configurado), suficiente para investigação multi-tool.
-- Ajustar o prompt para encorajar **cadeias de ferramentas** (consultar → cruzar → concluir) antes de responder.
+## 1. Banco de dados (uma migration)
 
-## 2. Conhecimento estrutural da plataforma (system prompt)
+Tabelas em `public`, todas com `user_id uuid` + RLS scoped a `auth.uid()` + GRANTs para `authenticated` e `service_role`.
 
-Embutir no `buildSystemPrompt` um **mapa enxuto** de:
+- **calendar_activities** — `title`, `description` (rich text JSON), `start_at`, `end_at`, `all_day`, `status` (enum `not_started|in_progress|waiting_approval|done|cancelled`), `priority` (enum `low|medium|high|critical`), `category`, `project`, `client`, `tags text[]`, `color`, `recurrence_rule text` (RFC 5545 RRULE), `recurrence_until`, `recurrence_count`, `parent_activity_id uuid` (instância gerada de uma série), `series_exception jsonb` (overrides), `completed_at`.
+- **calendar_attachments** — `activity_id`, `file_path` (storage), `file_name`, `mime_type`, `size_bytes`, `is_link bool`, `external_url`.
+- **calendar_reminders** — `activity_id`, `offset_minutes int` (15, 60, 1440, 0 = na hora, custom), `channels text[]` (`in_app`, `email`), `sent_at`, `next_trigger_at` (indexado, usado pelo cron).
+- **calendar_saved_views** — `name`, `filters jsonb` (responsáveis, status, prioridade, tags, período, etc.), `view_mode` (month/week/day/list), `is_favorite`.
+- **calendar_notifications** — `activity_id`, `title`, `body`, `read_at`, `kind` (`reminder|due_soon|overdue`).
+- Storage bucket privado `calendar-attachments` com policy "owner can read/write own folder" (`user_id/...`).
+- pg_cron a cada 1 min chamando `/api/public/calendar-reminders-tick` (apikey = anon) que busca `calendar_reminders` com `next_trigger_at <= now()`, cria `calendar_notifications` e dispara e-mail via Lovable Emails.
 
-- **Rotas** principais (Dashboard `/`, Apólices, Endossos, Operação, Alertas, Auditoria, Analytics, Ferramentas, Intelligence, Configurações com abas Perfil/Integrações/Dados/Notificações/Exceções).
-- **Schemas** das tabelas (`policies`, `endorsements`, `audit_runs`, `audit_findings`, `audit_ignores`, `policy_sync_runs`, `oliver_*`) com colunas-chave e relacionamentos.
-- **Fluxos**:
-  - Sync de apólices: hook `policy-sync` → n8n → callback `/api/public/policy-sync-callback`.
-  - Auditoria: `runAudit` → n8n webhook (`N8N_AUDIT_WEBHOOK_URL`) → callback `/api/public/audit-callback` (assinado por `AUDIT_CALLBACK_SECRET`).
-  - Exceções de auditoria (`audit_ignores`): filtram findings por usuário (escopo apólice ou tipo_erro+apólice).
-  - Repasse: regras em `src/lib/analytics/repasse-rules.ts` (faixas % sobre prêmio bruto).
-  - Códigos Excelsior: dicionário em `src/lib/excelsior/codes.ts`.
-- **Glossário OLÉ**: endosso A/B/C/D, prêmio direto, vigência, finding, etc.
-- **Regras de ouro de resposta** revistas: sempre nomear a rota onde o usuário pode agir ("vá em Configurações → Exceções"), citar números só após chamar tool, propor próxima ação.
+## 2. Server functions (`src/lib/calendar.functions.ts`)
 
-## 3. Mais ferramentas (cobertura ampla de dados)
+Todas com `requireSupabaseAuth`, escopadas ao `userId`:
+- `listActivities({from, to, filters})` — expande recorrência no range usando `rrule` (lib npm) e mescla overrides.
+- `getActivity(id)`, `createActivity`, `updateActivity` (com modo `this | this_and_future | all` para séries), `deleteActivity` (mesmos modos), `moveActivity(id, newStart, newEnd)` (drag-and-drop).
+- `listAttachments`, `addAttachment` (upload assinado), `addLink`, `removeAttachment`.
+- `listSavedViews`, `saveView`, `deleteView`, `setFavoriteView`.
+- `listNotifications`, `markNotificationRead`, `markAllRead`.
+- `getDashboardMetrics({from, to})` — total/pendentes/em andamento/concluídas/atrasadas/taxa de conclusão/próximos vencimentos.
 
-Adicionar ao objeto `tools` em `oliver-chat.ts`:
+## 3. Rota pública (cron)
 
-- `getRepasseByMonth` — série mensal de repasse (usa `getAnalyticsAggregates().repasseByMonth`).
-- `getTopPoliciesByPremium` — ranking por prêmio direto (USD/BRL).
-- `getEndorsementBreakdown` — distribuição de endossos por tipo (A/B/C/D) global ou por apólice.
-- `getAuditRunHistory` — últimos N runs com status, duração, taxa de aprovação, delta vs run anterior.
-- `getAuditRunDetail` — detalhe de 1 run (findings agrupados por tipo, top apólices afetadas).
-- `getPolicySyncHealth` — últimos `policy_sync_runs` (status, duração, total).
-- `listAuditIgnoresGlobal` — exceções ativas (resumo agregado, sem PII).
-- `getSystemHealth` — wrapper de `getSystemStatus` (n8n integrations, secrets).
-- `getNotifications` — lê notificações servidor (alertas críticos/altos abertos).
-- `lookupExcelsiorCode` — traduz código Excelsior via `translateExcelsior`.
-- `explainRepasseFor` — dado um valor, devolve breakdown via `computeRepasse`.
-- `searchKnowledge` — **RAG**: busca semântica sobre apólices + findings + memória (ver §4).
+`src/routes/api/public/calendar-reminders-tick.ts` — POST, valida `apikey` header = `SUPABASE_PUBLISHABLE_KEY`, processa lembretes vencidos, recalcula `next_trigger_at` para séries recorrentes, dispara e-mail via Lovable Emails (template "Lembrete: {título}").
 
-Todas as tools mantêm o padrão `inputSchema` Zod estrito e retornos compactos.
+## 4. UI (`src/routes/_authenticated/ferramentas.calendario.tsx`)
 
-## 4. Memória semântica / RAG
-
-Indexa conteúdo da operação em pgvector para o Oléver achar "agulha no palheiro".
-
-### Migration
-
-Tabela nova `public.oliver_knowledge`:
+Estrutura em árvore de componentes em `src/components/calendar/`:
 
 ```text
-id uuid pk
-kind text  -- 'policy' | 'finding' | 'memory' | 'audit_run'
-ref_id text  -- numero_apolice, finding.id, etc
-title text
-content text
-embedding vector(3072)
-metadata jsonb
-updated_at timestamptz
+calendar/
+  CalendarShell.tsx           ← layout: header (KPIs + filtros + view-switcher) | sidebar mini-cal + saved views | main
+  KpiStrip.tsx                ← 7 cards de métricas (animados, design tokens)
+  ViewSwitcher.tsx            ← Mês / Semana / Dia / Lista + setas + "Hoje"
+  FilterBar.tsx               ← chips combináveis + "Salvar visão"
+  MonthView.tsx               ← grid 7x6, indicadores de tarefas, +N more, click→Quick Create, drop target
+  WeekView.tsx                ← timeline horizontal, slots de 30min, drag-resize
+  DayView.tsx                 ← timeline vertical detalhada, "now line"
+  ListView.tsx                ← tabela ordenável/agrupável (status, prioridade, data)
+  ActivityCard.tsx            ← bloco visual draggable c/ cor por prioridade
+  ActivityTooltip.tsx         ← hover preview (status/prioridade/horário)
+  QuickCreatePopover.tsx      ← duplo-click ou tecla N
+  ActivityDialog.tsx          ← modal completo (tabs: Detalhes / Recorrência / Anexos / Lembretes)
+  RichTextEditor.tsx          ← Tiptap (já compatível com a stack)
+  RecurrenceEditor.tsx        ← UI para RRULE (diária/semanal/mensal/anual + custom: dia da semana, dia do mês, intervalo, até X, N ocorrências)
+  AttachmentsPanel.tsx        ← upload (botão + drag-drop), preview, download, link externo
+  RemindersPanel.tsx          ← presets (na hora/15min/1h/24h) + custom + canais (in-app/e-mail)
+  SavedViewsList.tsx          ← favoritas + ações
+  NotificationsBell.tsx       ← no header, com badge não lidas (já existente, integrado)
+  KeyboardShortcuts.tsx       ← N / F / Esc / setas
 ```
 
-- `CREATE EXTENSION IF NOT EXISTS vector;`
-- Índice HNSW cosine.
-- GRANTs: somente `service_role` (RAG só roda server-side).
-- RLS habilitada com policy negando acesso direto (apenas server lê via supabaseAdmin).
-- Função SQL `match_oliver_knowledge(query_embedding, match_count, kind_filter)`.
+Bibliotecas: `rrule` (recorrência), `@dnd-kit/core` (drag-drop), `@tiptap/react` + `@tiptap/starter-kit` (rich text), `date-fns` (já presente).
 
-### Helper de embeddings (`src/lib/oliver-rag.server.ts`)
+Estilo: 100% via design tokens (`bg-surface`, `border-border`, `text-primary` etc.). Microanimações sutis (transitions Tailwind). Dark mode automático (já configurado).
 
-- `embedText(text)` — chama `https://ai.gateway.lovable.dev/v1/embeddings` com `google/gemini-embedding-001`.
-- `indexPolicy(numero_apolice)` — extrai campos relevantes do JSON `proposta` + endossos, gera chunks, faz upsert.
-- `indexFinding(id)` — texto = tipo_erro + apolice + detalhes + datas.
-- `indexMemoryDoc()` — chunks da `oliver_memory.content`.
-- `reindexAll()` — varredura completa.
+## 5. Notificações por e-mail (Lovable Emails)
 
-### Tool nova `searchKnowledge`
+- Verifico status do domínio antes de implementar; se não houver, mostro o setup dialog primeiro.
+- `scaffold_transactional_email` para gerar a rota de envio.
+- Template React Email "ReminderEmail" com título, horário, descrição (texto), link para `/ferramentas/calendario?activity=<id>`.
 
-Recebe `query` + `kind?` + `limit?`, embeda a query, chama `match_oliver_knowledge`, retorna top N com `similarity`, `title`, `content`, `metadata`.
+## 6. Integração na navegação
 
-### Indexação contínua
+- `src/routes/_authenticated/ferramentas.tsx` vira hub: lista cards de ferramentas, com "Calendário Inteligente" ativo apontando para `/ferramentas/calendario`. Cards "em construção" continuam como placeholders.
+- Nenhuma mudança no sidebar global.
 
-- Adicionar `indexPolicy` ao final do callback de sync (`/api/public/policy-sync-callback`) para novas apólices.
-- Adicionar `indexFinding` ao final do callback de auditoria (`/api/public/audit-callback`) para novos findings.
-- Adicionar `indexMemoryDoc()` ao final de `replaceMemory` e da tool `appendToMemory`.
-- Nova server fn `reindexOliverKnowledge` exposta na aba **Configurações → Dados** com botão "Reindexar Oléver" (rodar manualmente para o histórico).
+## 7. Detalhes técnicos importantes
 
-## 5. Resposta a erros 402/429 do gateway
-
-- No catch do `streamText`, devolver mensagem clara ("créditos esgotados" / "limite de uso atingido") para o usuário, em vez de falhar silenciosamente.
+- **Recorrência**: `recurrence_rule` armazena RRULE; `listActivities` expande no servidor para o range pedido. Overrides (instância movida/editada) ficam em linhas filhas com `parent_activity_id` + `series_exception.original_start`.
+- **Performance**: índices em `(user_id, start_at)`, `(user_id, end_at)`, `(user_id, status)`. Paginação na ListView. Query keys do TanStack Query incluem range visível.
+- **Atalhos**: hook global `useKeyboardShortcuts` ativo só dentro da rota do calendário.
+- **Permissões**: tudo `auth.uid() = user_id`. Bucket de anexos com folder prefix do user id.
 
 ## Arquivos afetados
 
-- **modify** `src/routes/api/oliver-chat.ts` (modelo, prompt, +12 tools, erro handling).
-- **create** `src/lib/oliver-rag.server.ts` (embed + index + match).
-- **create** `supabase/migrations/<ts>_oliver_knowledge.sql` (tabela + extensão + função + grants + RLS).
-- **modify** `src/routes/api/public/policy-sync-callback.ts` (index ao final).
-- **modify** `src/routes/api/public/audit-callback.ts` (index ao final).
-- **modify** `src/lib/oliver.functions.ts` (`replaceMemory` reindexa; export `reindexOliverKnowledge`).
-- **modify** `src/components/settings/dados-tab.tsx` (botão "Reindexar Oléver").
+- **create** migration `*_calendar_module.sql` (tabelas + RLS + GRANTs + bucket + cron)
+- **create** `src/lib/calendar.functions.ts`
+- **create** `src/routes/api/public/calendar-reminders-tick.ts`
+- **create** `src/routes/_authenticated/ferramentas.calendario.tsx`
+- **create** `src/components/calendar/*` (≈15 componentes acima)
+- **create** `src/lib/calendar/rrule-utils.ts`, `src/lib/calendar/filters.ts`
+- **create** template React Email para lembrete (via scaffold)
+- **modify** `src/routes/_authenticated/ferramentas.tsx` (hub com card clicável)
+- **deps** `bun add rrule @dnd-kit/core @dnd-kit/sortable @tiptap/react @tiptap/starter-kit @tiptap/pm`
 
-## Observações técnicas
+## Fora do escopo desta entrega
 
-- Embeddings rodam só server-side com `LOVABLE_API_KEY` (já presente). Custo: ~$0,15/M tokens, baixo para o volume atual.
-- Vector(3072) bate com o default do `gemini-embedding-001`.
-- A indexação no callback é "best effort" (try/catch silencioso) — não bloqueia o callback se a embedding API falhar.
-- Visão global de leitura mantida (supabaseAdmin), conforme decidido.
-
-## Riscos / fora do escopo
-
-- Não substituo o histórico de mensagens por RAG — o `useChat` segue passando o histórico completo da thread.
-- Não toco no UI do chat (`src/routes/_authenticated/intelligence.tsx`) — só adiciono botão em Configurações → Dados.
-- Reindexação inicial do histórico exige clique manual (botão); não roda automaticamente para evitar travar o build.
+- Equipes/clientes/projetos modelados (campos livres por enquanto, como combinado).
+- Push notifications web (só in-app + e-mail).
+- Compartilhamento de visões salvas com outros usuários (uso individual).
