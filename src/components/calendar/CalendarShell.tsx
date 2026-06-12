@@ -108,7 +108,7 @@ export function CalendarShell() {
     return () => window.removeEventListener("keydown", onKey);
   }, [view]);
 
-  const unread = (notifsQ.data ?? []).filter((n: CalendarNotification) => !n.read_at).length;
+  const unread = ((notifsQ.data ?? []) as CalendarNotification[]).filter((n) => !n.read_at).length;
 
   return (
     <div className="space-y-5">
@@ -129,7 +129,7 @@ export function CalendarShell() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <NotificationsBell items={notifsQ.data ?? []} unread={unread} onRead={async (id) => { await markRead({ data: { id } }); qc.invalidateQueries({ queryKey: ["cal-notifs"] }); }} onReadAll={async () => { await markRead({ data: { all: true } }); qc.invalidateQueries({ queryKey: ["cal-notifs"] }); }} />
+          <NotificationsBell items={(notifsQ.data ?? []) as CalendarNotification[]} unread={unread} onRead={async (id) => { await markRead({ data: { id } }); qc.invalidateQueries({ queryKey: ["cal-notifs"] }); }} onReadAll={async () => { await markRead({ data: { all: true } }); qc.invalidateQueries({ queryKey: ["cal-notifs"] }); }} />
           <Button onClick={() => handleOpenNew()} className="gap-1.5">
             <Plus className="h-4 w-4" /> Nova atividade <kbd className="ml-1 hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded border border-primary-foreground/30 bg-primary-foreground/10">N</kbd>
           </Button>
