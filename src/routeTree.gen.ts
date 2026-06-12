@@ -22,6 +22,7 @@ import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAlertasRouteImport } from './routes/_authenticated/alertas'
 import { Route as AuthenticatedApolicesIndexRouteImport } from './routes/_authenticated/apolices.index'
 import { Route as ApiPublicPolicySyncCallbackRouteImport } from './routes/api/public/policy-sync-callback'
+import { Route as ApiPublicCalendarRemindersTickRouteImport } from './routes/api/public/calendar-reminders-tick'
 import { Route as ApiPublicAuditCallbackRouteImport } from './routes/api/public/audit-callback'
 import { Route as AuthenticatedApolicesIdIndexRouteImport } from './routes/_authenticated/apolices.$id.index'
 import { Route as ApiPublicHooksPolicySyncRouteImport } from './routes/api/public/hooks/policy-sync'
@@ -96,6 +97,12 @@ const ApiPublicPolicySyncCallbackRoute =
     path: '/api/public/policy-sync-callback',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCalendarRemindersTickRoute =
+  ApiPublicCalendarRemindersTickRouteImport.update({
+    id: '/api/public/calendar-reminders-tick',
+    path: '/api/public/calendar-reminders-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicAuditCallbackRoute = ApiPublicAuditCallbackRouteImport.update({
   id: '/api/public/audit-callback',
   path: '/api/public/audit-callback',
@@ -132,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/operacao': typeof AuthenticatedOperacaoRoute
   '/api/oliver-chat': typeof ApiOliverChatRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
+  '/api/public/calendar-reminders-tick': typeof ApiPublicCalendarRemindersTickRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
   '/apolices/': typeof AuthenticatedApolicesIndexRoute
   '/api/public/hooks/policy-sync': typeof ApiPublicHooksPolicySyncRoute
@@ -150,6 +158,7 @@ export interface FileRoutesByTo {
   '/api/oliver-chat': typeof ApiOliverChatRoute
   '/': typeof AuthenticatedIndexRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
+  '/api/public/calendar-reminders-tick': typeof ApiPublicCalendarRemindersTickRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
   '/apolices': typeof AuthenticatedApolicesIndexRoute
   '/api/public/hooks/policy-sync': typeof ApiPublicHooksPolicySyncRoute
@@ -170,6 +179,7 @@ export interface FileRoutesById {
   '/api/oliver-chat': typeof ApiOliverChatRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
+  '/api/public/calendar-reminders-tick': typeof ApiPublicCalendarRemindersTickRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
   '/_authenticated/apolices/': typeof AuthenticatedApolicesIndexRoute
   '/api/public/hooks/policy-sync': typeof ApiPublicHooksPolicySyncRoute
@@ -190,6 +200,7 @@ export interface FileRouteTypes {
     | '/operacao'
     | '/api/oliver-chat'
     | '/api/public/audit-callback'
+    | '/api/public/calendar-reminders-tick'
     | '/api/public/policy-sync-callback'
     | '/apolices/'
     | '/api/public/hooks/policy-sync'
@@ -208,6 +219,7 @@ export interface FileRouteTypes {
     | '/api/oliver-chat'
     | '/'
     | '/api/public/audit-callback'
+    | '/api/public/calendar-reminders-tick'
     | '/api/public/policy-sync-callback'
     | '/apolices'
     | '/api/public/hooks/policy-sync'
@@ -227,6 +239,7 @@ export interface FileRouteTypes {
     | '/api/oliver-chat'
     | '/_authenticated/'
     | '/api/public/audit-callback'
+    | '/api/public/calendar-reminders-tick'
     | '/api/public/policy-sync-callback'
     | '/_authenticated/apolices/'
     | '/api/public/hooks/policy-sync'
@@ -239,6 +252,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ApiOliverChatRoute: typeof ApiOliverChatRoute
   ApiPublicAuditCallbackRoute: typeof ApiPublicAuditCallbackRoute
+  ApiPublicCalendarRemindersTickRoute: typeof ApiPublicCalendarRemindersTickRoute
   ApiPublicPolicySyncCallbackRoute: typeof ApiPublicPolicySyncCallbackRoute
   ApiPublicHooksPolicySyncRoute: typeof ApiPublicHooksPolicySyncRoute
 }
@@ -336,6 +350,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPolicySyncCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/calendar-reminders-tick': {
+      id: '/api/public/calendar-reminders-tick'
+      path: '/api/public/calendar-reminders-tick'
+      fullPath: '/api/public/calendar-reminders-tick'
+      preLoaderRoute: typeof ApiPublicCalendarRemindersTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/audit-callback': {
       id: '/api/public/audit-callback'
       path: '/api/public/audit-callback'
@@ -404,9 +425,20 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ApiOliverChatRoute: ApiOliverChatRoute,
   ApiPublicAuditCallbackRoute: ApiPublicAuditCallbackRoute,
+  ApiPublicCalendarRemindersTickRoute: ApiPublicCalendarRemindersTickRoute,
   ApiPublicPolicySyncCallbackRoute: ApiPublicPolicySyncCallbackRoute,
   ApiPublicHooksPolicySyncRoute: ApiPublicHooksPolicySyncRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
