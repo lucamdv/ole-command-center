@@ -36,7 +36,7 @@ export function expandActivity(
   try {
     const rule = rrulestr(activity.recurrence_rule, { dtstart: start });
     const dates = rule.between(from, to, true);
-    return dates.map((d) => {
+    return dates.map((d: Date) => {
       const occStart = d.toISOString();
       const exc = exceptions.get(`${activity.id}|${occStart}`);
       if (exc) {
