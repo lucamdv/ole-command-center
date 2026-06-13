@@ -15,11 +15,11 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as ApiOliverChatRouteImport } from './routes/api/oliver-chat'
 import { Route as AuthenticatedOperacaoRouteImport } from './routes/_authenticated/operacao'
 import { Route as AuthenticatedIntelligenceRouteImport } from './routes/_authenticated/intelligence'
-import { Route as AuthenticatedFerramentasRouteImport } from './routes/_authenticated/ferramentas'
 import { Route as AuthenticatedEndossosRouteImport } from './routes/_authenticated/endossos'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedAlertasRouteImport } from './routes/_authenticated/alertas'
+import { Route as AuthenticatedFerramentasIndexRouteImport } from './routes/_authenticated/ferramentas.index'
 import { Route as AuthenticatedApolicesIndexRouteImport } from './routes/_authenticated/apolices.index'
 import { Route as ApiPublicPolicySyncCallbackRouteImport } from './routes/api/public/policy-sync-callback'
 import { Route as ApiPublicCalendarRemindersTickRouteImport } from './routes/api/public/calendar-reminders-tick'
@@ -59,12 +59,6 @@ const AuthenticatedIntelligenceRoute =
     path: '/intelligence',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedFerramentasRoute =
-  AuthenticatedFerramentasRouteImport.update({
-    id: '/ferramentas',
-    path: '/ferramentas',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedEndossosRoute = AuthenticatedEndossosRouteImport.update({
   id: '/endossos',
   path: '/endossos',
@@ -86,6 +80,12 @@ const AuthenticatedAlertasRoute = AuthenticatedAlertasRouteImport.update({
   path: '/alertas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFerramentasIndexRoute =
+  AuthenticatedFerramentasIndexRouteImport.update({
+    id: '/ferramentas/',
+    path: '/ferramentas/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedApolicesIndexRoute =
   AuthenticatedApolicesIndexRouteImport.update({
     id: '/apolices/',
@@ -111,9 +111,9 @@ const ApiPublicAuditCallbackRoute = ApiPublicAuditCallbackRouteImport.update({
 } as any)
 const AuthenticatedFerramentasCalendarioRoute =
   AuthenticatedFerramentasCalendarioRouteImport.update({
-    id: '/calendario',
-    path: '/calendario',
-    getParentRoute: () => AuthenticatedFerramentasRoute,
+    id: '/ferramentas/calendario',
+    path: '/ferramentas/calendario',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedApolicesIdIndexRoute =
   AuthenticatedApolicesIdIndexRouteImport.update({
@@ -141,7 +141,6 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/endossos': typeof AuthenticatedEndossosRoute
-  '/ferramentas': typeof AuthenticatedFerramentasRouteWithChildren
   '/intelligence': typeof AuthenticatedIntelligenceRoute
   '/operacao': typeof AuthenticatedOperacaoRoute
   '/api/oliver-chat': typeof ApiOliverChatRoute
@@ -150,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/api/public/calendar-reminders-tick': typeof ApiPublicCalendarRemindersTickRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
   '/apolices/': typeof AuthenticatedApolicesIndexRoute
+  '/ferramentas/': typeof AuthenticatedFerramentasIndexRoute
   '/api/public/hooks/policy-sync': typeof ApiPublicHooksPolicySyncRoute
   '/apolices/$id/': typeof AuthenticatedApolicesIdIndexRoute
   '/apolices/$id/endossos/$num': typeof AuthenticatedApolicesIdEndossosNumRoute
@@ -160,7 +160,6 @@ export interface FileRoutesByTo {
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/endossos': typeof AuthenticatedEndossosRoute
-  '/ferramentas': typeof AuthenticatedFerramentasRouteWithChildren
   '/intelligence': typeof AuthenticatedIntelligenceRoute
   '/operacao': typeof AuthenticatedOperacaoRoute
   '/api/oliver-chat': typeof ApiOliverChatRoute
@@ -170,6 +169,7 @@ export interface FileRoutesByTo {
   '/api/public/calendar-reminders-tick': typeof ApiPublicCalendarRemindersTickRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
   '/apolices': typeof AuthenticatedApolicesIndexRoute
+  '/ferramentas': typeof AuthenticatedFerramentasIndexRoute
   '/api/public/hooks/policy-sync': typeof ApiPublicHooksPolicySyncRoute
   '/apolices/$id': typeof AuthenticatedApolicesIdIndexRoute
   '/apolices/$id/endossos/$num': typeof AuthenticatedApolicesIdEndossosNumRoute
@@ -182,7 +182,6 @@ export interface FileRoutesById {
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/endossos': typeof AuthenticatedEndossosRoute
-  '/_authenticated/ferramentas': typeof AuthenticatedFerramentasRouteWithChildren
   '/_authenticated/intelligence': typeof AuthenticatedIntelligenceRoute
   '/_authenticated/operacao': typeof AuthenticatedOperacaoRoute
   '/api/oliver-chat': typeof ApiOliverChatRoute
@@ -192,6 +191,7 @@ export interface FileRoutesById {
   '/api/public/calendar-reminders-tick': typeof ApiPublicCalendarRemindersTickRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
   '/_authenticated/apolices/': typeof AuthenticatedApolicesIndexRoute
+  '/_authenticated/ferramentas/': typeof AuthenticatedFerramentasIndexRoute
   '/api/public/hooks/policy-sync': typeof ApiPublicHooksPolicySyncRoute
   '/_authenticated/apolices/$id/': typeof AuthenticatedApolicesIdIndexRoute
   '/_authenticated/apolices/$id/endossos/$num': typeof AuthenticatedApolicesIdEndossosNumRoute
@@ -205,7 +205,6 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/configuracoes'
     | '/endossos'
-    | '/ferramentas'
     | '/intelligence'
     | '/operacao'
     | '/api/oliver-chat'
@@ -214,6 +213,7 @@ export interface FileRouteTypes {
     | '/api/public/calendar-reminders-tick'
     | '/api/public/policy-sync-callback'
     | '/apolices/'
+    | '/ferramentas/'
     | '/api/public/hooks/policy-sync'
     | '/apolices/$id/'
     | '/apolices/$id/endossos/$num'
@@ -224,7 +224,6 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/configuracoes'
     | '/endossos'
-    | '/ferramentas'
     | '/intelligence'
     | '/operacao'
     | '/api/oliver-chat'
@@ -234,6 +233,7 @@ export interface FileRouteTypes {
     | '/api/public/calendar-reminders-tick'
     | '/api/public/policy-sync-callback'
     | '/apolices'
+    | '/ferramentas'
     | '/api/public/hooks/policy-sync'
     | '/apolices/$id'
     | '/apolices/$id/endossos/$num'
@@ -245,7 +245,6 @@ export interface FileRouteTypes {
     | '/_authenticated/analytics'
     | '/_authenticated/configuracoes'
     | '/_authenticated/endossos'
-    | '/_authenticated/ferramentas'
     | '/_authenticated/intelligence'
     | '/_authenticated/operacao'
     | '/api/oliver-chat'
@@ -255,6 +254,7 @@ export interface FileRouteTypes {
     | '/api/public/calendar-reminders-tick'
     | '/api/public/policy-sync-callback'
     | '/_authenticated/apolices/'
+    | '/_authenticated/ferramentas/'
     | '/api/public/hooks/policy-sync'
     | '/_authenticated/apolices/$id/'
     | '/_authenticated/apolices/$id/endossos/$num'
@@ -314,13 +314,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIntelligenceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/ferramentas': {
-      id: '/_authenticated/ferramentas'
-      path: '/ferramentas'
-      fullPath: '/ferramentas'
-      preLoaderRoute: typeof AuthenticatedFerramentasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/endossos': {
       id: '/_authenticated/endossos'
       path: '/endossos'
@@ -347,6 +340,13 @@ declare module '@tanstack/react-router' {
       path: '/alertas'
       fullPath: '/alertas'
       preLoaderRoute: typeof AuthenticatedAlertasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ferramentas/': {
+      id: '/_authenticated/ferramentas/'
+      path: '/ferramentas'
+      fullPath: '/ferramentas/'
+      preLoaderRoute: typeof AuthenticatedFerramentasIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/apolices/': {
@@ -379,10 +379,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/ferramentas/calendario': {
       id: '/_authenticated/ferramentas/calendario'
-      path: '/calendario'
+      path: '/ferramentas/calendario'
       fullPath: '/ferramentas/calendario'
       preLoaderRoute: typeof AuthenticatedFerramentasCalendarioRouteImport
-      parentRoute: typeof AuthenticatedFerramentasRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/apolices/$id/': {
       id: '/_authenticated/apolices/$id/'
@@ -408,31 +408,17 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthenticatedFerramentasRouteChildren {
-  AuthenticatedFerramentasCalendarioRoute: typeof AuthenticatedFerramentasCalendarioRoute
-}
-
-const AuthenticatedFerramentasRouteChildren: AuthenticatedFerramentasRouteChildren =
-  {
-    AuthenticatedFerramentasCalendarioRoute:
-      AuthenticatedFerramentasCalendarioRoute,
-  }
-
-const AuthenticatedFerramentasRouteWithChildren =
-  AuthenticatedFerramentasRoute._addFileChildren(
-    AuthenticatedFerramentasRouteChildren,
-  )
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAlertasRoute: typeof AuthenticatedAlertasRoute
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedEndossosRoute: typeof AuthenticatedEndossosRoute
-  AuthenticatedFerramentasRoute: typeof AuthenticatedFerramentasRouteWithChildren
   AuthenticatedIntelligenceRoute: typeof AuthenticatedIntelligenceRoute
   AuthenticatedOperacaoRoute: typeof AuthenticatedOperacaoRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedFerramentasCalendarioRoute: typeof AuthenticatedFerramentasCalendarioRoute
   AuthenticatedApolicesIndexRoute: typeof AuthenticatedApolicesIndexRoute
+  AuthenticatedFerramentasIndexRoute: typeof AuthenticatedFerramentasIndexRoute
   AuthenticatedApolicesIdIndexRoute: typeof AuthenticatedApolicesIdIndexRoute
   AuthenticatedApolicesIdEndossosNumRoute: typeof AuthenticatedApolicesIdEndossosNumRoute
 }
@@ -442,11 +428,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedEndossosRoute: AuthenticatedEndossosRoute,
-  AuthenticatedFerramentasRoute: AuthenticatedFerramentasRouteWithChildren,
   AuthenticatedIntelligenceRoute: AuthenticatedIntelligenceRoute,
   AuthenticatedOperacaoRoute: AuthenticatedOperacaoRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedFerramentasCalendarioRoute:
+    AuthenticatedFerramentasCalendarioRoute,
   AuthenticatedApolicesIndexRoute: AuthenticatedApolicesIndexRoute,
+  AuthenticatedFerramentasIndexRoute: AuthenticatedFerramentasIndexRoute,
   AuthenticatedApolicesIdIndexRoute: AuthenticatedApolicesIdIndexRoute,
   AuthenticatedApolicesIdEndossosNumRoute:
     AuthenticatedApolicesIdEndossosNumRoute,
