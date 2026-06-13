@@ -1,5 +1,5 @@
-import pkg from "rrule";
-const { RRule, RRuleSet, rrulestr, Frequency } = pkg;
+import * as rrulePkg from "rrule";
+const { RRule, RRuleSet, rrulestr, Frequency } = rrulePkg as any;
 import type { CalendarActivity } from "./types";
 
 export interface ExpandedOccurrence extends CalendarActivity {
@@ -36,7 +36,7 @@ export function expandActivity(
   try {
     const rule = rrulestr(activity.recurrence_rule, { dtstart: start });
     const dates = rule.between(from, to, true);
-    return dates.map((d) => {
+    return dates.map((d: Date) => {
       const occStart = d.toISOString();
       const exc = exceptions.get(`${activity.id}|${occStart}`);
       if (exc) {
