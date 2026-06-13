@@ -20,6 +20,7 @@ import { Route as AuthenticatedEndossosRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedAlertasRouteImport } from './routes/_authenticated/alertas'
+import { Route as AuthenticatedFerramentasIndexRouteImport } from './routes/_authenticated/ferramentas.index'
 import { Route as AuthenticatedApolicesIndexRouteImport } from './routes/_authenticated/apolices.index'
 import { Route as ApiPublicPolicySyncCallbackRouteImport } from './routes/api/public/policy-sync-callback'
 import { Route as ApiPublicCalendarRemindersTickRouteImport } from './routes/api/public/calendar-reminders-tick'
@@ -86,6 +87,12 @@ const AuthenticatedAlertasRoute = AuthenticatedAlertasRouteImport.update({
   path: '/alertas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFerramentasIndexRoute =
+  AuthenticatedFerramentasIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedFerramentasRoute,
+  } as any)
 const AuthenticatedApolicesIndexRoute =
   AuthenticatedApolicesIndexRouteImport.update({
     id: '/apolices/',
@@ -150,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/api/public/calendar-reminders-tick': typeof ApiPublicCalendarRemindersTickRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
   '/apolices/': typeof AuthenticatedApolicesIndexRoute
+  '/ferramentas/': typeof AuthenticatedFerramentasIndexRoute
   '/api/public/hooks/policy-sync': typeof ApiPublicHooksPolicySyncRoute
   '/apolices/$id/': typeof AuthenticatedApolicesIdIndexRoute
   '/apolices/$id/endossos/$num': typeof AuthenticatedApolicesIdEndossosNumRoute
@@ -160,7 +168,6 @@ export interface FileRoutesByTo {
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/endossos': typeof AuthenticatedEndossosRoute
-  '/ferramentas': typeof AuthenticatedFerramentasRouteWithChildren
   '/intelligence': typeof AuthenticatedIntelligenceRoute
   '/operacao': typeof AuthenticatedOperacaoRoute
   '/api/oliver-chat': typeof ApiOliverChatRoute
@@ -170,6 +177,7 @@ export interface FileRoutesByTo {
   '/api/public/calendar-reminders-tick': typeof ApiPublicCalendarRemindersTickRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
   '/apolices': typeof AuthenticatedApolicesIndexRoute
+  '/ferramentas': typeof AuthenticatedFerramentasIndexRoute
   '/api/public/hooks/policy-sync': typeof ApiPublicHooksPolicySyncRoute
   '/apolices/$id': typeof AuthenticatedApolicesIdIndexRoute
   '/apolices/$id/endossos/$num': typeof AuthenticatedApolicesIdEndossosNumRoute
@@ -192,6 +200,7 @@ export interface FileRoutesById {
   '/api/public/calendar-reminders-tick': typeof ApiPublicCalendarRemindersTickRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
   '/_authenticated/apolices/': typeof AuthenticatedApolicesIndexRoute
+  '/_authenticated/ferramentas/': typeof AuthenticatedFerramentasIndexRoute
   '/api/public/hooks/policy-sync': typeof ApiPublicHooksPolicySyncRoute
   '/_authenticated/apolices/$id/': typeof AuthenticatedApolicesIdIndexRoute
   '/_authenticated/apolices/$id/endossos/$num': typeof AuthenticatedApolicesIdEndossosNumRoute
@@ -214,6 +223,7 @@ export interface FileRouteTypes {
     | '/api/public/calendar-reminders-tick'
     | '/api/public/policy-sync-callback'
     | '/apolices/'
+    | '/ferramentas/'
     | '/api/public/hooks/policy-sync'
     | '/apolices/$id/'
     | '/apolices/$id/endossos/$num'
@@ -224,7 +234,6 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/configuracoes'
     | '/endossos'
-    | '/ferramentas'
     | '/intelligence'
     | '/operacao'
     | '/api/oliver-chat'
@@ -234,6 +243,7 @@ export interface FileRouteTypes {
     | '/api/public/calendar-reminders-tick'
     | '/api/public/policy-sync-callback'
     | '/apolices'
+    | '/ferramentas'
     | '/api/public/hooks/policy-sync'
     | '/apolices/$id'
     | '/apolices/$id/endossos/$num'
@@ -255,6 +265,7 @@ export interface FileRouteTypes {
     | '/api/public/calendar-reminders-tick'
     | '/api/public/policy-sync-callback'
     | '/_authenticated/apolices/'
+    | '/_authenticated/ferramentas/'
     | '/api/public/hooks/policy-sync'
     | '/_authenticated/apolices/$id/'
     | '/_authenticated/apolices/$id/endossos/$num'
@@ -349,6 +360,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAlertasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ferramentas/': {
+      id: '/_authenticated/ferramentas/'
+      path: '/'
+      fullPath: '/ferramentas/'
+      preLoaderRoute: typeof AuthenticatedFerramentasIndexRouteImport
+      parentRoute: typeof AuthenticatedFerramentasRoute
+    }
     '/_authenticated/apolices/': {
       id: '/_authenticated/apolices/'
       path: '/apolices'
@@ -410,12 +428,14 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedFerramentasRouteChildren {
   AuthenticatedFerramentasCalendarioRoute: typeof AuthenticatedFerramentasCalendarioRoute
+  AuthenticatedFerramentasIndexRoute: typeof AuthenticatedFerramentasIndexRoute
 }
 
 const AuthenticatedFerramentasRouteChildren: AuthenticatedFerramentasRouteChildren =
   {
     AuthenticatedFerramentasCalendarioRoute:
       AuthenticatedFerramentasCalendarioRoute,
+    AuthenticatedFerramentasIndexRoute: AuthenticatedFerramentasIndexRoute,
   }
 
 const AuthenticatedFerramentasRouteWithChildren =
