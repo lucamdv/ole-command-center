@@ -1,5 +1,5 @@
-import pkg from "rrule";
-const { RRule, RRuleSet, rrulestr, Frequency } = pkg;
+import * as rrulePkg from "rrule";
+const { RRule, RRuleSet, rrulestr, Frequency } = rrulePkg as any;
 import type { CalendarActivity } from "./types";
 
 export interface ExpandedOccurrence extends CalendarActivity {
