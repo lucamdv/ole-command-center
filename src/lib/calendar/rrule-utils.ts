@@ -1,4 +1,5 @@
-import { RRule, RRuleSet, rrulestr, Frequency } from "rrule";
+import pkg from "rrule";
+const { RRule, RRuleSet, rrulestr, Frequency } = pkg;
 import type { CalendarActivity } from "./types";
 
 export interface ExpandedOccurrence extends CalendarActivity {
@@ -87,7 +88,7 @@ export function buildRRuleString(config: RecurrenceConfig, dtstart: Date): strin
 export function parseRRule(ruleStr: string | null | undefined): RecurrenceConfig | null {
   if (!ruleStr) return null;
   try {
-    const r = rrulestr(ruleStr) as RRule;
+    const r = rrulestr(ruleStr) as InstanceType<typeof RRule>;
     const o = r.origOptions;
     const freqArr = ["YEARLY", "MONTHLY", "WEEKLY", "DAILY"] as const;
     const freqIdx = (o.freq ?? 3) as number;
