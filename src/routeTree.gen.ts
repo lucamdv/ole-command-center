@@ -15,6 +15,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as ApiOliverChatRouteImport } from './routes/api/oliver-chat'
 import { Route as AuthenticatedOperacaoRouteImport } from './routes/_authenticated/operacao'
 import { Route as AuthenticatedIntelligenceRouteImport } from './routes/_authenticated/intelligence'
+import { Route as AuthenticatedFerramentasRouteImport } from './routes/_authenticated/ferramentas'
 import { Route as AuthenticatedEndossosRouteImport } from './routes/_authenticated/endossos'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
@@ -59,6 +60,12 @@ const AuthenticatedIntelligenceRoute =
     path: '/intelligence',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFerramentasRoute =
+  AuthenticatedFerramentasRouteImport.update({
+    id: '/ferramentas',
+    path: '/ferramentas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEndossosRoute = AuthenticatedEndossosRouteImport.update({
   id: '/endossos',
   path: '/endossos',
@@ -82,9 +89,9 @@ const AuthenticatedAlertasRoute = AuthenticatedAlertasRouteImport.update({
 } as any)
 const AuthenticatedFerramentasIndexRoute =
   AuthenticatedFerramentasIndexRouteImport.update({
-    id: '/ferramentas/',
-    path: '/ferramentas/',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedFerramentasRoute,
   } as any)
 const AuthenticatedApolicesIndexRoute =
   AuthenticatedApolicesIndexRouteImport.update({
@@ -111,9 +118,9 @@ const ApiPublicAuditCallbackRoute = ApiPublicAuditCallbackRouteImport.update({
 } as any)
 const AuthenticatedFerramentasCalendarioRoute =
   AuthenticatedFerramentasCalendarioRouteImport.update({
-    id: '/ferramentas/calendario',
-    path: '/ferramentas/calendario',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/calendario',
+    path: '/calendario',
+    getParentRoute: () => AuthenticatedFerramentasRoute,
   } as any)
 const AuthenticatedApolicesIdIndexRoute =
   AuthenticatedApolicesIdIndexRouteImport.update({
@@ -141,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/endossos': typeof AuthenticatedEndossosRoute
+  '/ferramentas': typeof AuthenticatedFerramentasRouteWithChildren
   '/intelligence': typeof AuthenticatedIntelligenceRoute
   '/operacao': typeof AuthenticatedOperacaoRoute
   '/api/oliver-chat': typeof ApiOliverChatRoute
@@ -182,6 +190,7 @@ export interface FileRoutesById {
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/endossos': typeof AuthenticatedEndossosRoute
+  '/_authenticated/ferramentas': typeof AuthenticatedFerramentasRouteWithChildren
   '/_authenticated/intelligence': typeof AuthenticatedIntelligenceRoute
   '/_authenticated/operacao': typeof AuthenticatedOperacaoRoute
   '/api/oliver-chat': typeof ApiOliverChatRoute
@@ -205,6 +214,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/configuracoes'
     | '/endossos'
+    | '/ferramentas'
     | '/intelligence'
     | '/operacao'
     | '/api/oliver-chat'
@@ -245,6 +255,7 @@ export interface FileRouteTypes {
     | '/_authenticated/analytics'
     | '/_authenticated/configuracoes'
     | '/_authenticated/endossos'
+    | '/_authenticated/ferramentas'
     | '/_authenticated/intelligence'
     | '/_authenticated/operacao'
     | '/api/oliver-chat'
@@ -314,6 +325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIntelligenceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ferramentas': {
+      id: '/_authenticated/ferramentas'
+      path: '/ferramentas'
+      fullPath: '/ferramentas'
+      preLoaderRoute: typeof AuthenticatedFerramentasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/endossos': {
       id: '/_authenticated/endossos'
       path: '/endossos'
@@ -344,10 +362,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/ferramentas/': {
       id: '/_authenticated/ferramentas/'
-      path: '/ferramentas'
+      path: '/'
       fullPath: '/ferramentas/'
       preLoaderRoute: typeof AuthenticatedFerramentasIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedFerramentasRoute
     }
     '/_authenticated/apolices/': {
       id: '/_authenticated/apolices/'
@@ -379,10 +397,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/ferramentas/calendario': {
       id: '/_authenticated/ferramentas/calendario'
-      path: '/ferramentas/calendario'
+      path: '/calendario'
       fullPath: '/ferramentas/calendario'
       preLoaderRoute: typeof AuthenticatedFerramentasCalendarioRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedFerramentasRoute
     }
     '/_authenticated/apolices/$id/': {
       id: '/_authenticated/apolices/$id/'
@@ -408,17 +426,33 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedFerramentasRouteChildren {
+  AuthenticatedFerramentasCalendarioRoute: typeof AuthenticatedFerramentasCalendarioRoute
+  AuthenticatedFerramentasIndexRoute: typeof AuthenticatedFerramentasIndexRoute
+}
+
+const AuthenticatedFerramentasRouteChildren: AuthenticatedFerramentasRouteChildren =
+  {
+    AuthenticatedFerramentasCalendarioRoute:
+      AuthenticatedFerramentasCalendarioRoute,
+    AuthenticatedFerramentasIndexRoute: AuthenticatedFerramentasIndexRoute,
+  }
+
+const AuthenticatedFerramentasRouteWithChildren =
+  AuthenticatedFerramentasRoute._addFileChildren(
+    AuthenticatedFerramentasRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAlertasRoute: typeof AuthenticatedAlertasRoute
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedEndossosRoute: typeof AuthenticatedEndossosRoute
+  AuthenticatedFerramentasRoute: typeof AuthenticatedFerramentasRouteWithChildren
   AuthenticatedIntelligenceRoute: typeof AuthenticatedIntelligenceRoute
   AuthenticatedOperacaoRoute: typeof AuthenticatedOperacaoRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
-  AuthenticatedFerramentasCalendarioRoute: typeof AuthenticatedFerramentasCalendarioRoute
   AuthenticatedApolicesIndexRoute: typeof AuthenticatedApolicesIndexRoute
-  AuthenticatedFerramentasIndexRoute: typeof AuthenticatedFerramentasIndexRoute
   AuthenticatedApolicesIdIndexRoute: typeof AuthenticatedApolicesIdIndexRoute
   AuthenticatedApolicesIdEndossosNumRoute: typeof AuthenticatedApolicesIdEndossosNumRoute
 }
@@ -428,13 +462,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedEndossosRoute: AuthenticatedEndossosRoute,
+  AuthenticatedFerramentasRoute: AuthenticatedFerramentasRouteWithChildren,
   AuthenticatedIntelligenceRoute: AuthenticatedIntelligenceRoute,
   AuthenticatedOperacaoRoute: AuthenticatedOperacaoRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
-  AuthenticatedFerramentasCalendarioRoute:
-    AuthenticatedFerramentasCalendarioRoute,
   AuthenticatedApolicesIndexRoute: AuthenticatedApolicesIndexRoute,
-  AuthenticatedFerramentasIndexRoute: AuthenticatedFerramentasIndexRoute,
   AuthenticatedApolicesIdIndexRoute: AuthenticatedApolicesIdIndexRoute,
   AuthenticatedApolicesIdEndossosNumRoute:
     AuthenticatedApolicesIdEndossosNumRoute,
@@ -455,3 +487,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
