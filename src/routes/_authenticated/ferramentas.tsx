@@ -87,5 +87,6 @@ function FerramentasPage() {
           </div>
         </div>
       </div>
+    </div>
   );
 }
