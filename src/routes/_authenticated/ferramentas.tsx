@@ -30,42 +30,62 @@ function FerramentasPage() {
         </p>
       </div>
 
-      <div className="relative overflow-hidden rounded-2xl border border-border bg-linear-to-br from-surface to-surface-2 p-10 shadow-elevated">
-        <div className="absolute -top-16 -right-16 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-        <div className="relative max-w-xl">
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md border border-primary/30 bg-primary/10 text-primary text-[11px] font-mono uppercase tracking-wider mb-4">
-            <Sparkles className="h-3 w-3" />
-            Em construção
+      <div className="grid gap-4 md:grid-cols-2">
+        <Link
+          to="/ferramentas/calendario"
+          className="group relative overflow-hidden rounded-2xl border border-border bg-linear-to-br from-surface to-surface-2 p-6 shadow-elevated hover:border-primary/40 transition"
+        >
+          <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+          <div className="relative">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md border border-primary/30 bg-primary/10 text-primary text-[11px] font-mono uppercase tracking-wider mb-4">
+              <Sparkles className="h-3 w-3" />
+              Disponível
+            </div>
+            <h2 className="text-[18px] font-semibold tracking-tight mb-1.5 flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              Calendário Inteligente
+            </h2>
+            <p className="text-[13px] text-muted-foreground leading-relaxed">
+              Planeje, acompanhe e organize suas atividades com visualizações de mês/semana/dia/lista, recorrência,
+              anexos, lembretes e indicadores em tempo real.
+            </p>
+            <div className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-primary font-medium">
+              Abrir ferramenta
+              <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition" />
+            </div>
           </div>
-          <h2 className="text-[22px] font-semibold tracking-tight mb-2 flex items-center gap-2">
-            <Wrench className="h-5 w-5 text-primary" />
-            Caixa de ferramentas a caminho
-          </h2>
-          <p className="text-[13.5px] text-muted-foreground leading-relaxed">
-            Estamos preparando utilitários como simuladores de cálculo, importadores em lote, validadores de
-            documentação e integrações diretas com o motor de auditoria. Em breve disponíveis nesta aba.
-          </p>
+        </Link>
 
-          <div className="mt-6 grid sm:grid-cols-3 gap-3">
-            {[
-              { label: "Importadores", desc: "Carga em lote de apólices e endossos" },
-              { label: "Validadores", desc: "Check rápido contra regras OLÉ" },
-              { label: "Simuladores", desc: "Cenários de prêmio e cobertura" },
-            ].map((t) => (
-              <div
-                key={t.label}
-                className="rounded-xl border border-border/60 bg-surface/60 p-3.5 hover:border-primary/30 transition"
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <Hammer className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-[12.5px] font-semibold">{t.label}</span>
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-linear-to-br from-surface to-surface-2 p-6 shadow-elevated">
+          <div className="relative">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md border border-border bg-muted/40 text-muted-foreground text-[11px] font-mono uppercase tracking-wider mb-4">
+              <Hammer className="h-3 w-3" />
+              Em construção
+            </div>
+            <h2 className="text-[18px] font-semibold tracking-tight mb-1.5 flex items-center gap-2">
+              <Wrench className="h-5 w-5 text-muted-foreground" />
+              Mais ferramentas a caminho
+            </h2>
+            <p className="text-[13px] text-muted-foreground leading-relaxed">
+              Importadores em lote, validadores OLÉ e simuladores de prêmio/cobertura estão sendo preparados para
+              esta área.
+            </p>
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              {[
+                { label: "Importadores" },
+                { label: "Validadores" },
+                { label: "Simuladores" },
+              ].map((t) => (
+                <div
+                  key={t.label}
+                  className="rounded-lg border border-border/60 bg-surface/60 p-2 text-center text-[11px] text-muted-foreground"
+                >
+                  {t.label}
                 </div>
-                <div className="text-[11px] text-muted-foreground leading-snug">{t.desc}</div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
-    </div>
   );
 }
