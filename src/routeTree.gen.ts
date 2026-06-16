@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as ApiOliverChatRouteImport } from './routes/api/oliver-chat'
 import { Route as AuthenticatedOperacaoRouteImport } from './routes/_authenticated/operacao'
 import { Route as AuthenticatedIntelligenceRouteImport } from './routes/_authenticated/intelligence'
@@ -43,6 +44,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOliverChatRoute = ApiOliverChatRouteImport.update({
   id: '/api/oliver-chat',
@@ -152,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/intelligence': typeof AuthenticatedIntelligenceRoute
   '/operacao': typeof AuthenticatedOperacaoRoute
   '/api/oliver-chat': typeof ApiOliverChatRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/ferramentas/calendario': typeof AuthenticatedFerramentasCalendarioRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
   '/api/public/calendar-reminders-tick': typeof ApiPublicCalendarRemindersTickRoute
@@ -171,6 +178,7 @@ export interface FileRoutesByTo {
   '/intelligence': typeof AuthenticatedIntelligenceRoute
   '/operacao': typeof AuthenticatedOperacaoRoute
   '/api/oliver-chat': typeof ApiOliverChatRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/ferramentas/calendario': typeof AuthenticatedFerramentasCalendarioRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/_authenticated/intelligence': typeof AuthenticatedIntelligenceRoute
   '/_authenticated/operacao': typeof AuthenticatedOperacaoRoute
   '/api/oliver-chat': typeof ApiOliverChatRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/ferramentas/calendario': typeof AuthenticatedFerramentasCalendarioRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
@@ -218,6 +227,7 @@ export interface FileRouteTypes {
     | '/intelligence'
     | '/operacao'
     | '/api/oliver-chat'
+    | '/invite/$token'
     | '/ferramentas/calendario'
     | '/api/public/audit-callback'
     | '/api/public/calendar-reminders-tick'
@@ -237,6 +247,7 @@ export interface FileRouteTypes {
     | '/intelligence'
     | '/operacao'
     | '/api/oliver-chat'
+    | '/invite/$token'
     | '/'
     | '/ferramentas/calendario'
     | '/api/public/audit-callback'
@@ -259,6 +270,7 @@ export interface FileRouteTypes {
     | '/_authenticated/intelligence'
     | '/_authenticated/operacao'
     | '/api/oliver-chat'
+    | '/invite/$token'
     | '/_authenticated/'
     | '/_authenticated/ferramentas/calendario'
     | '/api/public/audit-callback'
@@ -275,6 +287,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiOliverChatRoute: typeof ApiOliverChatRoute
+  InviteTokenRoute: typeof InviteTokenRoute
   ApiPublicAuditCallbackRoute: typeof ApiPublicAuditCallbackRoute
   ApiPublicCalendarRemindersTickRoute: typeof ApiPublicCalendarRemindersTickRoute
   ApiPublicPolicySyncCallbackRoute: typeof ApiPublicPolicySyncCallbackRoute
@@ -303,6 +316,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/oliver-chat': {
       id: '/api/oliver-chat'
@@ -479,6 +499,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiOliverChatRoute: ApiOliverChatRoute,
+  InviteTokenRoute: InviteTokenRoute,
   ApiPublicAuditCallbackRoute: ApiPublicAuditCallbackRoute,
   ApiPublicCalendarRemindersTickRoute: ApiPublicCalendarRemindersTickRoute,
   ApiPublicPolicySyncCallbackRoute: ApiPublicPolicySyncCallbackRoute,
