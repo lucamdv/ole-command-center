@@ -10,10 +10,12 @@ import {
   Sparkles,
   Radio,
   Wrench,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getSystemStatus } from "@/lib/audit.functions";
 import { BrandMark } from "@/components/brand/brand-mark";
+import { useCurrentRole } from "@/hooks/use-current-role";
 
 const NAV = [
   { to: "/", label: "Visão Geral", icon: LayoutDashboard },
@@ -24,6 +26,10 @@ const NAV = [
   { to: "/intelligence", label: "Oléver", icon: Sparkles },
   { to: "/ferramentas", label: "Ferramentas", icon: Wrench },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
+] as const;
+
+const ADMIN_NAV = [
+  { to: "/admin/usuarios", label: "Usuários", icon: ShieldCheck },
 ] as const;
 
 export function Sidebar() {
