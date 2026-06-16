@@ -41,6 +41,7 @@ export function Sidebar() {
     refetchInterval: 60_000,
     staleTime: 30_000,
   });
+  const { data: roleInfo } = useCurrentRole();
 
   const state = status?.state ?? "operational";
   const tone =
