@@ -10,10 +10,12 @@ import {
   Sparkles,
   Radio,
   Wrench,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getSystemStatus } from "@/lib/audit.functions";
 import { BrandMark } from "@/components/brand/brand-mark";
+import { useCurrentRole } from "@/hooks/use-current-role";
 
 const NAV = [
   { to: "/", label: "Visão Geral", icon: LayoutDashboard },
@@ -26,6 +28,10 @@ const NAV = [
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ] as const;
 
+const ADMIN_NAV = [
+  { to: "/admin/usuarios", label: "Usuários", icon: ShieldCheck },
+] as const;
+
 export function Sidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const fetchStatus = useServerFn(getSystemStatus);
@@ -35,6 +41,7 @@ export function Sidebar() {
     refetchInterval: 60_000,
     staleTime: 30_000,
   });
+  const { data: roleInfo } = useCurrentRole();
 
   const state = status?.state ?? "operational";
   const tone =
@@ -94,6 +101,37 @@ export function Sidebar() {
             </Link>
           );
         })}
+
+        {roleInfo?.isAdmin && (
+          <>
+            <div className="px-2 pt-4 pb-2 text-[10px] font-medium tracking-[0.15em] uppercase text-muted-foreground/60">
+              Administração
+            </div>
+            {ADMIN_NAV.map((item) => {
+              const active = pathname.startsWith(item.to);
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={cn(
+                    "group flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] font-medium transition-all",
+                    "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60",
+                    active && "bg-sidebar-accent text-foreground shadow-sm",
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      "h-4 w-4 shrink-0 transition-colors",
+                      active ? "text-primary" : "text-muted-foreground/80 group-hover:text-foreground",
+                    )}
+                  />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              );
+            })}
+          </>
+        )}
       </nav>
 
       {/* Footer */}

@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as ApiOliverChatRouteImport } from './routes/api/oliver-chat'
 import { Route as AuthenticatedOperacaoRouteImport } from './routes/_authenticated/operacao'
 import { Route as AuthenticatedIntelligenceRouteImport } from './routes/_authenticated/intelligence'
@@ -26,6 +27,7 @@ import { Route as ApiPublicPolicySyncCallbackRouteImport } from './routes/api/pu
 import { Route as ApiPublicCalendarRemindersTickRouteImport } from './routes/api/public/calendar-reminders-tick'
 import { Route as ApiPublicAuditCallbackRouteImport } from './routes/api/public/audit-callback'
 import { Route as AuthenticatedFerramentasCalendarioRouteImport } from './routes/_authenticated/ferramentas.calendario'
+import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
 import { Route as AuthenticatedApolicesIdIndexRouteImport } from './routes/_authenticated/apolices.$id.index'
 import { Route as ApiPublicHooksPolicySyncRouteImport } from './routes/api/public/hooks/policy-sync'
 import { Route as AuthenticatedApolicesIdEndossosNumRouteImport } from './routes/_authenticated/apolices.$id.endossos.$num'
@@ -43,6 +45,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOliverChatRoute = ApiOliverChatRouteImport.update({
   id: '/api/oliver-chat',
@@ -122,6 +129,12 @@ const AuthenticatedFerramentasCalendarioRoute =
     path: '/calendario',
     getParentRoute: () => AuthenticatedFerramentasRoute,
   } as any)
+const AuthenticatedAdminUsuariosRoute =
+  AuthenticatedAdminUsuariosRouteImport.update({
+    id: '/admin/usuarios',
+    path: '/admin/usuarios',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedApolicesIdIndexRoute =
   AuthenticatedApolicesIdIndexRouteImport.update({
     id: '/apolices/$id/',
@@ -152,6 +165,8 @@ export interface FileRoutesByFullPath {
   '/intelligence': typeof AuthenticatedIntelligenceRoute
   '/operacao': typeof AuthenticatedOperacaoRoute
   '/api/oliver-chat': typeof ApiOliverChatRoute
+  '/invite/$token': typeof InviteTokenRoute
+  '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/ferramentas/calendario': typeof AuthenticatedFerramentasCalendarioRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
   '/api/public/calendar-reminders-tick': typeof ApiPublicCalendarRemindersTickRoute
@@ -171,7 +186,9 @@ export interface FileRoutesByTo {
   '/intelligence': typeof AuthenticatedIntelligenceRoute
   '/operacao': typeof AuthenticatedOperacaoRoute
   '/api/oliver-chat': typeof ApiOliverChatRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/': typeof AuthenticatedIndexRoute
+  '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/ferramentas/calendario': typeof AuthenticatedFerramentasCalendarioRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
   '/api/public/calendar-reminders-tick': typeof ApiPublicCalendarRemindersTickRoute
@@ -194,7 +211,9 @@ export interface FileRoutesById {
   '/_authenticated/intelligence': typeof AuthenticatedIntelligenceRoute
   '/_authenticated/operacao': typeof AuthenticatedOperacaoRoute
   '/api/oliver-chat': typeof ApiOliverChatRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/_authenticated/ferramentas/calendario': typeof AuthenticatedFerramentasCalendarioRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
   '/api/public/calendar-reminders-tick': typeof ApiPublicCalendarRemindersTickRoute
@@ -218,6 +237,8 @@ export interface FileRouteTypes {
     | '/intelligence'
     | '/operacao'
     | '/api/oliver-chat'
+    | '/invite/$token'
+    | '/admin/usuarios'
     | '/ferramentas/calendario'
     | '/api/public/audit-callback'
     | '/api/public/calendar-reminders-tick'
@@ -237,7 +258,9 @@ export interface FileRouteTypes {
     | '/intelligence'
     | '/operacao'
     | '/api/oliver-chat'
+    | '/invite/$token'
     | '/'
+    | '/admin/usuarios'
     | '/ferramentas/calendario'
     | '/api/public/audit-callback'
     | '/api/public/calendar-reminders-tick'
@@ -259,7 +282,9 @@ export interface FileRouteTypes {
     | '/_authenticated/intelligence'
     | '/_authenticated/operacao'
     | '/api/oliver-chat'
+    | '/invite/$token'
     | '/_authenticated/'
+    | '/_authenticated/admin/usuarios'
     | '/_authenticated/ferramentas/calendario'
     | '/api/public/audit-callback'
     | '/api/public/calendar-reminders-tick'
@@ -275,6 +300,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiOliverChatRoute: typeof ApiOliverChatRoute
+  InviteTokenRoute: typeof InviteTokenRoute
   ApiPublicAuditCallbackRoute: typeof ApiPublicAuditCallbackRoute
   ApiPublicCalendarRemindersTickRoute: typeof ApiPublicCalendarRemindersTickRoute
   ApiPublicPolicySyncCallbackRoute: typeof ApiPublicPolicySyncCallbackRoute
@@ -303,6 +329,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/oliver-chat': {
       id: '/api/oliver-chat'
@@ -402,6 +435,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFerramentasCalendarioRouteImport
       parentRoute: typeof AuthenticatedFerramentasRoute
     }
+    '/_authenticated/admin/usuarios': {
+      id: '/_authenticated/admin/usuarios'
+      path: '/admin/usuarios'
+      fullPath: '/admin/usuarios'
+      preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/apolices/$id/': {
       id: '/_authenticated/apolices/$id/'
       path: '/apolices/$id'
@@ -452,6 +492,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIntelligenceRoute: typeof AuthenticatedIntelligenceRoute
   AuthenticatedOperacaoRoute: typeof AuthenticatedOperacaoRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
   AuthenticatedApolicesIndexRoute: typeof AuthenticatedApolicesIndexRoute
   AuthenticatedApolicesIdIndexRoute: typeof AuthenticatedApolicesIdIndexRoute
   AuthenticatedApolicesIdEndossosNumRoute: typeof AuthenticatedApolicesIdEndossosNumRoute
@@ -466,6 +507,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIntelligenceRoute: AuthenticatedIntelligenceRoute,
   AuthenticatedOperacaoRoute: AuthenticatedOperacaoRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
   AuthenticatedApolicesIndexRoute: AuthenticatedApolicesIndexRoute,
   AuthenticatedApolicesIdIndexRoute: AuthenticatedApolicesIdIndexRoute,
   AuthenticatedApolicesIdEndossosNumRoute:
@@ -479,6 +521,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiOliverChatRoute: ApiOliverChatRoute,
+  InviteTokenRoute: InviteTokenRoute,
   ApiPublicAuditCallbackRoute: ApiPublicAuditCallbackRoute,
   ApiPublicCalendarRemindersTickRoute: ApiPublicCalendarRemindersTickRoute,
   ApiPublicPolicySyncCallbackRoute: ApiPublicPolicySyncCallbackRoute,
@@ -487,13 +530,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -2,9 +2,12 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Header } from "./header";
 import { Sidebar } from "./sidebar";
 import { CommandPalette } from "./command-palette";
+import { useCurrentRole } from "@/hooks/use-current-role";
+import { ForcePasswordChangeDialog } from "@/components/auth/force-password-change-dialog";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const { data: roleInfo } = useCurrentRole();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -28,6 +31,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
       </div>
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+      <ForcePasswordChangeDialog open={Boolean(roleInfo?.mustChangePassword)} />
     </div>
   );
 }
