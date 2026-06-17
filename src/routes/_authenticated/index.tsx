@@ -101,6 +101,8 @@ function PageHeader({
 }) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+  const { profile } = useProfile();
+  const firstName = (profile.nome || "").split(/\s+/)[0] || "Operador";
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border bg-linear-to-br from-surface via-surface to-surface-2 px-6 py-5 shadow-elevated">
       <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
@@ -129,7 +131,7 @@ function PageHeader({
             )}
           </div>
           <h1 className="text-[28px] font-semibold tracking-tight text-foreground">
-            {greeting}, Luca. <span className="text-muted-foreground">Aqui está sua operação.</span>
+            {greeting}, {firstName}. <span className="text-muted-foreground">Aqui está sua operação.</span>
           </h1>
           <p className="text-[13.5px] text-muted-foreground mt-1 max-w-2xl">
             {latestAt
