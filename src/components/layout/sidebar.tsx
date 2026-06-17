@@ -141,11 +141,11 @@ export function Sidebar() {
       <div className="border-t border-sidebar-border p-3 space-y-2">
         <div className="flex items-center gap-2.5 px-2 py-2 rounded-md hover:bg-sidebar-accent/40 transition cursor-pointer">
           <div className="h-8 w-8 rounded-full bg-linear-to-br from-primary to-info grid place-items-center text-[11px] font-semibold text-primary-foreground">
-            LM
+            {getInitials(profile.nome) || "OL"}
           </div>
           <div className="leading-tight min-w-0 flex-1">
-            <div className="text-[12.5px] font-medium text-foreground truncate">Luca Monteiro</div>
-            <div className="text-[10.5px] text-muted-foreground truncate">Operações · Admin</div>
+            <div className="text-[12.5px] font-medium text-foreground truncate" title={profile.nome}>{profile.nome}</div>
+            <div className="text-[10.5px] text-muted-foreground truncate">{profile.email} · {roleLabel}</div>
           </div>
         </div>
         <div
