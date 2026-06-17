@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { getSystemStatus } from "@/lib/audit.functions";
 import { BrandMark } from "@/components/brand/brand-mark";
 import { useCurrentRole } from "@/hooks/use-current-role";
+import { getInitials, useProfile } from "@/hooks/use-settings";
 
 const NAV = [
   { to: "/", label: "Visão Geral", icon: LayoutDashboard },
