@@ -1,7 +1,7 @@
 import { Moon, Sun, Monitor } from "lucide-react";
 import { useTheme } from "@/components/theme/theme-provider";
 import { useProfile } from "@/hooks/use-settings";
-import { toast } from "sonner";
+
 
 const FUSOS = [
   "America/Sao_Paulo",
