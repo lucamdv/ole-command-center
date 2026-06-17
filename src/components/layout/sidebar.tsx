@@ -43,6 +43,8 @@ export function Sidebar() {
     staleTime: 30_000,
   });
   const { data: roleInfo } = useCurrentRole();
+  const { profile } = useProfile();
+  const roleLabel = roleInfo?.isAdmin ? "Admin" : roleInfo?.isManager ? "Manager" : "Usuário";
 
   const state = status?.state ?? "operational";
   const tone =
