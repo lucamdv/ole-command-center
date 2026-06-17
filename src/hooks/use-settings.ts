@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { NotifKind } from "@/lib/notifications.functions";
+import { useCurrentRole } from "@/hooks/use-current-role";
 
 export interface OperatorProfile {
   nome: string;
@@ -10,14 +11,20 @@ export interface OperatorProfile {
 
 export type NotifPrefs = Record<NotifKind, boolean> & { som: boolean };
 
-const PROFILE_KEY = "ole.profile.v1";
+const PREFS_KEY = "ole.profile.prefs.v1";
 const NOTIF_PREFS_KEY = "ole.notif.prefs.v1";
 
-const DEFAULT_PROFILE: OperatorProfile = {
-  nome: "Luca Monteiro",
-  email: "luca@excelsior.com.br",
+type LocalPrefs = Pick<OperatorProfile, "fuso" | "idioma">;
+
+const DEFAULT_LOCAL: LocalPrefs = {
   fuso: "America/Sao_Paulo",
   idioma: "pt-BR",
+};
+
+const FALLBACK_PROFILE: OperatorProfile = {
+  nome: "Operador",
+  email: "—",
+  ...DEFAULT_LOCAL,
 };
 
 const DEFAULT_PREFS: NotifPrefs = {
@@ -29,9 +36,7 @@ const DEFAULT_PREFS: NotifPrefs = {
   som: false,
 };
 
-type ProfileListener = (p: OperatorProfile) => void;
 type PrefsListener = (p: NotifPrefs) => void;
-const profileListeners = new Set<ProfileListener>();
 const prefsListeners = new Set<PrefsListener>();
 
 function readJSON<T>(key: string, fallback: T): T {
@@ -46,21 +51,33 @@ function readJSON<T>(key: string, fallback: T): T {
 }
 
 export function useProfile() {
-  const [profile, setProfileState] = useState<OperatorProfile>(() =>
-    readJSON(PROFILE_KEY, DEFAULT_PROFILE),
-  );
-  useEffect(() => {
-    const l: ProfileListener = (p) => setProfileState(p);
-    profileListeners.add(l);
-    return () => {
-      profileListeners.delete(l);
+  const { data: roleInfo } = useCurrentRole();
+  const [local, setLocal] = useState<LocalPrefs>(() => readJSON(PREFS_KEY, DEFAULT_LOCAL));
+
+  const profile = useMemo<OperatorProfile>(() => {
+    const p = roleInfo?.profile;
+    if (!p) return { ...FALLBACK_PROFILE, ...local };
+    return {
+      nome: p.full_name || p.email || "Operador",
+      email: p.email || "—",
+      fuso: local.fuso,
+      idioma: local.idioma,
     };
-  }, []);
+  }, [roleInfo, local]);
+
   const update = useCallback((patch: Partial<OperatorProfile>) => {
-    const next = { ...readJSON(PROFILE_KEY, DEFAULT_PROFILE), ...patch };
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(next));
-    profileListeners.forEach((l) => l(next));
+    setLocal((prev) => {
+      const next: LocalPrefs = {
+        fuso: patch.fuso ?? prev.fuso,
+        idioma: patch.idioma ?? prev.idioma,
+      };
+      if (typeof window !== "undefined") {
+        localStorage.setItem(PREFS_KEY, JSON.stringify(next));
+      }
+      return next;
+    });
   }, []);
+
   return { profile, update };
 }
 

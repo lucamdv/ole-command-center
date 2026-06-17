@@ -1,7 +1,7 @@
 import { Moon, Sun, Monitor } from "lucide-react";
 import { useTheme } from "@/components/theme/theme-provider";
 import { useProfile } from "@/hooks/use-settings";
-import { toast } from "sonner";
+
 
 const FUSOS = [
   "America/Sao_Paulo",
@@ -23,17 +23,18 @@ export function PerfilTab() {
         <Field label="Nome do operador">
           <input
             value={profile.nome}
-            onChange={(e) => update({ nome: e.target.value })}
-            onBlur={() => toast.success("Perfil atualizado")}
-            className="w-full h-9 px-3 rounded-md border border-border bg-surface text-[13px] focus:outline-none focus:border-primary"
+            readOnly
+            title="Gerenciado pelo administrador"
+            className="w-full h-9 px-3 rounded-md border border-border bg-surface/40 text-[13px] text-muted-foreground cursor-not-allowed focus:outline-none"
           />
         </Field>
         <Field label="E-mail">
           <input
             type="email"
             value={profile.email}
-            onChange={(e) => update({ email: e.target.value })}
-            className="w-full h-9 px-3 rounded-md border border-border bg-surface text-[13px] focus:outline-none focus:border-primary"
+            readOnly
+            title="Gerenciado pelo administrador"
+            className="w-full h-9 px-3 rounded-md border border-border bg-surface/40 text-[13px] text-muted-foreground cursor-not-allowed focus:outline-none"
           />
         </Field>
         <Field label="Fuso horário">
