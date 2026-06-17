@@ -36,6 +36,7 @@ import { exportAuditPdf } from "@/lib/audit/export-pdf";
 import type { AuditFindingRow, LatestAudit } from "@/lib/audit/types";
 import { formatDateTime, formatInt, formatPct, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useProfile } from "@/hooks/use-settings";
 
 
 export const Route = createFileRoute("/_authenticated/")({
