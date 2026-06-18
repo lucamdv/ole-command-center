@@ -62,29 +62,29 @@ export type Database = {
         Row: {
           apolice: string
           created_at: string
+          created_by: string | null
           id: string
           motivo: string | null
           scope: string
           tipo_erro: string | null
-          user_id: string
         }
         Insert: {
           apolice: string
           created_at?: string
+          created_by?: string | null
           id?: string
           motivo?: string | null
           scope: string
           tipo_erro?: string | null
-          user_id: string
         }
         Update: {
           apolice?: string
           created_at?: string
+          created_by?: string | null
           id?: string
           motivo?: string | null
           scope?: string
           tipo_erro?: string | null
-          user_id?: string
         }
         Relationships: []
       }

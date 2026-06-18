@@ -4,7 +4,7 @@ import { z } from "zod";
 
 export interface AuditIgnoreRow {
   id: string;
-  user_id: string;
+  created_by: string | null;
   scope: "apolice" | "apolice_tipo";
   apolice: string;
   tipo_erro: string | null;
@@ -35,13 +35,13 @@ export const addAuditIgnore = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const scope: "apolice" | "apolice_tipo" = data.tipo_erro ? "apolice_tipo" : "apolice";
     const row = {
-      user_id: context.userId,
+      created_by: context.userId,
       scope,
       apolice: data.apolice,
       tipo_erro: data.tipo_erro ?? null,
       motivo: data.motivo ?? null,
     };
-    // Upsert idempotente sobre (user_id, apolice, coalesce(tipo_erro,''))
+    // Idempotente em escopo global (apolice, coalesce(tipo_erro,''))
     let q = context.supabase
       .from("audit_ignores")
       .select("id")
