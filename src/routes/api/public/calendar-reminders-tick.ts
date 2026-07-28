@@ -1,13 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0b3hybmxxaXlndmliZ2ZtaWRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MTU1MTgsImV4cCI6MjA5NTk5MTUxOH0.u1T_9VAJMOCPZIf_-JAv-J8b6_X8ddsRP8fRI51Fc18";
-
+/**
+ * Endpoint de cron para disparo de lembretes do calendário.
+ * Protegido por shared-secret privado no header `x-hook-secret`
+ * (env `CALENDAR_REMINDERS_HOOK_SECRET`).
+ */
 export const Route = createFileRoute("/api/public/calendar-reminders-tick")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apikey = request.headers.get("apikey");
-        if (apikey !== ANON_KEY) return new Response("Unauthorized", { status: 401 });
+        const expected = process.env.CALENDAR_REMINDERS_HOOK_SECRET;
+        if (!expected) return new Response("Not configured", { status: 500 });
+        const provided = request.headers.get("x-hook-secret");
+        if (!provided || provided !== expected) {
+          return new Response("Unauthorized", { status: 401 });
+        }
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const nowIso = new Date().toISOString();

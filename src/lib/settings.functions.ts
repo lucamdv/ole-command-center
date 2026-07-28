@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertAdmin } from "@/lib/assert-admin";
 
 export interface IntegrationStatus {
   id: "motor_policies" | "n8n_audit" | "audit_callback";
@@ -12,7 +13,8 @@ export interface IntegrationStatus {
 }
 
 export const getIntegrationsStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(
-  async (): Promise<IntegrationStatus[]> => {
+  async ({ context }): Promise<IntegrationStatus[]> => {
+    await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const [{ data: lastSync }, { data: lastAudit }] = await Promise.all([
@@ -116,11 +118,13 @@ async function pingWebhook(url: string | undefined, label: string) {
   }
 }
 
-export const pingMotorPolicies = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async () => {
+export const pingMotorPolicies = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
+  await assertAdmin(context);
   return pingWebhook(process.env.N8N_MOTOR_POLICIES_URL, "MOTOR OLÉ");
 });
 
-export const pingAuditWebhook = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async () => {
+export const pingAuditWebhook = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
+  await assertAdmin(context);
   return pingWebhook(process.env.N8N_AUDIT_WEBHOOK_URL, "N8N Auditoria");
 });
 
@@ -134,7 +138,8 @@ export interface DataCounters {
 }
 
 export const getDataCounters = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(
-  async (): Promise<DataCounters> => {
+  async ({ context }): Promise<DataCounters> => {
+    await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const tables = [
       "oliver_threads",
@@ -154,7 +159,8 @@ export const getDataCounters = createServerFn({ method: "GET" }).middleware([req
   },
 );
 
-export const purgeOliver = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async () => {
+export const purgeOliver = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
+  await assertAdmin(context);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   // messages cascade if FK; explicitly delete to be safe
   await supabaseAdmin.from("oliver_messages").delete().not("id", "is", null);
@@ -164,7 +170,8 @@ export const purgeOliver = createServerFn({ method: "POST" }).middleware([requir
 
 export const purgeOldAudits = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((d: { days?: number }) => d)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const days = data.days ?? 90;
     const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
@@ -177,7 +184,8 @@ export const purgeOldAudits = createServerFn({ method: "POST" }).middleware([req
     return { ok: true, removed: count ?? 0, cutoff };
   });
 
-export const exportPoliciesCSV = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
+export const exportPoliciesCSV = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
+  await assertAdmin(context);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { findSeguradoNome, computePremioLiquido } = await import("@/lib/excelsior/translate");
   const { data, error } = await supabaseAdmin
@@ -223,7 +231,8 @@ export const exportPoliciesCSV = createServerFn({ method: "GET" }).middleware([r
   return { csv: lines.join("\n"), count: rows.length };
 });
 
-export const exportLatestAuditJSON = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
+export const exportLatestAuditJSON = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
+  await assertAdmin(context);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: runs } = await supabaseAdmin
     .from("audit_runs")
