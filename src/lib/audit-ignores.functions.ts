@@ -60,6 +60,23 @@ export const addAuditIgnore = createServerFn({ method: "POST" })
     return { id: (inserted as { id: string }).id, alreadyExists: false };
   });
 
+const UpdateSchema = z.object({
+  id: z.string().uuid(),
+  motivo: z.string().max(500).nullable(),
+});
+
+export const updateAuditIgnore = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: z.infer<typeof UpdateSchema>) => UpdateSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("audit_ignores")
+      .update({ motivo: data.motivo?.trim() ? data.motivo.trim() : null } as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const removeAuditIgnore = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
