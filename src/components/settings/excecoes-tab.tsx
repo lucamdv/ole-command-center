@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { EyeOff, Search, Trash2 } from "lucide-react";
+import { Check, EyeOff, Pencil, Search, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,13 +10,32 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useAuditIgnores, useRemoveAuditIgnore } from "@/hooks/use-audit-ignores";
+import {
+  useAuditIgnores,
+  useRemoveAuditIgnore,
+  useUpdateAuditIgnore,
+} from "@/hooks/use-audit-ignores";
 import { formatDateTime } from "@/lib/format";
 
 export function ExcecoesTab() {
   const { data: ignores = [], isLoading } = useAuditIgnores();
   const remove = useRemoveAuditIgnore();
+  const update = useUpdateAuditIgnore();
   const [q, setQ] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+
+  const startEdit = (id: string, motivo: string | null) => {
+    setEditingId(id);
+    setDraft(motivo ?? "");
+  };
+  const saveEdit = (id: string) => {
+    update.mutate(
+      { id, motivo: draft.trim() ? draft.trim() : null },
+      { onSuccess: () => setEditingId(null) },
+    );
+  };
+
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
