@@ -43,7 +43,7 @@ function ConfigPage() {
       </div>
 
       <div className="flex flex-wrap gap-1 border-b border-border">
-        {TABS.map((t) => {
+        {tabs.map((t) => {
           const Icon = t.icon;
           const isActive = active === t.id;
           return (
