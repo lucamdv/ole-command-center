@@ -5,6 +5,7 @@ import {
   addAuditIgnore,
   listAuditIgnores,
   removeAuditIgnore,
+  updateAuditIgnore,
 } from "@/lib/audit-ignores.functions";
 
 export const auditIgnoresQuery = queryOptions({
