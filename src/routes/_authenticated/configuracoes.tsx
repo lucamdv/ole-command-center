@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Bell, Database, EyeOff, Plug, User } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PerfilTab } from "@/components/settings/perfil-tab";
 import { NotificacoesTab } from "@/components/settings/notificacoes-tab";
 import { IntegracoesTab } from "@/components/settings/integracoes-tab";
 import { DadosTab } from "@/components/settings/dados-tab";
 import { ExcecoesTab } from "@/components/settings/excecoes-tab";
+import { useCurrentRole } from "@/hooks/use-current-role";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({
@@ -18,16 +19,19 @@ export const Route = createFileRoute("/_authenticated/configuracoes")({
 });
 
 const TABS = [
-  { id: "perfil", label: "Perfil", icon: User, Component: PerfilTab },
-  { id: "notificacoes", label: "Notificações", icon: Bell, Component: NotificacoesTab },
-  { id: "excecoes", label: "Exceções", icon: EyeOff, Component: ExcecoesTab },
-  { id: "integracoes", label: "Integrações", icon: Plug, Component: IntegracoesTab },
-  { id: "dados", label: "Dados & Retenção", icon: Database, Component: DadosTab },
+  { id: "perfil", label: "Perfil", icon: User, Component: PerfilTab, adminOnly: false },
+  { id: "notificacoes", label: "Notificações", icon: Bell, Component: NotificacoesTab, adminOnly: false },
+  { id: "excecoes", label: "Exceções", icon: EyeOff, Component: ExcecoesTab, adminOnly: false },
+  { id: "integracoes", label: "Integrações", icon: Plug, Component: IntegracoesTab, adminOnly: true },
+  { id: "dados", label: "Dados & Retenção", icon: Database, Component: DadosTab, adminOnly: true },
 ] as const;
 
 function ConfigPage() {
+  const { data: roleInfo } = useCurrentRole();
+  const isAdmin = !!roleInfo?.isAdmin;
+  const tabs = useMemo(() => TABS.filter((t) => !t.adminOnly || isAdmin), [isAdmin]);
   const [active, setActive] = useState<(typeof TABS)[number]["id"]>("perfil");
-  const Active = TABS.find((t) => t.id === active)!.Component;
+  const Active = (tabs.find((t) => t.id === active) ?? tabs[0]).Component;
 
   return (
     <div className="space-y-6">
