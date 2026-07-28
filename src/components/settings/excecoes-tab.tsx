@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { EyeOff, Search, Trash2 } from "lucide-react";
+import { Check, EyeOff, Pencil, Search, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,13 +10,32 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useAuditIgnores, useRemoveAuditIgnore } from "@/hooks/use-audit-ignores";
+import {
+  useAuditIgnores,
+  useRemoveAuditIgnore,
+  useUpdateAuditIgnore,
+} from "@/hooks/use-audit-ignores";
 import { formatDateTime } from "@/lib/format";
 
 export function ExcecoesTab() {
   const { data: ignores = [], isLoading } = useAuditIgnores();
   const remove = useRemoveAuditIgnore();
+  const update = useUpdateAuditIgnore();
   const [q, setQ] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+
+  const startEdit = (id: string, motivo: string | null) => {
+    setEditingId(id);
+    setDraft(motivo ?? "");
+  };
+  const saveEdit = (id: string) => {
+    update.mutate(
+      { id, motivo: draft.trim() ? draft.trim() : null },
+      { onSuccess: () => setEditingId(null) },
+    );
+  };
+
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -57,7 +76,7 @@ export function ExcecoesTab() {
               <TableHead className="text-[11px]">Tipo de erro</TableHead>
               <TableHead className="text-[11px]">Motivo</TableHead>
               <TableHead className="text-[11px]">Criada em</TableHead>
-              <TableHead className="text-[11px] w-[120px] text-right">Ação</TableHead>
+              <TableHead className="text-[11px] w-[180px] text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -88,25 +107,78 @@ export function ExcecoesTab() {
                   )}
                 </TableCell>
                 <TableCell className="text-[12.5px] text-muted-foreground max-w-[320px]">
-                  {i.motivo || "—"}
+                  {editingId === i.id ? (
+                    <Input
+                      autoFocus
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") saveEdit(i.id);
+                        if (e.key === "Escape") setEditingId(null);
+                      }}
+                      maxLength={500}
+                      placeholder="Motivo da exceção…"
+                      className="h-8 text-[12.5px]"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => startEdit(i.id, i.motivo)}
+                      className="text-left hover:text-foreground transition-colors w-full"
+                    >
+                      {i.motivo || <span className="italic">Adicionar motivo…</span>}
+                    </button>
+                  )}
                 </TableCell>
                 <TableCell className="text-[11.5px] font-mono text-muted-foreground">
                   {formatDateTime(i.created_at)}
                 </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 text-[11.5px] gap-1 text-muted-foreground hover:text-destructive"
-                    disabled={remove.isPending}
-                    onClick={() => {
-                      if (confirm(`Remover a exceção da apólice ${i.apolice}?`)) {
-                        remove.mutate({ id: i.id });
-                      }
-                    }}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" /> Remover
-                  </Button>
+                <TableCell className="text-right whitespace-nowrap">
+                  {editingId === i.id ? (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 text-[11.5px] gap-1 text-primary"
+                        disabled={update.isPending}
+                        onClick={() => saveEdit(i.id)}
+                      >
+                        <Check className="h-3.5 w-3.5" /> Salvar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 text-muted-foreground"
+                        onClick={() => setEditingId(null)}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 text-[11.5px] gap-1 text-muted-foreground hover:text-foreground"
+                        onClick={() => startEdit(i.id, i.motivo)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" /> Editar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                        disabled={remove.isPending}
+                        onClick={() => {
+                          if (confirm(`Remover a exceção da apólice ${i.apolice}?`)) {
+                            remove.mutate({ id: i.id });
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

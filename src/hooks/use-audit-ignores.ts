@@ -5,6 +5,7 @@ import {
   addAuditIgnore,
   listAuditIgnores,
   removeAuditIgnore,
+  updateAuditIgnore,
 } from "@/lib/audit-ignores.functions";
 
 export const auditIgnoresQuery = queryOptions({
@@ -60,6 +61,21 @@ export function useRemoveAuditIgnore() {
     },
     onError: (err: Error) => {
       toast.error("Falha ao remover exceção", { description: err.message });
+    },
+  });
+}
+
+export function useUpdateAuditIgnore() {
+  const qc = useQueryClient();
+  const updateFn = useServerFn(updateAuditIgnore);
+  return useMutation({
+    mutationFn: (input: { id: string; motivo: string | null }) => updateFn({ data: input }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["audit-ignores"] });
+      toast.success("Motivo atualizado");
+    },
+    onError: (err: Error) => {
+      toast.error("Falha ao atualizar motivo", { description: err.message });
     },
   });
 }
