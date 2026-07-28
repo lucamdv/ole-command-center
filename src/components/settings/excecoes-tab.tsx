@@ -76,7 +76,7 @@ export function ExcecoesTab() {
               <TableHead className="text-[11px]">Tipo de erro</TableHead>
               <TableHead className="text-[11px]">Motivo</TableHead>
               <TableHead className="text-[11px]">Criada em</TableHead>
-              <TableHead className="text-[11px] w-[120px] text-right">Ação</TableHead>
+              <TableHead className="text-[11px] w-[180px] text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
