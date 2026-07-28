@@ -64,3 +64,18 @@ export function useRemoveAuditIgnore() {
     },
   });
 }
+
+export function useUpdateAuditIgnore() {
+  const qc = useQueryClient();
+  const updateFn = useServerFn(updateAuditIgnore);
+  return useMutation({
+    mutationFn: (input: { id: string; motivo: string | null }) => updateFn({ data: input }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["audit-ignores"] });
+      toast.success("Motivo atualizado");
+    },
+    onError: (err: Error) => {
+      toast.error("Falha ao atualizar motivo", { description: err.message });
+    },
+  });
+}
