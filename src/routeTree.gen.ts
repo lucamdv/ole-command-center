@@ -27,6 +27,7 @@ import { Route as AuthenticatedFerramentasIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedFerramentasCalendarioRouteImport } from './routes/_authenticated/ferramentas.calendario'
 import { Route as ApiPublicAuditCallbackRouteImport } from './routes/api/public/audit-callback'
 import { Route as ApiPublicCalendarRemindersTickRouteImport } from './routes/api/public/calendar-reminders-tick'
+import { Route as ApiPublicEndorsementExtractionCallbackRouteImport } from './routes/api/public/endorsement-extraction-callback'
 import { Route as ApiPublicPolicySyncCallbackRouteImport } from './routes/api/public/policy-sync-callback'
 import { Route as AuthenticatedApolicesIdIndexRouteImport } from './routes/_authenticated/apolices.$id.index'
 import { Route as ApiPublicHooksPolicySyncRouteImport } from './routes/api/public/hooks/policy-sync'
@@ -129,6 +130,12 @@ const ApiPublicCalendarRemindersTickRoute =
     path: '/api/public/calendar-reminders-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicEndorsementExtractionCallbackRoute =
+  ApiPublicEndorsementExtractionCallbackRouteImport.update({
+    id: '/api/public/endorsement-extraction-callback',
+    path: '/api/public/endorsement-extraction-callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPolicySyncCallbackRoute =
   ApiPublicPolicySyncCallbackRouteImport.update({
     id: '/api/public/policy-sync-callback',
@@ -170,6 +177,7 @@ export interface FileRoutesByFullPath {
   '/ferramentas/calendario': typeof AuthenticatedFerramentasCalendarioRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
   '/api/public/calendar-reminders-tick': typeof ApiPublicCalendarRemindersTickRoute
+  '/api/public/endorsement-extraction-callback': typeof ApiPublicEndorsementExtractionCallbackRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
   '/apolices/': typeof AuthenticatedApolicesIndexRoute
   '/ferramentas/': typeof AuthenticatedFerramentasIndexRoute
@@ -192,6 +200,7 @@ export interface FileRoutesByTo {
   '/ferramentas/calendario': typeof AuthenticatedFerramentasCalendarioRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
   '/api/public/calendar-reminders-tick': typeof ApiPublicCalendarRemindersTickRoute
+  '/api/public/endorsement-extraction-callback': typeof ApiPublicEndorsementExtractionCallbackRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
   '/apolices': typeof AuthenticatedApolicesIndexRoute
   '/ferramentas': typeof AuthenticatedFerramentasIndexRoute
@@ -217,6 +226,7 @@ export interface FileRoutesById {
   '/_authenticated/ferramentas/calendario': typeof AuthenticatedFerramentasCalendarioRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
   '/api/public/calendar-reminders-tick': typeof ApiPublicCalendarRemindersTickRoute
+  '/api/public/endorsement-extraction-callback': typeof ApiPublicEndorsementExtractionCallbackRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
   '/_authenticated/apolices/': typeof AuthenticatedApolicesIndexRoute
   '/_authenticated/ferramentas/': typeof AuthenticatedFerramentasIndexRoute
@@ -242,6 +252,7 @@ export interface FileRouteTypes {
     | '/ferramentas/calendario'
     | '/api/public/audit-callback'
     | '/api/public/calendar-reminders-tick'
+    | '/api/public/endorsement-extraction-callback'
     | '/api/public/policy-sync-callback'
     | '/apolices/'
     | '/ferramentas/'
@@ -264,6 +275,7 @@ export interface FileRouteTypes {
     | '/ferramentas/calendario'
     | '/api/public/audit-callback'
     | '/api/public/calendar-reminders-tick'
+    | '/api/public/endorsement-extraction-callback'
     | '/api/public/policy-sync-callback'
     | '/apolices'
     | '/ferramentas'
@@ -288,6 +300,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ferramentas/calendario'
     | '/api/public/audit-callback'
     | '/api/public/calendar-reminders-tick'
+    | '/api/public/endorsement-extraction-callback'
     | '/api/public/policy-sync-callback'
     | '/_authenticated/apolices/'
     | '/_authenticated/ferramentas/'
@@ -303,6 +316,7 @@ export interface RootRouteChildren {
   InviteTokenRoute: typeof InviteTokenRoute
   ApiPublicAuditCallbackRoute: typeof ApiPublicAuditCallbackRoute
   ApiPublicCalendarRemindersTickRoute: typeof ApiPublicCalendarRemindersTickRoute
+  ApiPublicEndorsementExtractionCallbackRoute: typeof ApiPublicEndorsementExtractionCallbackRoute
   ApiPublicPolicySyncCallbackRoute: typeof ApiPublicPolicySyncCallbackRoute
   ApiPublicHooksPolicySyncRoute: typeof ApiPublicHooksPolicySyncRoute
 }
@@ -435,6 +449,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCalendarRemindersTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/endorsement-extraction-callback': {
+      id: '/api/public/endorsement-extraction-callback'
+      path: '/api/public/endorsement-extraction-callback'
+      fullPath: '/api/public/endorsement-extraction-callback'
+      preLoaderRoute: typeof ApiPublicEndorsementExtractionCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/policy-sync-callback': {
       id: '/api/public/policy-sync-callback'
       path: '/api/public/policy-sync-callback'
@@ -524,19 +545,11 @@ const rootRouteChildren: RootRouteChildren = {
   InviteTokenRoute: InviteTokenRoute,
   ApiPublicAuditCallbackRoute: ApiPublicAuditCallbackRoute,
   ApiPublicCalendarRemindersTickRoute: ApiPublicCalendarRemindersTickRoute,
+  ApiPublicEndorsementExtractionCallbackRoute:
+    ApiPublicEndorsementExtractionCallbackRoute,
   ApiPublicPolicySyncCallbackRoute: ApiPublicPolicySyncCallbackRoute,
   ApiPublicHooksPolicySyncRoute: ApiPublicHooksPolicySyncRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
