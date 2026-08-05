@@ -74,6 +74,9 @@ export const runEndorsementExtraction = createServerFn({ method: "POST" })
           run_id: runId,
           callback_url: callbackUrl,
           callback_secret_header: "x-callback-secret",
+          // O n8n devolve este valor no header x-callback-secret ao chamar a callback_url.
+          callback_secret: secret ?? null,
+
           trigger: "ole-copilot",
           tool: "extrator-ultimos-endossos",
           mode: "async_callback",
