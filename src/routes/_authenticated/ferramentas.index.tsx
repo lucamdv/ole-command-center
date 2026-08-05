@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Wrench, Sparkles, Hammer, Calendar, ArrowRight } from "lucide-react";
+import { Wrench, Sparkles, Hammer, Calendar, ArrowRight, Layers } from "lucide-react";
+
 
 export const Route = createFileRoute("/_authenticated/ferramentas/")({
   head: () => ({
