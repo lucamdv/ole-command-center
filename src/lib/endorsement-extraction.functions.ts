@@ -61,10 +61,22 @@ export const runEndorsementExtraction = createServerFn({ method: "POST" })
     }
     const runId = (runRow as { id: string }).id;
 
-    const base =
+    // Preferimos a origem da requisição atual: garante que o callback aponte
+    // para o mesmo build que está rodando (preview ou produção).
+    let base =
       process.env.PUBLIC_APP_URL ||
       (process.env.NODE_ENV === "production" ? PRODUCTION_PUBLIC_URL : PREVIEW_PUBLIC_URL);
+    if (!process.env.PUBLIC_APP_URL) {
+      try {
+        const { getRequest } = await import("@tanstack/react-start/server");
+        const origin = new URL(getRequest().url).origin;
+        if (/^https:\/\//.test(origin) && !origin.includes("localhost")) base = origin;
+      } catch {
+        // mantém o fallback
+      }
+    }
     const callbackUrl = `${base.replace(/\/$/, "")}/api/public/endorsement-extraction-callback?run_id=${runId}`;
+
 
     try {
       const res = await fetch(url, {
