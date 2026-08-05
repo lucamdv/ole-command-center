@@ -1,94 +1,36 @@
-## Objetivo
+# Extrator de Últimos Endossos
 
-Remover o auto-cadastro público e centralizar gestão de usuários em um painel de admin. Apenas admins podem criar, editar, remover e promover usuários, além de emitir links mágicos de convite (24h, 1 uso).
+Nova ferramenta em `/ferramentas/extrator-endossos`: um botão dispara um fluxo novo no n8n, o resultado volta por callback e é exibido em tabela com exportação CSV/PDF. Exceções próprias da ferramenta (independentes das exceções de auditoria).
 
-## Papéis
+## Como vai funcionar
 
-- **admin** — gerencia usuários, convites, todos os dados.
-- **manager** — opera a plataforma e dados de negócio, mas não gerencia usuários.
-- **user** — uso comum da plataforma.
+1. Botão "Extrair últimos endossos" cria uma execução (status "em andamento") e chama o webhook do n8n enviando `run_id`, `callback_url` e a lista de apólices em exceção (para o n8n já ignorá-las).
+2. A tela faz polling e mostra progresso; quando o n8n devolve o resultado, a tabela aparece.
+3. Tabela com colunas **PolicyNumber** e **last_sequencial_endosso_used**, com busca, ordenação e contador de linhas.
+4. Botões **Exportar CSV** e **Exportar PDF**.
+5. Aba de exceções própria: adicionar apólice (com motivo opcional), editar motivo, remover. Apólices em exceção não aparecem na tabela nem nas exportações e não são enviadas ao n8n.
+6. Gerenciar exceções é restrito a administradores; demais usuários visualizam a extração normalmente.
 
-Sua conta (`luca@excelsior.com.br`) será promovida a `admin` na migração inicial.
-
-## Mudanças no banco (uma migração)
-
-1. **Enum `app_role`** com valores `admin`, `manager`, `user`.
-2. **Tabela `public.user_roles`** (`user_id`, `role`, único por par) + GRANTs + RLS. Função `public.has_role(_user_id, _role)` SECURITY DEFINER.
-3. **Tabela `public.profiles`** (`id` → `auth.users`, `full_name`, `email`, `must_change_password boolean default false`, `created_by`) + GRANTs + RLS (usuário lê/edita o próprio; admin lê/edita todos via `has_role`). Trigger `on_auth_user_created` cria profile automaticamente.
-4. **Tabela `public.user_invites`** (`id`, `email`, `role`, `token_hash`, `expires_at`, `used_at`, `used_by`, `created_by`, `created_at`). RLS: somente admin lê/cria/revoga. GRANT para `authenticated` + `service_role`.
-5. **Desabilitar signup público** em Supabase Auth (`configure_auth` com `disable_signup: true`).
-6. **Seed**: promover Luca a admin via lookup por e-mail em `auth.users` (na própria migração).
-
-## Server functions (`src/lib/admin.functions.ts`)
-
-Todas com `requireSupabaseAuth` + checagem `has_role(admin)` antes de carregar `supabaseAdmin` dinamicamente.
-
-- `listUsers()` — lista profiles + roles.
-- `createUserManual({ email, full_name, role, password })` — admin define senha temporária; marca `must_change_password = true`.
-- `updateUser({ user_id, full_name, role })`.
-- `deleteUser({ user_id })`.
-- `createInvite({ email, role })` — gera token aleatório (32 bytes), armazena apenas hash SHA-256, `expires_at = now() + 24h`. Retorna o link `https://<host>/invite/<token>` para o admin copiar.
-- `revokeInvite({ id })`.
-- `listInvites()`.
-
-Server function pública (sem auth) **com validação por token**:
-- `consumeInvite({ token, password, full_name })` — valida hash, expiração e `used_at`. Cria usuário via `supabaseAdmin.auth.admin.createUser` (email_confirm: true), atribui role, marca convite como usado. Atômico (lock por `FOR UPDATE`).
-
-Server function autenticada:
-- `changeOwnPassword({ new_password })` — usa supabase do contexto, limpa `must_change_password`.
-
-## Rotas (TanStack)
-
-- **`src/routes/invite.$token.tsx`** (público) — formulário para o convidado definir nome + senha. Chama `consumeInvite`. Após sucesso, redireciona para `/auth` para login.
-- **`src/routes/auth.tsx`** — remover toggle de "criar conta", manter apenas login + recuperação de senha. Mostrar texto explicando que cadastros são por convite.
-- **`src/routes/_authenticated/admin.usuarios.tsx`** — painel:
-  - Tabela de usuários (nome, e-mail, role, criado em) com ações editar / remover / promover.
-  - Botão "Cadastrar manualmente" → dialog com nome, e-mail, role, senha temporária.
-  - Botão "Gerar link de convite" → dialog com e-mail + role → exibe link copiável (toast "copiado").
-  - Tabela de convites pendentes (e-mail, role, expira em, status) com botão revogar.
-  - Rota protegida por `beforeLoad` que checa `has_role(admin)` via server fn; redireciona não-admins.
-- **Item no menu lateral "Administração"** visível apenas para admins.
-
-## Troca obrigatória de senha
-
-- Hook global no shell autenticado: ao montar, consulta `must_change_password` do próprio profile.
-- Se `true`, abre dialog **bloqueante** (não fechável) com campos nova senha + confirmação. Submit chama `changeOwnPassword` e remove flag.
-
-## Validação e segurança
-
-- Zod em todos os inputs (e-mail, senha mín. 8 chars, role enum).
-- Token de convite: 32 bytes random base64url; armazenar apenas SHA-256.
-- RLS estrita em `user_roles`, `user_invites` e `profiles`.
-- `consumeInvite` é o único caminho público; bloqueia se token expirou/usado.
-- Senha temporária nunca é logada nem retornada.
+Também haverá uma opção para ignorar uma apólice direto da linha da tabela (visível só para admin), que cria a exceção.
 
 ## Detalhes técnicos
 
-```text
-src/
-├── lib/
-│   ├── admin.functions.ts        # CRUD usuários, convites
-│   └── invites.functions.ts      # consumeInvite (público)
-├── routes/
-│   ├── auth.tsx                  # editar: só login
-│   ├── invite.$token.tsx         # novo: aceitar convite
-│   └── _authenticated/
-│       └── admin.usuarios.tsx    # novo: painel admin
-├── components/
-│   ├── admin/
-│   │   ├── users-table.tsx
-│   │   ├── create-user-dialog.tsx
-│   │   ├── invite-dialog.tsx
-│   │   └── invites-table.tsx
-│   └── auth/
-│       └── force-password-change-dialog.tsx
-└── hooks/
-    └── use-current-role.ts       # consulta has_role do user atual
-```
+Banco (nova migração):
+- `endorsement_extraction_runs`: status, contadores, `error_message`, `raw`, timestamps. Sem acesso direto pela API (leitura via server functions com service role, seguindo o padrão de `audit_runs`).
+- `endorsement_extraction_items`: `run_id`, `policy_number`, `last_sequencial_endosso_used`.
+- `endorsement_exceptions`: `policy_number`, `motivo`, `created_by`; RLS — leitura para autenticados, escrita/edição/remoção só para admin. Tabela **separada** de `audit_ignores`.
 
-Pacote `crypto` (Node nativo) para hash de token; sem dependências novas.
+Backend:
+- `src/lib/endorsement-extraction.functions.ts`: `runEndorsementExtraction` (dispara webhook, cria run), `getExtractionStatus`, `getLatestExtraction` (filtra exceções em runtime), `listExtractionExceptions`, `addExtractionException`, `updateExtractionException`, `removeExtractionException` (as três últimas com `assertAdmin`).
+- Rota pública `src/routes/api/public/endorsement-extraction-callback.ts`, protegida por shared-secret em header, aceitando payload `[{ PolicyNumber, last_sequencial_endosso_used }]` (tolerante a variações de caixa e a envelope `{ payload: [...] }` como no callback de auditoria).
+- Novos secrets: `N8N_ENDORSEMENT_WEBHOOK_URL` e `ENDORSEMENT_CALLBACK_SECRET`. A URL do webhook será solicitada a você; o secret de callback é gerado automaticamente e deve ser colado no header do fluxo n8n.
 
-## Itens a confirmar depois da aprovação
+Frontend:
+- `src/routes/_authenticated/ferramentas.extrator-endossos.tsx` + componentes em `src/components/extrator/` (botão de execução, tabela, diálogo de exceções).
+- Hook `src/hooks/use-endorsement-extraction.ts` (TanStack Query + polling, no mesmo padrão de `use-audit`).
+- Export CSV local (Blob) e PDF via `jspdf` + `jspdf-autotable`, já usados no projeto.
+- Card novo na página `/ferramentas` linkando a ferramenta.
 
-- Layout/visual do painel admin (segue design system atual).
-- Texto exato na tela de login explicando "acesso por convite".
+## O que preciso de você
+
+A URL do webhook de produção do novo fluxo n8n (`https://.../webhook/...`) para salvar como secret.
