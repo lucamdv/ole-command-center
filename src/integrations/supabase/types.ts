@@ -378,6 +378,101 @@ export type Database = {
         }
         Relationships: []
       }
+      endorsement_exceptions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          motivo: string | null
+          policy_number: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          motivo?: string | null
+          policy_number: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          motivo?: string | null
+          policy_number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      endorsement_extraction_items: {
+        Row: {
+          created_at: string
+          id: string
+          last_sequencial_endosso_used: number | null
+          policy_number: string
+          run_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_sequencial_endosso_used?: number | null
+          policy_number: string
+          run_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_sequencial_endosso_used?: number | null
+          policy_number?: string
+          run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "endorsement_extraction_items_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "endorsement_extraction_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      endorsement_extraction_runs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          raw: Json | null
+          status: string
+          total_apolices: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          raw?: Json | null
+          status?: string
+          total_apolices?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          raw?: Json | null
+          status?: string
+          total_apolices?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       endorsements: {
         Row: {
           created_at: string

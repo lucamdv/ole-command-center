@@ -1,0 +1,467 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import {
+  ArrowUpDown,
+  Check,
+  Download,
+  EyeOff,
+  FileDown,
+  Layers,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useCurrentRole } from "@/hooks/use-current-role";
+import {
+  useAddEndorsementException,
+  useEndorsementExceptions,
+  useLatestExtraction,
+  useRemoveEndorsementException,
+  useRunEndorsementExtraction,
+  useUpdateEndorsementException,
+} from "@/hooks/use-endorsement-extraction";
+import {
+  exportEndorsementsCsv,
+  exportEndorsementsPdf,
+} from "@/lib/extrator/export-endorsements";
+import { formatDateTime, relativeTime } from "@/lib/format";
+import { cn } from "@/lib/utils";
+
+export const Route = createFileRoute("/_authenticated/ferramentas/extrator-endossos")({
+  head: () => ({
+    meta: [
+      { title: "Extrator de Últimos Endossos · OLÉ COPILOT" },
+      {
+        name: "description",
+        content:
+          "Extraia o último endosso emitido de cada apólice da carteira e exporte em CSV ou PDF.",
+      },
+      { property: "og:title", content: "Extrator de Últimos Endossos · OLÉ COPILOT" },
+      {
+        property: "og:description",
+        content: "Último endosso emitido por apólice, com exceções e exportação CSV/PDF.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+  component: ExtratorPage,
+});
+
+function ExtratorPage() {
+  const { data: roleInfo } = useCurrentRole();
+  const isAdmin = !!roleInfo?.isAdmin;
+
+  const { data: latest, isLoading } = useLatestExtraction();
+  const { mutate: run, isRunning } = useRunEndorsementExtraction();
+  const addException = useAddEndorsementException();
+
+  const [q, setQ] = useState("");
+  const [asc, setAsc] = useState(true);
+
+  const rows = useMemo(() => {
+    const items = latest?.items ?? [];
+    const term = q.trim().toLowerCase();
+    const filtered = term
+      ? items.filter((i) => i.policy_number.toLowerCase().includes(term))
+      : items;
+    return [...filtered].sort((a, b) =>
+      asc
+        ? a.policy_number.localeCompare(b.policy_number)
+        : b.policy_number.localeCompare(a.policy_number),
+    );
+  }, [latest, q, asc]);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-primary">
+              Ferramentas
+            </span>
+            <span className="h-1 w-1 rounded-full bg-muted-foreground/40" />
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+              Extrator
+            </span>
+          </div>
+          <h1 className="text-[24px] font-semibold tracking-tight flex items-center gap-2">
+            <Layers className="h-5 w-5 text-primary" />
+            Extrator de Últimos Endossos
+          </h1>
+          <p className="mt-1.5 flex flex-wrap items-center gap-2 text-[12.5px] text-muted-foreground">
+            <span
+              className={cn(
+                "inline-block h-1.5 w-1.5 rounded-full",
+                latest ? "bg-emerald-500" : isRunning ? "bg-warning animate-pulse" : "bg-muted-foreground/50",
+              )}
+            />
+            <span>
+              <span className="text-foreground font-medium">{latest?.items.length ?? 0}</span>{" "}
+              apólices
+            </span>
+            {!!latest?.hiddenCount && (
+              <>
+                <span className="text-border">•</span>
+                <span>{latest.hiddenCount} ocultadas por exceção</span>
+              </>
+            )}
+            <span className="text-border">•</span>
+            <span title={latest?.run.finished_at ? formatDateTime(latest.run.finished_at) : undefined}>
+              {latest?.run.finished_at
+                ? `última extração ${relativeTime(latest.run.finished_at)}`
+                : isRunning
+                  ? "extração em andamento"
+                  : "nenhuma extração ainda"}
+            </span>
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <ExceptionsDialog isAdmin={isAdmin} />
+          <Button
+            variant="outline"
+            className="h-10 gap-2 text-[12.5px]"
+            disabled={rows.length === 0}
+            onClick={() => exportEndorsementsCsv(rows)}
+          >
+            <Download className="h-3.5 w-3.5" /> CSV
+          </Button>
+          <Button
+            variant="outline"
+            className="h-10 gap-2 text-[12.5px]"
+            disabled={rows.length === 0}
+            onClick={() => exportEndorsementsPdf(rows, latest?.run.finished_at ?? null)}
+          >
+            <FileDown className="h-3.5 w-3.5" /> PDF
+          </Button>
+          <Button
+            className="h-10 gap-2 text-[12.5px] font-semibold"
+            disabled={isRunning}
+            onClick={() => run()}
+          >
+            <RefreshCw className={cn("h-3.5 w-3.5", isRunning && "animate-spin")} />
+            {isRunning ? "Extraindo…" : "Extrair últimos endossos"}
+          </Button>
+        </div>
+      </div>
+
+      {/* Busca */}
+      <div className="relative w-full md:w-[380px]">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Buscar apólice…"
+          className="pl-9 h-10 text-[12.5px]"
+        />
+      </div>
+
+      {/* Tabela */}
+      <div className="rounded-xl border border-border bg-surface overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => setAsc((v) => !v)}
+                  className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+                >
+                  PolicyNumber <ArrowUpDown className="h-3 w-3" />
+                </button>
+              </TableHead>
+              <TableHead className="text-[11px] text-right">
+                last_sequencial_endosso_used
+              </TableHead>
+              {isAdmin && <TableHead className="text-[11px] w-[120px] text-right">Ações</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading && (
+              <TableRow>
+                <TableCell
+                  colSpan={isAdmin ? 3 : 2}
+                  className="text-center py-10 text-[12.5px] text-muted-foreground"
+                >
+                  Carregando…
+                </TableCell>
+              </TableRow>
+            )}
+            {!isLoading && rows.length === 0 && (
+              <TableRow>
+                <TableCell
+                  colSpan={isAdmin ? 3 : 2}
+                  className="text-center py-14 text-[12.5px] text-muted-foreground"
+                >
+                  {latest
+                    ? "Nenhuma apólice corresponde à busca."
+                    : 'Nenhuma extração ainda. Clique em "Extrair últimos endossos".'}
+                </TableCell>
+              </TableRow>
+            )}
+            {rows.map((r) => (
+              <TableRow key={r.policy_number}>
+                <TableCell className="font-mono text-[12px] break-all">
+                  {r.policy_number}
+                </TableCell>
+                <TableCell className="text-right font-mono text-[12px] tabular-nums">
+                  {r.last_sequencial_endosso_used ?? "—"}
+                </TableCell>
+                {isAdmin && (
+                  <TableCell className="text-right">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 text-[11.5px] gap-1 text-muted-foreground hover:text-foreground"
+                      disabled={addException.isPending}
+                      onClick={() =>
+                        addException.mutate({ policy_number: r.policy_number, motivo: null })
+                      }
+                    >
+                      <EyeOff className="h-3.5 w-3.5" /> Ignorar
+                    </Button>
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
+function ExceptionsDialog({ isAdmin }: { isAdmin: boolean }) {
+  const { data: exceptions = [], isLoading } = useEndorsementExceptions();
+  const add = useAddEndorsementException();
+  const update = useUpdateEndorsementException();
+  const remove = useRemoveEndorsementException();
+
+  const [policy, setPolicy] = useState("");
+  const [motivo, setMotivo] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+
+  const submit = () => {
+    if (!policy.trim()) return;
+    add.mutate(
+      { policy_number: policy.trim(), motivo: motivo.trim() || null },
+      {
+        onSuccess: () => {
+          setPolicy("");
+          setMotivo("");
+        },
+      },
+    );
+  };
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="h-10 gap-2 text-[12.5px]">
+          <EyeOff className="h-3.5 w-3.5" /> Exceções
+          {exceptions.length > 0 && (
+            <span className="ml-0.5 rounded bg-muted px-1.5 text-[11px] font-mono">
+              {exceptions.length}
+            </span>
+          )}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-[15px]">Exceções da extração</DialogTitle>
+          <DialogDescription className="text-[12.5px]">
+            Apólices listadas aqui não aparecem na tabela nem nas exportações, e não são enviadas
+            ao fluxo n8n. Esta lista é independente das exceções de auditoria.
+          </DialogDescription>
+        </DialogHeader>
+
+        {isAdmin ? (
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              value={policy}
+              onChange={(e) => setPolicy(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submit()}
+              placeholder="Número da apólice"
+              className="h-9 text-[12.5px] sm:w-[200px] font-mono"
+            />
+            <Input
+              value={motivo}
+              onChange={(e) => setMotivo(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submit()}
+              placeholder="Motivo (opcional)"
+              maxLength={500}
+              className="h-9 text-[12.5px] flex-1"
+            />
+            <Button
+              className="h-9 gap-1 text-[12.5px]"
+              disabled={add.isPending || !policy.trim()}
+              onClick={submit}
+            >
+              <Plus className="h-3.5 w-3.5" /> Adicionar
+            </Button>
+          </div>
+        ) : (
+          <p className="text-[12px] text-muted-foreground">
+            Apenas administradores podem criar, editar ou remover exceções.
+          </p>
+        )}
+
+        <div className="rounded-lg border border-border overflow-hidden max-h-[50vh] overflow-y-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-[11px]">Apólice</TableHead>
+                <TableHead className="text-[11px]">Motivo</TableHead>
+                <TableHead className="text-[11px]">Criada em</TableHead>
+                {isAdmin && (
+                  <TableHead className="text-[11px] w-[160px] text-right">Ações</TableHead>
+                )}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading && (
+                <TableRow>
+                  <TableCell
+                    colSpan={isAdmin ? 4 : 3}
+                    className="text-center py-8 text-[12px] text-muted-foreground"
+                  >
+                    Carregando…
+                  </TableCell>
+                </TableRow>
+              )}
+              {!isLoading && exceptions.length === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={isAdmin ? 4 : 3}
+                    className="text-center py-10 text-[12.5px] text-muted-foreground"
+                  >
+                    Nenhuma exceção registrada.
+                  </TableCell>
+                </TableRow>
+              )}
+              {exceptions.map((e) => (
+                <TableRow key={e.id}>
+                  <TableCell className="font-mono text-[12px] break-all">
+                    {e.policy_number}
+                  </TableCell>
+                  <TableCell className="text-[12.5px] text-muted-foreground max-w-[260px]">
+                    {editingId === e.id ? (
+                      <Input
+                        autoFocus
+                        value={draft}
+                        onChange={(ev) => setDraft(ev.target.value)}
+                        onKeyDown={(ev) => {
+                          if (ev.key === "Enter")
+                            update.mutate(
+                              { id: e.id, motivo: draft.trim() ? draft.trim() : null },
+                              { onSuccess: () => setEditingId(null) },
+                            );
+                          if (ev.key === "Escape") setEditingId(null);
+                        }}
+                        maxLength={500}
+                        className="h-8 text-[12.5px]"
+                      />
+                    ) : isAdmin ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingId(e.id);
+                          setDraft(e.motivo ?? "");
+                        }}
+                        className="text-left hover:text-foreground transition-colors w-full"
+                      >
+                        {e.motivo || <span className="italic">Adicionar motivo…</span>}
+                      </button>
+                    ) : (
+                      e.motivo || <span className="italic">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-[11.5px] font-mono text-muted-foreground">
+                    {formatDateTime(e.created_at)}
+                  </TableCell>
+                  {isAdmin && (
+                    <TableCell className="text-right whitespace-nowrap">
+                      {editingId === e.id ? (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 text-[11.5px] gap-1 text-primary"
+                            disabled={update.isPending}
+                            onClick={() =>
+                              update.mutate(
+                                { id: e.id, motivo: draft.trim() ? draft.trim() : null },
+                                { onSuccess: () => setEditingId(null) },
+                              )
+                            }
+                          >
+                            <Check className="h-3.5 w-3.5" /> Salvar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-muted-foreground"
+                            onClick={() => setEditingId(null)}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 text-[11.5px] gap-1 text-muted-foreground hover:text-foreground"
+                            onClick={() => {
+                              setEditingId(e.id);
+                              setDraft(e.motivo ?? "");
+                            }}
+                          >
+                            <Pencil className="h-3.5 w-3.5" /> Editar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                            disabled={remove.isPending}
+                            onClick={() => remove.mutate({ id: e.id })}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </>
+                      )}
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
