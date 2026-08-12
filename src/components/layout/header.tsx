@@ -50,7 +50,7 @@ export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
   }, [openNotif, unread, markAllRead]);
 
   return (
-    <header className="h-14 shrink-0 border-b border-border bg-background/70 backdrop-blur-xl flex items-center px-3 sm:px-5 gap-2 sm:gap-4 sticky top-0 z-30">
+    <header className="shrink-0 min-h-14 h-[calc(3.5rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] border-b border-border bg-background/70 backdrop-blur-xl flex items-center px-3 sm:px-5 gap-2 sm:gap-4 sticky top-0 z-30">
       <MobileNav />
 
       <button
@@ -100,7 +100,7 @@ export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
         {openNotif && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setOpenNotif(false)} />
-            <div className="fixed sm:absolute left-2 right-2 sm:left-auto top-14 sm:top-11 sm:right-0 z-50 w-auto sm:w-[380px] rounded-xl border border-border bg-surface shadow-elevated overflow-hidden animate-in fade-in slide-in-from-top-2">
+            <div className="fixed sm:absolute left-2 right-2 sm:left-auto top-[calc(3.5rem+env(safe-area-inset-top))] sm:top-11 sm:right-0 z-50 w-auto sm:w-[380px] rounded-xl border border-border bg-surface shadow-elevated overflow-hidden animate-in fade-in slide-in-from-top-2">
               <div className="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2 gap-2">
                 <div className="flex items-center gap-2">
                   <div className="text-[13px] font-semibold">Notificações</div>

@@ -28,7 +28,7 @@ export function MobileNav() {
         </button>
       </SheetTrigger>
       <SheetContent side="left" className="w-[85vw] max-w-[300px] p-0 flex flex-col bg-sidebar">
-        <div className="px-5 pt-5 pb-4 border-b border-sidebar-border">
+        <div className="px-5 pt-[max(1.25rem,calc(env(safe-area-inset-top)+0.75rem))] pb-4 border-b border-sidebar-border">
           <BrandMark height={32} />
           <div className="flex items-center gap-1.5 mt-1.5">
             <span className="h-1 w-1 rounded-full bg-primary" />
