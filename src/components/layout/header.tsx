@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { MobileNav } from "@/components/layout/mobile-nav";
 import { useNotifications } from "@/hooks/use-notifications";
 import { getInitials, useProfile } from "@/hooks/use-settings";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,21 +50,33 @@ export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
   }, [openNotif, unread, markAllRead]);
 
   return (
-    <header className="h-14 shrink-0 border-b border-border bg-background/70 backdrop-blur-xl flex items-center px-5 gap-4 sticky top-0 z-30">
+    <header className="h-14 shrink-0 border-b border-border bg-background/70 backdrop-blur-xl flex items-center px-3 sm:px-5 gap-2 sm:gap-4 sticky top-0 z-30">
+      <MobileNav />
+
       <button
         onClick={onOpenPalette}
-        className="group flex items-center gap-2.5 flex-1 max-w-xl h-9 px-3 rounded-lg bg-surface border border-border hover:border-primary/40 hover:bg-surface-2 transition text-left"
+        className="hidden sm:flex group items-center gap-2.5 flex-1 max-w-xl h-9 px-3 rounded-lg bg-surface border border-border hover:border-primary/40 hover:bg-surface-2 transition text-left min-w-0"
       >
-        <Search className="h-4 w-4 text-muted-foreground/70" />
+        <Search className="h-4 w-4 shrink-0 text-muted-foreground/70" />
         <span className="text-[13px] text-muted-foreground/80 truncate">
           Pesquisar apólice, endosso, corretor, cobertura ou erro
         </span>
-        <kbd className="ml-auto hidden sm:flex items-center gap-1 text-[10.5px] text-muted-foreground/70 font-mono px-1.5 py-0.5 rounded border border-border bg-background">
+        <kbd className="ml-auto hidden md:flex items-center gap-1 text-[10.5px] text-muted-foreground/70 font-mono px-1.5 py-0.5 rounded border border-border bg-background shrink-0">
           <Command className="h-3 w-3" />K
         </kbd>
       </button>
 
-      <div className="hidden lg:flex items-center gap-2 px-2.5 h-8 rounded-md border border-border bg-surface/60">
+      <button
+        onClick={onOpenPalette}
+        className="sm:hidden h-10 w-10 shrink-0 grid place-items-center rounded-md border border-border bg-surface/60 text-muted-foreground hover:bg-surface-2 transition"
+        aria-label="Pesquisar"
+      >
+        <Search className="h-4.5 w-4.5" />
+      </button>
+
+      <div className="flex-1 sm:hidden" />
+
+      <div className="hidden lg:flex items-center gap-2 px-2.5 h-8 rounded-md border border-border bg-surface/60 shrink-0">
         <RefreshCw className={cn("h-3.5 w-3.5 text-info", syncing && "animate-spin")} />
         <span className="text-[11px] text-muted-foreground">Sync</span>
         <span className="text-[11px] font-mono text-foreground">{relativeTime(lastSync)}</span>
@@ -87,8 +100,8 @@ export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
         {openNotif && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setOpenNotif(false)} />
-            <div className="absolute right-0 top-11 z-50 w-[380px] rounded-xl border border-border bg-surface shadow-elevated overflow-hidden animate-in fade-in slide-in-from-top-2">
-              <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-2">
+            <div className="fixed sm:absolute left-2 right-2 sm:left-auto top-14 sm:top-11 sm:right-0 z-50 w-auto sm:w-[380px] rounded-xl border border-border bg-surface shadow-elevated overflow-hidden animate-in fade-in slide-in-from-top-2">
+              <div className="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2 gap-2">
                 <div className="flex items-center gap-2">
                   <div className="text-[13px] font-semibold">Notificações</div>
                   {unread > 0 && (
@@ -118,7 +131,7 @@ export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
                   </button>
                 </div>
               </div>
-              <div className="max-h-[420px] overflow-y-auto">
+              <div className="max-h-[60vh] sm:max-h-[420px] overflow-y-auto">
                 {items.length === 0 ? (
                   <div className="px-4 py-10 text-center">
                     <Bell className="h-6 w-6 mx-auto text-muted-foreground/40 mb-2" />
@@ -179,7 +192,7 @@ export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
         )}
       </div>
 
-      <div className="hidden sm:flex flex-col items-end leading-tight">
+      <div className="hidden lg:flex flex-col items-end leading-tight min-w-0">
         <span className="text-[12px] font-medium text-foreground">{profile.nome}</span>
         <span className="text-[10px] text-muted-foreground">Operações · Admin</span>
       </div>

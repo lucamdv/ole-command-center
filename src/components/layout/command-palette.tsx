@@ -59,7 +59,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
               className="w-full bg-transparent py-4 text-[14px] text-foreground placeholder:text-muted-foreground/70 outline-none"
             />
           </div>
-          <Command.List className="max-h-[420px] overflow-y-auto p-2">
+          <Command.List className="max-h-[55vh] sm:max-h-[420px] overflow-y-auto p-2">
             <Command.Empty className="py-8 text-center text-[13px] text-muted-foreground">
               Nenhum resultado encontrado.
             </Command.Empty>

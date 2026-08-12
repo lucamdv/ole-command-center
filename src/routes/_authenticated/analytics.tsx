@@ -248,7 +248,7 @@ function AnalyticsPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-[24px] font-semibold tracking-tight">Analytics</h1>
+            <h1 className="text-[20px] sm:text-[24px] font-semibold tracking-tight">Analytics</h1>
             <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/30">
               BI · LIVE
             </span>
@@ -346,13 +346,13 @@ function AnalyticsPage() {
 
 
           <div ref={chartsRef} className="space-y-6">
-            <div className="grid lg:grid-cols-3 gap-6">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               <ChartCard
                 className="lg:col-span-2"
                 title="Tendência de runs" empty={!hasData["Tendência de runs"]}
                 subtitle="Aprovados vs reprovados nas últimas 12 auditorias"
               >
-                <div className="h-[280px]">
+                <div className="h-[210px] sm:h-[280px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={series}>
                       <defs>
@@ -377,7 +377,7 @@ function AnalyticsPage() {
               </ChartCard>
 
               <ChartCard title="Severidade" empty={!hasData["Severidade"]} subtitle="Distribuição na última auditoria">
-                <div className="h-[200px]">
+                <div className="h-[170px] sm:h-[200px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -408,9 +408,9 @@ function AnalyticsPage() {
               </ChartCard>
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
               <ChartCard title="Conformidade ao longo do tempo" empty={!hasData["Conformidade ao longo do tempo"]} subtitle="% aprovado por run">
-                <div className="h-[220px]">
+                <div className="h-[170px] sm:h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={series.map((s) => ({ ...s, conf: s.total ? (s.approved / s.total) * 100 : 0 }))}>
                       <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
@@ -424,7 +424,7 @@ function AnalyticsPage() {
               </ChartCard>
 
               <ChartCard title="Volume processado" empty={!hasData["Volume processado"]} subtitle="Apólices auditadas por run">
-                <div className="h-[220px]">
+                <div className="h-[170px] sm:h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={series}>
                       <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
@@ -438,12 +438,12 @@ function AnalyticsPage() {
               </ChartCard>
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
               <ChartCard title="Top 10 tipos de erro" empty={!hasData["Top 10 tipos de erro"]} subtitle="Última auditoria">
                 {errorTypes.length === 0 ? (
                   <EmptyMsg text="Nenhum tipo de erro nesta run." />
                 ) : (
-                  <div className="h-[300px]">
+                  <div className="h-[230px] sm:h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={errorTypes} layout="vertical" margin={{ left: 8, right: 16 }}>
                         <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" horizontal={false} />
@@ -468,7 +468,7 @@ function AnalyticsPage() {
                 {monthly.length === 0 ? (
                   <EmptyMsg text="Sem datas de vigência nos findings." />
                 ) : (
-                  <div className="h-[300px]">
+                  <div className="h-[230px] sm:h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={monthly}>
                         <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
@@ -490,7 +490,7 @@ function AnalyticsPage() {
               {repasse.length === 0 ? (
                 <EmptyMsg text="Sem prêmios pagos sincronizados." />
               ) : (
-                <div className="h-[440px]">
+                <div className="h-[370px] sm:h-[440px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={repasse} margin={{ top: 36, right: 24, left: 8, bottom: 8 }}>
                       <defs>
@@ -608,7 +608,7 @@ function AnalyticsPage() {
               <Heatmap runs={heatmap.runs} rows={heatmap.rows} />
             </ChartCard>
 
-            <div className="grid lg:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
               <ChartCard
                 title="Apólices mais problemáticas" empty={!hasData["Apólices mais problemáticas"]}
                 subtitle={`Top ${apoliceRank.length} por nº de inconsistências`}
@@ -700,7 +700,7 @@ function AnalyticsPage() {
               </ChartCard>
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
               <ChartCard
                 title="Carteira por nº de endossos" empty={!hasData["Carteira por nº de endossos"]}
                 subtitle="Quantas alterações cada apólice acumulou"
@@ -708,7 +708,7 @@ function AnalyticsPage() {
                 {endorsementsDist.length === 0 ? (
                   <EmptyMsg text="Sem apólices na carteira." />
                 ) : (
-                  <div className="h-[260px]">
+                  <div className="h-[190px] sm:h-[260px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={endorsementsDist}>
                         <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
@@ -729,7 +729,7 @@ function AnalyticsPage() {
                 {issuances.length === 0 ? (
                   <EmptyMsg text="Sem emissões registradas." />
                 ) : (
-                  <div className="h-[260px]">
+                  <div className="h-[190px] sm:h-[260px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={issuances}>
                         <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
@@ -744,7 +744,7 @@ function AnalyticsPage() {
               </ChartCard>
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
               <ChartCard
                 title="Endossos emitidos por mês" empty={!hasData["Endossos emitidos por mês"]}
                 subtitle={`${formatInt(totalEndossos)} endossos em ${issuances.filter((i) => i.endossosTotal > 0).length} meses`}
@@ -752,7 +752,7 @@ function AnalyticsPage() {
                 {issuances.length === 0 ? (
                   <EmptyMsg text="Sem endossos registrados." />
                 ) : (
-                  <div className="h-[260px]">
+                  <div className="h-[190px] sm:h-[260px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={issuances}>
                         <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
@@ -773,7 +773,7 @@ function AnalyticsPage() {
                 {issuances.length === 0 ? (
                   <EmptyMsg text="Sem emissões registradas." />
                 ) : (
-                  <div className="h-[260px]">
+                  <div className="h-[190px] sm:h-[260px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={issuances}>
                         <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
@@ -857,7 +857,7 @@ function Kpi({
       <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-medium">
         {label}
       </div>
-      <div className={`mt-1.5 text-[22px] font-semibold tabular-nums ${toneClass}`}>{value}</div>
+      <div className={`mt-1.5 text-[18px] sm:text-[22px] font-semibold tabular-nums ${toneClass}`}>{value}</div>
       <div className="mt-1 flex items-center gap-2 text-[11px]">
         {showDelta && (
           <span
@@ -1033,9 +1033,9 @@ function LoadingState() {
           <div key={i} className="h-24 rounded-2xl border border-border bg-surface animate-pulse" />
         ))}
       </div>
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 h-[320px] rounded-2xl border border-border bg-surface animate-pulse" />
-        <div className="h-[320px] rounded-2xl border border-border bg-surface animate-pulse" />
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="lg:col-span-2 h-[250px] sm:h-[320px] rounded-2xl border border-border bg-surface animate-pulse" />
+        <div className="h-[250px] sm:h-[320px] rounded-2xl border border-border bg-surface animate-pulse" />
       </div>
     </div>
   );

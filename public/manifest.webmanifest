@@ -1,0 +1,17 @@
+{
+  "name": "Olé Copilot — Centro de Comando",
+  "short_name": "Olé Copilot",
+  "description": "Centro de comando operacional para emissão de seguros: monitoramento, auditoria e analytics.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0B0B14",
+  "theme_color": "#2C2B7C",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

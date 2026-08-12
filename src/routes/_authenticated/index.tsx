@@ -130,7 +130,7 @@ function PageHeader({
               </span>
             )}
           </div>
-          <h1 className="text-[28px] font-semibold tracking-tight text-foreground">
+          <h1 className="text-[22px] sm:text-[28px] font-semibold tracking-tight text-foreground">
             {greeting}, {firstName}. <span className="text-muted-foreground">Aqui está sua operação.</span>
           </h1>
           <p className="text-[13.5px] text-muted-foreground mt-1 max-w-2xl">
@@ -212,7 +212,7 @@ function Dashboard({
       </div>
 
       {/* Severidade split + linha secundária */}
-      <div className="grid lg:grid-cols-3 gap-3">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <SeveritySplit sev={sev} />
         <div className="rounded-xl border border-border bg-surface/60 grid grid-cols-2 md:grid-cols-4 lg:col-span-2 divide-y md:divide-y-0 md:divide-x divide-border overflow-hidden">
           <MiniStat label="Risco Operacional" value={`${k.operationalRisk.toFixed(1)}%`} tone="warning" />
@@ -227,7 +227,7 @@ function Dashboard({
 
       {/* Pulso real: tendência + distribuição */}
       <div className="rounded-2xl border border-border bg-surface/80 backdrop-blur overflow-hidden shadow-elevated">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-linear-to-r from-surface to-surface-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3.5 sm:py-4 border-b border-border bg-linear-to-r from-surface to-surface-2">
           <div>
             <div className="text-[14px] font-semibold tracking-tight">Pulso Operacional</div>
             <div className="text-[11px] text-muted-foreground">Evolução das auditorias e distribuição de erros por tipo</div>
@@ -240,10 +240,10 @@ function Dashboard({
           <div className="bg-surface p-5 lg:col-span-2">
             <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground mb-1">Histórico de Runs</div>
             <div className="flex items-baseline gap-1.5 mb-3">
-              <span className="text-[24px] font-semibold tabular-nums leading-tight">{history.length}</span>
+              <span className="text-[20px] sm:text-[24px] font-semibold tabular-nums leading-tight">{history.length}</span>
               <span className="text-[12px] text-muted-foreground">execuções registradas</span>
             </div>
-            <div className="h-[200px]">
+            <div className="h-[170px] sm:h-[200px]">
               {series.length > 1 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={series}>
@@ -275,7 +275,7 @@ function Dashboard({
           <div className="bg-surface p-5">
             <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground mb-1">Distribuição por Erro</div>
             <div className="flex items-baseline gap-1.5 mb-3">
-              <span className="text-[24px] font-semibold tabular-nums leading-tight">{breakdown.length}</span>
+              <span className="text-[20px] sm:text-[24px] font-semibold tabular-nums leading-tight">{breakdown.length}</span>
               <span className="text-[12px] text-muted-foreground">tipos</span>
             </div>
             <div className="h-[160px]">
@@ -310,7 +310,7 @@ function Dashboard({
       {/* Heatmap real */}
       {heatmap.rows.length > 0 && (
         <div className="rounded-2xl border border-border bg-surface/80 backdrop-blur shadow-elevated overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-linear-to-r from-surface to-surface-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3.5 sm:py-4 border-b border-border bg-linear-to-r from-surface to-surface-2">
             <div>
               <div className="text-[14px] font-semibold tracking-tight">Matriz de Risco Operacional</div>
               <div className="text-[11px] text-muted-foreground">Incidência de cada regra ao longo das últimas {heatmap.runs.length} auditorias</div>
@@ -356,9 +356,9 @@ function Dashboard({
       )}
 
       {/* Top apólices afetadas */}
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
         <div className="rounded-2xl border border-border bg-surface p-5 shadow-elevated">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
             <div>
               <div className="text-[13px] font-semibold">Apólices com mais inconsistências</div>
               <div className="text-[11px] text-muted-foreground">Top 8 desta auditoria</div>
@@ -406,14 +406,14 @@ function Dashboard({
         </div>
 
         <div className="rounded-2xl border border-border bg-surface p-5 shadow-elevated">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
             <div>
               <div className="text-[13px] font-semibold">Ranking de Regras Acionadas</div>
               <div className="text-[11px] text-muted-foreground">Por número de ocorrências</div>
             </div>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="h-[260px]">
+          <div className="h-[190px] sm:h-[260px]">
             {breakdown.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={breakdown} layout="vertical" margin={{ left: 8, right: 16 }}>
@@ -434,7 +434,7 @@ function Dashboard({
       <BreakdownTable findings={latest.findings} totalFindings={latest.findings.length} />
 
       {/* Endossos + Janela de vigência */}
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
         <EndossosCard endossos={endossos} />
         <MonthlyWindowCard months={months} />
       </div>
@@ -611,7 +611,7 @@ function BreakdownTable({ findings, totalFindings }: { findings: AuditFindingRow
 
   return (
     <div className="rounded-2xl border border-border bg-surface shadow-elevated overflow-hidden">
-      <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+      <div className="px-5 py-4 border-b border-border flex flex-wrap items-center justify-between gap-2">
         <div>
           <div className="text-[14px] font-semibold tracking-tight">Breakdown Severidade × Tipo</div>
           <div className="text-[11px] text-muted-foreground">{rows.length} regras acionadas · {formatInt(totalFindings)} achados totais</div>

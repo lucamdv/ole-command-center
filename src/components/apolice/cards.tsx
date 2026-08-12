@@ -208,7 +208,7 @@ export function DocumentoHeader({
               </span>
             )}
           </div>
-          <div className="font-mono text-[22px] font-semibold tracking-tight break-all">
+          <div className="font-mono text-[18px] sm:text-[22px] font-semibold tracking-tight break-all">
             {documento.numeroCompleto}
           </div>
           {seguradoNome && (
@@ -222,7 +222,7 @@ export function DocumentoHeader({
             <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground">
               Prêmio total
             </div>
-            <div className="text-[22px] font-semibold text-foreground font-mono">
+            <div className="text-[18px] sm:text-[22px] font-semibold text-foreground font-mono">
               {fmtNum(premioValor ?? 0, premioMoeda ?? "BRL")}
             </div>
           </div>
