@@ -41,6 +41,15 @@ import { exportAuditPdf } from "@/lib/audit/export-pdf";
 import { exportChartsPdf } from "@/lib/analytics/export-charts";
 import { formatBRL, formatCompact, formatInt, formatPct, formatUSD, relativeTime } from "@/lib/format";
 import { REPASSE_RULES } from "@/lib/analytics/repasse-rules";
+import { DateRangeFilter } from "@/components/analytics/date-range-filter";
+import {
+  DEFAULT_RANGE,
+  formatRangeBadge,
+  monthWithinRange,
+  resolveRange,
+  withinRange,
+  type DateRangeState,
+} from "@/lib/analytics/date-filter";
 
 export const Route = createFileRoute("/_authenticated/analytics")({
   head: () => ({
@@ -62,10 +71,28 @@ function AnalyticsPage() {
   const policiesQ = usePolicies();
   const aggregatesQ = useAnalyticsAggregates();
 
-  const latest = latestQ.data ?? null;
-  const history = historyQ.data ?? [];
+  const [range, setRange] = useState<DateRangeState>(DEFAULT_RANGE);
+  const bounds = useMemo(() => resolveRange(range), [range]);
+  const rangeActive = bounds.from !== null || bounds.to !== null;
+
+  const latestRaw = latestQ.data ?? null;
+  const historyRaw = historyQ.data ?? [];
   const policies = policiesQ.data ?? [];
-  const aggregates = aggregatesQ.data ?? { findingsByVigencia: [], revenueByMonth: [], policyPremiums: [], issuancesByMonth: [], repasseByMonth: [] };
+  const aggregatesRaw = aggregatesQ.data ?? { findingsByVigencia: [], revenueByMonth: [], policyPremiums: [], issuancesByMonth: [], repasseByMonth: [] };
+
+  const history = useMemo(
+    () =>
+      rangeActive
+        ? historyRaw.filter((r) => withinRange(r.data_auditoria ?? r.created_at, bounds))
+        : historyRaw,
+    [historyRaw, bounds, rangeActive],
+  );
+  // A última auditoria só entra na visão filtrada se sua data estiver no intervalo.
+  const latest = useMemo(() => {
+    if (!latestRaw || !rangeActive) return latestRaw;
+    const d = latestRaw.run.data_auditoria ?? latestRaw.run.created_at;
+    return withinRange(d, bounds) ? latestRaw : { ...latestRaw, findings: [] };
+  }, [latestRaw, bounds, rangeActive]);
 
   const kpis = useMemo(() => deriveKpis({ latest, history }), [latest, history]);
   const findings = latest?.findings ?? [];
@@ -74,10 +101,22 @@ function AnalyticsPage() {
   const errorTypes = useMemo(() => errorTypeBreakdown(findings).slice(0, 10), [findings]);
   const apoliceRank = useMemo(() => groupByApolice(findings).slice(0, 10), [findings]);
   const endossoRank = useMemo(() => groupByEndosso(findings).slice(0, 8), [findings]);
-  const monthly = aggregates.findingsByVigencia;
-  const revenue = aggregates.revenueByMonth;
-  const repasse = aggregates.repasseByMonth;
-  const issuances = aggregates.issuancesByMonth;
+  const monthly = useMemo(
+    () => aggregatesRaw.findingsByVigencia.filter((b) => monthWithinRange(b.month, bounds)),
+    [aggregatesRaw.findingsByVigencia, bounds],
+  );
+  const revenue = useMemo(
+    () => aggregatesRaw.revenueByMonth.filter((b) => monthWithinRange(b.month, bounds)),
+    [aggregatesRaw.revenueByMonth, bounds],
+  );
+  const repasse = useMemo(
+    () => aggregatesRaw.repasseByMonth.filter((b) => monthWithinRange(b.month, bounds)),
+    [aggregatesRaw.repasseByMonth, bounds],
+  );
+  const issuances = useMemo(
+    () => aggregatesRaw.issuancesByMonth.filter((b) => monthWithinRange(b.month, bounds)),
+    [aggregatesRaw.issuancesByMonth, bounds],
+  );
   const totalApolices = useMemo(() => issuances.reduce((s, r) => s + r.apolices, 0), [issuances]);
   const totalEndossos = useMemo(() => issuances.reduce((s, r) => s + r.endossosTotal, 0), [issuances]);
   const totalUsd = useMemo(() => revenue.reduce((s, r) => s + r.usd, 0), [revenue]);
@@ -191,7 +230,7 @@ function AnalyticsPage() {
     if (nodes.length === 0) return;
     setExporting("charts");
     try {
-      await exportChartsPdf(nodes);
+      await exportChartsPdf(nodes, formatRangeBadge(range));
       toast.success(`${nodes.length} gráficos exportados`);
     } catch (e) {
       toast.error("Falha ao exportar gráficos", { description: (e as Error).message });
@@ -225,7 +264,8 @@ function AnalyticsPage() {
             )}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <DateRangeFilter value={range} onChange={setRange} />
           <button
             onClick={handleExportCharts}
             disabled={!latest || exporting !== "none"}
