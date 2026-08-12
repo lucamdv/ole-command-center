@@ -41,10 +41,6 @@ import {
   useRunEndorsementExtraction,
   useUpdateEndorsementException,
 } from "@/hooks/use-endorsement-extraction";
-import {
-  exportEndorsementsCsv,
-  exportEndorsementsPdf,
-} from "@/lib/extrator/export-endorsements";
 import { formatDateTime, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -145,7 +141,10 @@ function ExtratorPage() {
             variant="outline"
             className="h-10 gap-2 text-[12.5px]"
             disabled={rows.length === 0}
-            onClick={() => exportEndorsementsCsv(rows)}
+            onClick={async () => {
+              const { exportEndorsementsCsv } = await import("@/lib/extrator/export-endorsements");
+              exportEndorsementsCsv(rows);
+            }}
           >
             <Download className="h-3.5 w-3.5" /> CSV
           </Button>
@@ -153,7 +152,10 @@ function ExtratorPage() {
             variant="outline"
             className="h-10 gap-2 text-[12.5px]"
             disabled={rows.length === 0}
-            onClick={() => exportEndorsementsPdf(rows, latest?.run.finished_at ?? null)}
+            onClick={async () => {
+              const { exportEndorsementsPdf } = await import("@/lib/extrator/export-endorsements");
+              exportEndorsementsPdf(rows, latest?.run.finished_at ?? null);
+            }}
           >
             <FileDown className="h-3.5 w-3.5" /> PDF
           </Button>

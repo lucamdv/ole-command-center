@@ -5,9 +5,9 @@ import {
   Cell,
   Pie,
   PieChart,
-  ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import { ResponsiveContainer } from "@/components/charts/in-view-container";
 import { Activity, AlertOctagon, CheckCircle2, Loader2, TrendingUp } from "lucide-react";
 import { HOURLY_THROUGHPUT } from "@/lib/mock/data";
 import { formatInt, formatPct } from "@/lib/format";
@@ -39,8 +39,15 @@ export function PulsoOperacional() {
           progress: it.progress >= 98 ? Math.floor(20 + Math.random() * 30) : Math.min(100, it.progress + Math.random() * 7),
         })),
       );
-    }, 1800);
-    return () => clearInterval(i);
+    }, 4000);
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") clearInterval(i);
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      clearInterval(i);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, []);
 
   return (

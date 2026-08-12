@@ -16,11 +16,11 @@ import {
   Pie,
   PieChart,
   ReferenceLine,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+import { ResponsiveContainer } from "@/components/charts/in-view-container";
 import { BarChart3, Download, EyeOff, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuditHistory, useLatestAudit } from "@/hooks/use-audit";
@@ -37,8 +37,6 @@ import {
   groupByEndosso,
   runSeries,
 } from "@/lib/audit/derive";
-import { exportAuditPdf } from "@/lib/audit/export-pdf";
-import { exportChartsPdf } from "@/lib/analytics/export-charts";
 import { formatBRL, formatCompact, formatInt, formatPct, formatUSD, relativeTime } from "@/lib/format";
 import { REPASSE_RULES } from "@/lib/analytics/repasse-rules";
 import { DateRangeFilter } from "@/components/analytics/date-range-filter";
@@ -209,10 +207,11 @@ function AnalyticsPage() {
   const chartsRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState<"none" | "report" | "charts">("none");
 
-  const handleExportReport = () => {
+  const handleExportReport = async () => {
     if (!latest) return;
     setExporting("report");
     try {
+      const { exportAuditPdf } = await import("@/lib/audit/export-pdf");
       exportAuditPdf(latest, history);
       toast.success("Relatório gerado");
     } catch (e) {
@@ -230,6 +229,7 @@ function AnalyticsPage() {
     if (nodes.length === 0) return;
     setExporting("charts");
     try {
+      const { exportChartsPdf } = await import("@/lib/analytics/export-charts");
       await exportChartsPdf(nodes, formatRangeBadge(range));
       toast.success(`${nodes.length} gráficos exportados`);
     } catch (e) {

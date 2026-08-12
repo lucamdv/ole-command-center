@@ -70,14 +70,15 @@ export function useNotifications() {
   const { data: serverItems = [] } = useQuery({
     queryKey: ["notifications", lastSeenAt],
     queryFn: () => fetchFn({ data: { lastSeenAt } }),
-    refetchInterval: 30_000,
-    staleTime: 15_000,
+    refetchInterval: 90_000,
+    refetchIntervalInBackground: false,
+    staleTime: 60_000,
   });
 
   // tick relative times every 30s
   const [, setTick] = useState(0);
   useEffect(() => {
-    const i = setInterval(() => setTick((n) => n + 1), 30_000);
+    const i = setInterval(() => setTick((n) => n + 1), 60_000);
     return () => clearInterval(i);
   }, []);
 

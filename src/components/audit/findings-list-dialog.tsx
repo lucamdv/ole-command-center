@@ -44,7 +44,6 @@ import {
   severityOf,
   type Severity,
 } from "@/lib/audit/derive";
-import { exportAuditPdf } from "@/lib/audit/export-pdf";
 import { useAuditHistory } from "@/hooks/use-audit";
 import { useAddAuditIgnore, useAuditIgnores } from "@/hooks/use-audit-ignores";
 import type { AuditFindingRow, LatestAudit } from "@/lib/audit/types";
@@ -221,7 +220,10 @@ export function FindingsListDialog({
           <Button size="sm" variant="outline" className="gap-1.5" onClick={copyAll}>
             <Copy className="h-3.5 w-3.5" /> Copiar tudo
           </Button>
-          <Button size="sm" variant="outline" onClick={() => exportAuditPdf(latest, history)} className="gap-1.5">
+          <Button size="sm" variant="outline" onClick={async () => {
+            const { exportAuditPdf } = await import("@/lib/audit/export-pdf");
+            exportAuditPdf(latest, history);
+          }} className="gap-1.5">
             <FileDown className="h-4 w-4" /> Exportar PDF
           </Button>
         </div>

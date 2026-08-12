@@ -9,11 +9,11 @@ import {
   Cell,
   Pie,
   PieChart,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+import { ResponsiveContainer } from "@/components/charts/in-view-container";
 import { toast } from "sonner";
 import { KpiCard } from "@/components/kpi/kpi-card";
 import { RunAuditButton } from "@/components/audit/run-audit-button";
@@ -32,7 +32,6 @@ import {
   runSeries,
   severityOf,
 } from "@/lib/audit/derive";
-import { exportAuditPdf } from "@/lib/audit/export-pdf";
 import type { AuditFindingRow, LatestAudit } from "@/lib/audit/types";
 import { formatDateTime, formatInt, formatPct, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -154,7 +153,10 @@ function PageHeader({
                 variant="outline"
                 size="sm"
                 className="gap-1.5"
-                onClick={() => exportAuditPdf(latest, history)}
+                onClick={async () => {
+                  const { exportAuditPdf } = await import("@/lib/audit/export-pdf");
+                  exportAuditPdf(latest, history);
+                }}
               >
                 <FileDown className="h-4 w-4" /> Exportar PDF
               </Button>

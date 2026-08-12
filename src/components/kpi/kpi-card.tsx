@@ -1,4 +1,9 @@
-import { Area, AreaChart, ResponsiveContainer } from "recharts";
+import {
+  Area,
+  AreaChart,
+} from "recharts";
+import { ResponsiveContainer } from "@/components/charts/in-view-container";
+import { memo, useMemo } from "react";
 import { ArrowDown, ArrowUp, Minus } from "lucide-react";
 import { useAnimatedCounter } from "@/hooks/use-animated-counter";
 import { cn } from "@/lib/utils";
@@ -30,7 +35,7 @@ const TONE_STROKE: Record<NonNullable<KpiProps["tone"]>, string> = {
   info: "var(--info)",
 };
 
-export function KpiCard({
+export const KpiCard = memo(function KpiCard({
   label,
   value,
   format = (n) => Math.round(n).toLocaleString("pt-BR"),
@@ -41,7 +46,7 @@ export function KpiCard({
   hint,
 }: KpiProps) {
   const animated = useAnimatedCounter(value);
-  const sparkData = spark?.map((v, i) => ({ i, v })) ?? [];
+  const sparkData = useMemo(() => spark?.map((v, i) => ({ i, v })) ?? [], [spark]);
   const stroke = TONE_STROKE[tone];
 
   return (
@@ -108,4 +113,4 @@ export function KpiCard({
       </div>
     </div>
   );
-}
+});
