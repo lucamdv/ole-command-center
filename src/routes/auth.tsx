@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import { BrandMark } from "@/components/brand/brand-mark";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
