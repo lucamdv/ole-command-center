@@ -1,6 +1,7 @@
 import { Moon, Sun, Monitor } from "lucide-react";
 import { useTheme } from "@/components/theme/theme-provider";
-import { useProfile } from "@/hooks/use-settings";
+import { useChartPrefs, useProfile } from "@/hooks/use-settings";
+
 
 
 const FUSOS = [
