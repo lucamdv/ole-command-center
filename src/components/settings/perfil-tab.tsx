@@ -17,6 +17,8 @@ const FUSOS = [
 export function PerfilTab() {
   const { profile, update } = useProfile();
   const { theme, setTheme } = useTheme();
+  const { prefs: chartPrefs, update: updateChartPrefs } = useChartPrefs();
+
 
   return (
     <div className="space-y-6 max-w-2xl">
