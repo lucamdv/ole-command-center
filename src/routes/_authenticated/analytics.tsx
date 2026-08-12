@@ -21,7 +21,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { BarChart3, Download, FileText, Loader2 } from "lucide-react";
+import { BarChart3, Download, EyeOff, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuditHistory, useLatestAudit } from "@/hooks/use-audit";
 import { usePolicies } from "@/hooks/use-policies";
