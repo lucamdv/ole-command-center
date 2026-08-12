@@ -116,6 +116,8 @@ function RootComponent() {
         <Outlet />
       </ThemeProvider>
       <Toaster />
+      <PwaUpdatePrompt />
+
     </QueryClientProvider>
   );
 }
