@@ -780,13 +780,19 @@ function ChartCard({
   title,
   subtitle,
   className,
+  empty,
   children,
 }: {
   title: string;
   subtitle?: string;
   className?: string;
+  /** true quando o gráfico não tem dados relevantes */
+  empty?: boolean;
   children: React.ReactNode;
 }) {
+  const { prefs } = useChartPrefs();
+  if (empty && prefs.hideEmptyCharts) return null;
+
   return (
     <div
       data-export="chart"
