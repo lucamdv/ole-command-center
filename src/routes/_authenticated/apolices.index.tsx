@@ -90,58 +90,54 @@ function ApolicesPage() {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full border-separate border-spacing-y-2">
-          <thead className="hidden md:table-header-group">
-            <tr className="text-[10.5px] font-semibold text-muted-foreground/80 uppercase tracking-[0.14em]">
-              <th className="text-left pb-2 pl-5 font-semibold">Apólice</th>
-              <th className="text-center pb-2 font-semibold">Endosso atual</th>
-              <th className="text-center pb-2 font-semibold">Endossos</th>
-              <th className="text-right pb-2 pr-10 font-semibold">Prêmio total</th>
-              <th className="text-right pb-2 pr-5 font-semibold">Atualizado</th>
-            </tr>
-          </thead>
-          <tbody className="text-[13px]">
-            {isLoading && (
-              <tr>
-                <td colSpan={5} className="px-4 py-16 text-center text-[13px] text-muted-foreground bg-surface/40 border border-border/60 rounded-xl">
-                  Carregando carteira…
-                </td>
-              </tr>
-            )}
+      <div>
+        <div className="hidden md:grid grid-cols-[1fr_140px_120px_200px_140px] text-[10.5px] font-semibold text-muted-foreground/80 uppercase tracking-[0.14em] pb-2">
+          <div className="pl-5">Apólice</div>
+          <div className="text-center">Endosso atual</div>
+          <div className="text-center">Endossos</div>
+          <div className="text-right pr-10">Prêmio total</div>
+          <div className="text-right pr-5">Atualizado</div>
+        </div>
 
-            {!isLoading && filtered.length === 0 && (
-              <tr>
-                <td colSpan={5}>
-                  <div className="px-4 py-16 text-center bg-surface/40 border border-border/60 rounded-xl">
-                    <FileText className="h-8 w-8 mx-auto text-muted-foreground/40 mb-3" />
-                    <div className="text-[13px] text-foreground font-medium">
-                      {policies && policies.length === 0
-                        ? "Nenhuma apólice sincronizada ainda."
-                        : "Nenhuma apólice corresponde à busca."}
-                    </div>
-                    {policies && policies.length === 0 && (
-                      <div className="text-[11.5px] text-muted-foreground mt-1">
-                        Clique em &quot;Sincronizar carteira&quot; para puxar do MOTOR OLÉ.
-                      </div>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            )}
+        {isLoading && (
+          <div className="px-4 py-16 text-center text-[13px] text-muted-foreground bg-surface/40 border border-border/60 rounded-xl">
+            Carregando carteira…
+          </div>
+        )}
 
-            {!isLoading &&
-              filtered.map((p) => (
-                <PolicyRow key={p.id} p={p} />
-              ))}
-          </tbody>
-        </table>
+        {!isLoading && filtered.length === 0 && (
+          <div className="px-4 py-16 text-center bg-surface/40 border border-border/60 rounded-xl">
+            <FileText className="h-8 w-8 mx-auto text-muted-foreground/40 mb-3" />
+            <div className="text-[13px] text-foreground font-medium">
+              {policies && policies.length === 0
+                ? "Nenhuma apólice sincronizada ainda."
+                : "Nenhuma apólice corresponde à busca."}
+            </div>
+            {policies && policies.length === 0 && (
+              <div className="text-[11.5px] text-muted-foreground mt-1">
+                Clique em &quot;Sincronizar carteira&quot; para puxar do MOTOR OLÉ.
+              </div>
+            )}
+          </div>
+        )}
+
+        {!isLoading && filtered.length > 0 && (
+          <VirtualList
+            items={filtered}
+            getKey={(p) => p.id}
+            estimateSize={76}
+            gap={8}
+            className="max-h-[70dvh] rounded-xl"
+          >
+            {(p) => <PolicyRow p={p} />}
+          </VirtualList>
+        )}
       </div>
     </div>
   );
 }
 
-function PolicyRow({
+const PolicyRow = memo(function PolicyRow({
   p,
 }: {
   p: NonNullable<ReturnType<typeof usePolicies>["data"]>[number];
@@ -153,64 +149,62 @@ function PolicyRow({
   const amount = match?.[2] ?? formatted;
 
   return (
-    <tr className="group">
-      <td className="p-0" colSpan={5}>
-        <Link
-          to="/apolices/$id"
-          params={{ id: p.numero_apolice }}
-          className="grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[1fr_140px_120px_200px_140px] items-center bg-surface/50 hover:bg-surface-2/60 border border-border/60 hover:border-primary/30 rounded-xl transition-all shadow-sm relative overflow-hidden"
+    <div className="group text-[13px]">
+      <Link
+        to="/apolices/$id"
+        params={{ id: p.numero_apolice }}
+        className="grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[1fr_140px_120px_200px_140px] items-center bg-surface/50 hover:bg-surface-2/60 border border-border/60 hover:border-primary/30 rounded-xl transition-all shadow-sm relative overflow-hidden"
+      >
+        {/* hover accent bar */}
+        <span className="absolute left-0 top-1/4 bottom-1/4 w-0.5 bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+
+        {/* Apólice */}
+        <div className="py-3 md:py-3.5 pl-4 md:pl-5 pr-3 min-w-0">
+          <div className="font-mono text-[12.5px] font-semibold tracking-tight text-foreground group-hover:text-primary transition-colors truncate">
+            {p.numero_apolice}
+          </div>
+          {p.segurado_nome && (
+            <div className="text-[11px] text-muted-foreground truncate mt-0.5">
+              {p.segurado_nome}
+            </div>
+          )}
+          <div className="md:hidden mt-1 flex items-center gap-1.5 text-[10.5px] text-muted-foreground font-mono">
+            <span>End. {p.numero_endosso_atual ?? "—"}</span>
+            <span className="text-border">•</span>
+            <span>{p.endorsements_count} endossos</span>
+            <span className="text-border">•</span>
+            <span className="truncate">{relativeTime(p.updated_at)}</span>
+          </div>
+        </div>
+
+        {/* Endosso atual */}
+        <div className="hidden md:block text-center py-3.5">
+          <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded bg-surface-2 text-muted-foreground border border-border/60 font-mono text-[11px] font-medium">
+            {p.numero_endosso_atual ?? "—"}
+          </span>
+        </div>
+
+        {/* Endossos */}
+        <div className="hidden md:block text-center py-3.5">
+          <span className="font-mono text-[12px] text-foreground/80 font-medium tabular-nums">
+            {p.endorsements_count}
+          </span>
+        </div>
+
+        {/* Prêmio total */}
+        <div className="text-right py-3 md:py-3.5 pr-4 md:pr-10 font-mono tabular-nums whitespace-nowrap">
+          <span className="text-primary/70 text-[10px] mr-1 font-semibold">{currency}</span>
+          <span className="text-foreground font-semibold text-[12.5px]">{amount}</span>
+        </div>
+
+        {/* Atualizado */}
+        <div
+          className="hidden md:block text-right py-3.5 pr-5 text-[11px] text-muted-foreground italic"
+          title={formatDateTime(p.updated_at)}
         >
-          {/* hover accent bar */}
-          <span className="absolute left-0 top-1/4 bottom-1/4 w-0.5 bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-
-          {/* Apólice */}
-          <div className="py-3 md:py-3.5 pl-4 md:pl-5 pr-3 min-w-0">
-            <div className="font-mono text-[12.5px] font-semibold tracking-tight text-foreground group-hover:text-primary transition-colors truncate">
-              {p.numero_apolice}
-            </div>
-            {p.segurado_nome && (
-              <div className="text-[11px] text-muted-foreground truncate mt-0.5">
-                {p.segurado_nome}
-              </div>
-            )}
-            <div className="md:hidden mt-1 flex items-center gap-1.5 text-[10.5px] text-muted-foreground font-mono">
-              <span>End. {p.numero_endosso_atual ?? "—"}</span>
-              <span className="text-border">•</span>
-              <span>{p.endorsements_count} endossos</span>
-              <span className="text-border">•</span>
-              <span className="truncate">{relativeTime(p.updated_at)}</span>
-            </div>
-          </div>
-
-          {/* Endosso atual */}
-          <div className="hidden md:block text-center py-3.5">
-            <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded bg-surface-2 text-muted-foreground border border-border/60 font-mono text-[11px] font-medium">
-              {p.numero_endosso_atual ?? "—"}
-            </span>
-          </div>
-
-          {/* Endossos */}
-          <div className="hidden md:block text-center py-3.5">
-            <span className="font-mono text-[12px] text-foreground/80 font-medium tabular-nums">
-              {p.endorsements_count}
-            </span>
-          </div>
-
-          {/* Prêmio total */}
-          <div className="text-right py-3 md:py-3.5 pr-4 md:pr-10 font-mono tabular-nums whitespace-nowrap">
-            <span className="text-primary/70 text-[10px] mr-1 font-semibold">{currency}</span>
-            <span className="text-foreground font-semibold text-[12.5px]">{amount}</span>
-          </div>
-
-          {/* Atualizado */}
-          <div
-            className="hidden md:block text-right py-3.5 pr-5 text-[11px] text-muted-foreground italic"
-            title={formatDateTime(p.updated_at)}
-          >
-            {relativeTime(p.updated_at)}
-          </div>
-        </Link>
-      </td>
-    </tr>
+          {relativeTime(p.updated_at)}
+        </div>
+      </Link>
+    </div>
   );
-}
+});
