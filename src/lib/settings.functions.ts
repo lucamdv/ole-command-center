@@ -129,8 +129,6 @@ export const pingAuditWebhook = createServerFn({ method: "POST" }).middleware([r
 });
 
 export interface DataCounters {
-  oliver_threads: number;
-  oliver_messages: number;
   audit_runs: number;
   audit_findings: number;
   policies: number;
@@ -142,8 +140,6 @@ export const getDataCounters = createServerFn({ method: "GET" }).middleware([req
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const tables = [
-      "oliver_threads",
-      "oliver_messages",
       "audit_runs",
       "audit_findings",
       "policies",
@@ -158,15 +154,6 @@ export const getDataCounters = createServerFn({ method: "GET" }).middleware([req
     return Object.fromEntries(entries) as unknown as DataCounters;
   },
 );
-
-export const purgeOliver = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
-  await assertAdmin(context);
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  // messages cascade if FK; explicitly delete to be safe
-  await supabaseAdmin.from("oliver_messages").delete().not("id", "is", null);
-  await supabaseAdmin.from("oliver_threads").delete().not("id", "is", null);
-  return { ok: true };
-});
 
 export const purgeOldAudits = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((d: { days?: number }) => d)
