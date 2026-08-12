@@ -126,6 +126,46 @@ function AnalyticsPage() {
     return buckets.filter((b) => b.count > 0);
   }, [policies]);
 
+  // === Disponibilidade de dados por gráfico ===
+  const { prefs: chartPrefs } = useChartPrefs();
+  const charts = useMemo(() => {
+    const hasIssuances = issuances.length > 0;
+    return [
+      { title: "Tendência de runs", has: series.length > 0 },
+      { title: "Severidade", has: sev.erros + sev.alertas + sev.infos > 0 },
+      { title: "Conformidade ao longo do tempo", has: series.length > 0 },
+      { title: "Volume processado", has: series.length > 0 },
+      { title: "Top 10 tipos de erro", has: errorTypes.length > 0 },
+      { title: "Findings por mês de vigência", has: monthly.length > 0 },
+      { title: "Receita Excelsior (USD)", has: repasse.length > 0 },
+      { title: "Heatmap · tipo de erro × runs", has: heatmap.rows.length > 0 && heatmap.runs.length > 0 },
+      { title: "Apólices mais problemáticas", has: apoliceRank.length > 0 },
+      { title: "Top endossos com inconsistências", has: endossoRank.length > 0 },
+      { title: "Carteira por nº de endossos", has: endorsementsDist.length > 0 },
+      { title: "Apólices emitidas por mês", has: issuances.some((i) => i.apolices > 0) },
+      { title: "Endossos emitidos por mês", has: issuances.some((i) => i.endossosTotal > 0) },
+      { title: "Emissões por mês e por tipo", has: hasIssuances },
+    ] as const;
+  }, [
+    series,
+    sev,
+    errorTypes,
+    monthly,
+    repasse,
+    heatmap,
+    apoliceRank,
+    endossoRank,
+    endorsementsDist,
+    issuances,
+  ]);
+  const hasData = useMemo(
+    () => Object.fromEntries(charts.map((c) => [c.title, c.has])) as Record<string, boolean>,
+    [charts],
+  );
+  const hiddenCharts = chartPrefs.hideEmptyCharts
+    ? charts.filter((c) => !c.has).map((c) => c.title)
+    : [];
+
 
   const chartsRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState<"none" | "report" | "charts">("none");
