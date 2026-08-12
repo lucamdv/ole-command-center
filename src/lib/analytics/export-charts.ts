@@ -8,7 +8,7 @@ function stamp(d = new Date()) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
 }
 
-export async function exportChartsPdf(nodes: HTMLElement[]) {
+export async function exportChartsPdf(nodes: HTMLElement[], periodLabel?: string | null) {
   if (nodes.length === 0) return;
   const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
@@ -51,7 +51,7 @@ export async function exportChartsPdf(nodes: HTMLElement[]) {
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
     doc.text(
-      `OLÉ COPILOT — Analytics  ·  ${new Date().toLocaleString("pt-BR")}`,
+      `OLÉ COPILOT — Analytics  ·  ${periodLabel ? `Período: ${periodLabel}  ·  ` : ""}${new Date().toLocaleString("pt-BR")}`,
       margin,
       pageH - 16,
     );
