@@ -26,6 +26,8 @@ import { toast } from "sonner";
 import { useAuditHistory, useLatestAudit } from "@/hooks/use-audit";
 import { usePolicies } from "@/hooks/use-policies";
 import { useAnalyticsAggregates } from "@/hooks/use-analytics";
+import { useChartPrefs } from "@/hooks/use-settings";
+
 import {
   buildHeatmap,
   countBySeverity,
