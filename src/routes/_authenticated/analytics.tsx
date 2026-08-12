@@ -94,6 +94,15 @@ function AnalyticsPage() {
     [repasse],
   );
   const repasseAvg = repasse.length > 0 ? repasseTotals.excelsiorLiquido / repasse.length : 0;
+  const repasseMax = useMemo(() => {
+    const peak = repasse.reduce(
+      (m, r) => Math.max(m, r.carregamentoExcelsior + r.premioDireto, r.excelsiorLiquido),
+      0,
+    );
+    if (peak === 0) return 1000;
+    const step = 500;
+    return Math.ceil((peak * 1.12) / step) * step;
+  }, [repasse]);
   const heatmap = useMemo(() => buildHeatmap(latest, history, 12), [latest, history]);
 
 
@@ -399,17 +408,17 @@ function AnalyticsPage() {
               {repasse.length === 0 ? (
                 <EmptyMsg text="Sem prêmios pagos sincronizados." />
               ) : (
-                <div className="h-[420px]">
+                <div className="h-[440px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={repasse} margin={{ top: 28, right: 24, left: 8, bottom: 8 }}>
+                    <ComposedChart data={repasse} margin={{ top: 36, right: 24, left: 8, bottom: 8 }}>
                       <defs>
                         <linearGradient id="gCarregamento" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.95} />
-                          <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.55} />
+                          <stop offset="0%" stopColor="var(--primary)" stopOpacity={1} />
+                          <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.65} />
                         </linearGradient>
                         <linearGradient id="gPremioDireto" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="var(--success)" stopOpacity={0.95} />
-                          <stop offset="100%" stopColor="var(--success)" stopOpacity={0.55} />
+                          <stop offset="0%" stopColor="var(--success)" stopOpacity={1} />
+                          <stop offset="100%" stopColor="var(--success)" stopOpacity={0.7} />
                         </linearGradient>
                         <linearGradient id="gLiquido" x1="0" y1="0" x2="1" y2="0">
                           <stop offset="0%" stopColor="var(--info)" stopOpacity={1} />
@@ -421,7 +430,7 @@ function AnalyticsPage() {
                         dataKey="label"
                         stroke="var(--muted-foreground)"
                         fontSize={11}
-                        tickMargin={8}
+                        tickMargin={10}
                         axisLine={false}
                         tickLine={false}
                       />
@@ -431,79 +440,73 @@ function AnalyticsPage() {
                         tickFormatter={(v) => `$${formatCompact(Number(v))}`}
                         axisLine={false}
                         tickLine={false}
-                        width={56}
-                        padding={{ top: 16, bottom: 8 }}
+                        width={60}
+                        domain={[0, repasseMax]}
+                        tickCount={6}
+                        allowDecimals={false}
                       />
                       <Tooltip
                         {...tooltipProps}
-                        cursor={{ fill: "var(--muted)", fillOpacity: 0.18 }}
+                        cursor={{ fill: "var(--muted)", fillOpacity: 0.22 }}
                         content={<RepasseTooltip />}
                       />
                       <Legend
-                        wrapperStyle={{ fontSize: 11, paddingTop: 12 }}
+                        wrapperStyle={{ fontSize: 11, paddingTop: 14 }}
                         iconType="circle"
                         iconSize={8}
                       />
                       <ReferenceLine
                         y={REPASSE_RULES.FIXO_SUPLEMENTAR_PISO}
                         stroke="var(--muted-foreground)"
-                        strokeDasharray="4 4"
-                        strokeOpacity={0.6}
+                        strokeDasharray="5 5"
+                        strokeOpacity={0.7}
                         label={{
-                          value: "Piso · US$ 8.333,33",
-                          position: "insideTopRight",
+                          value: "Piso US$ 8.333,33",
+                          position: "right",
                           fill: "var(--muted-foreground)",
                           fontSize: 10,
+                          dy: -6,
+                          dx: -6,
                         }}
+
                       />
-                      <ReferenceLine y={0} stroke="var(--border)" />
                       <Bar
                         dataKey="carregamentoExcelsior"
-                        name="Carregamento"
+                        name="Carregamento (piso)"
                         stackId="rec"
                         fill="url(#gCarregamento)"
-                        radius={[0, 0, 0, 0]}
-                        maxBarSize={48}
+                        maxBarSize={44}
                         isAnimationActive
                         animationDuration={900}
                       />
                       <Bar
                         dataKey="premioDireto"
-                        name="Prêmio Direto"
+                        name="Prêmio Direto (40%)"
                         stackId="rec"
                         fill="url(#gPremioDireto)"
                         radius={[6, 6, 0, 0]}
-                        maxBarSize={48}
-                        isAnimationActive
-                        animationDuration={900}
-                      />
-                      <Bar
-                        dataKey="pisCofinsDeducao"
-                        name="PIS/COFINS (dedução)"
-                        fill="var(--destructive)"
-                        fillOpacity={0.85}
-                        radius={[0, 0, 4, 4]}
-                        maxBarSize={24}
+                        maxBarSize={44}
                         isAnimationActive
                         animationDuration={900}
                       />
                       <Line
                         type="monotone"
                         dataKey="excelsiorLiquido"
-                        name="Total Excelsior"
+                        name="Total Excelsior (líq. PIS/COFINS)"
                         stroke="url(#gLiquido)"
-                        strokeWidth={2.5}
-                        dot={{ fill: "var(--info)", r: 3.5, strokeWidth: 0 }}
-                        activeDot={{ r: 6 }}
+                        strokeWidth={3}
+                        dot={{ fill: "var(--info)", r: 4, strokeWidth: 2, stroke: "var(--surface)" }}
+                        activeDot={{ r: 7 }}
                         isAnimationActive
                         animationDuration={1200}
                       >
                         <LabelList
                           dataKey="excelsiorLiquido"
                           position="top"
-                          offset={10}
-                          fontSize={10}
-                          fill="var(--muted-foreground)"
+                          offset={14}
+                          fontSize={11}
+                          fontWeight={600}
+                          fill="var(--foreground)"
                           formatter={(v: React.ReactNode) => `$${formatCompact(Number(v))}`}
                         />
                       </Line>
@@ -511,6 +514,7 @@ function AnalyticsPage() {
                   </ResponsiveContainer>
                 </div>
               )}
+
             </ChartCard>
 
 
