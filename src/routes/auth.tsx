@@ -58,8 +58,8 @@ function AuthPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-6">
       <Card className="w-full max-w-md p-8 space-y-6">
-        <div className="text-center space-y-1">
-          <div className="text-[24px] font-semibold tracking-tight">OLÉ COPILOT</div>
+        <div className="text-center space-y-3">
+          <BrandMark height={56} className="mx-auto" />
           <div className="text-[13px] text-muted-foreground">Entrar no Centro de Comando</div>
         </div>
 
