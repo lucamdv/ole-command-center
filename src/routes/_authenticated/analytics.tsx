@@ -94,6 +94,15 @@ function AnalyticsPage() {
     [repasse],
   );
   const repasseAvg = repasse.length > 0 ? repasseTotals.excelsiorLiquido / repasse.length : 0;
+  const repasseMax = useMemo(() => {
+    const peak = repasse.reduce(
+      (m, r) => Math.max(m, r.carregamentoExcelsior + r.premioDireto, r.excelsiorLiquido),
+      0,
+    );
+    if (peak === 0) return 1000;
+    const step = 500;
+    return Math.ceil((peak * 1.12) / step) * step;
+  }, [repasse]);
   const heatmap = useMemo(() => buildHeatmap(latest, history, 12), [latest, history]);
 
 
