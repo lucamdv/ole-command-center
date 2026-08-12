@@ -1,9 +1,11 @@
 import { memo, useEffect, useRef, useState, type ReactNode } from "react";
 import { ResponsiveContainer as RechartsResponsiveContainer } from "recharts";
 
+type Dim = number | `${number}%`;
+
 interface Props {
-  width?: number | string;
-  height?: number | string;
+  width?: Dim;
+  height?: Dim;
   minHeight?: number | string;
   className?: string;
   children: ReactNode;
