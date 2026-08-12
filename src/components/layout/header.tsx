@@ -50,7 +50,7 @@ export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
   }, [openNotif, unread, markAllRead]);
 
   return (
-    <header className="h-14 shrink-0 border-b border-border bg-background/70 backdrop-blur-xl flex items-center px-3 sm:px-5 gap-2 sm:gap-4 sticky top-0 z-30">
+    <header className="shrink-0 min-h-14 h-[calc(3.5rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] border-b border-border bg-background/70 backdrop-blur-xl flex items-center px-3 sm:px-5 gap-2 sm:gap-4 sticky top-0 z-30">
       <MobileNav />
 
       <button
