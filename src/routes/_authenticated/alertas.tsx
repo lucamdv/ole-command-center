@@ -306,4 +306,4 @@ const IncidentRow = memo(function IncidentRow({ f }: { f: AuditFindingRow }) {
       </div>
     </Link>
   );
-}
+});
