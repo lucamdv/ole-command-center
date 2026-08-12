@@ -207,7 +207,7 @@ function AnalyticsPage() {
   const chartsRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState<"none" | "report" | "charts">("none");
 
-  const handleExportReport = () => {
+  const handleExportReport = async () => {
     if (!latest) return;
     setExporting("report");
     try {
