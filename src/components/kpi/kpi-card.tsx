@@ -113,4 +113,4 @@ export const KpiCard = memo(function KpiCard({
       </div>
     </div>
   );
-}
+});
