@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import { BrandMark } from "@/components/brand/brand-mark";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -58,8 +59,8 @@ function AuthPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-6">
       <Card className="w-full max-w-md p-8 space-y-6">
-        <div className="text-center space-y-1">
-          <div className="text-[24px] font-semibold tracking-tight">OLÉ COPILOT</div>
+        <div className="text-center space-y-3">
+          <BrandMark height={56} className="mx-auto" />
           <div className="text-[13px] text-muted-foreground">Entrar no Centro de Comando</div>
         </div>
 
