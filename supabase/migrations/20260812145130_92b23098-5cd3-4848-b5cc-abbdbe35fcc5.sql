@@ -1,0 +1,1 @@
+SELECT cron.unschedule('calendar-reminders-tick');
