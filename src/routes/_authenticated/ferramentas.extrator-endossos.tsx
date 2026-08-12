@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { VirtualList } from "@/components/ui/virtual-list";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -183,57 +184,58 @@ function ExtratorPage() {
 
       {/* Tabela */}
       <div className="rounded-xl border border-border bg-surface overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-[11px]">
-                <button
-                  type="button"
-                  onClick={() => setAsc((v) => !v)}
-                  className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
-                >
-                  PolicyNumber <ArrowUpDown className="h-3 w-3" />
-                </button>
-              </TableHead>
-              <TableHead className="text-[11px] text-right">
-                last_sequencial_endosso_used
-              </TableHead>
-              {isAdmin && <TableHead className="text-[11px] w-[120px] text-right">Ações</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading && (
-              <TableRow>
-                <TableCell
-                  colSpan={isAdmin ? 3 : 2}
-                  className="text-center py-10 text-[12.5px] text-muted-foreground"
-                >
-                  Carregando…
-                </TableCell>
-              </TableRow>
-            )}
-            {!isLoading && rows.length === 0 && (
-              <TableRow>
-                <TableCell
-                  colSpan={isAdmin ? 3 : 2}
-                  className="text-center py-14 text-[12.5px] text-muted-foreground"
-                >
-                  {latest
-                    ? "Nenhuma apólice corresponde à busca."
-                    : 'Nenhuma extração ainda. Clique em "Extrair últimos endossos".'}
-                </TableCell>
-              </TableRow>
-            )}
-            {rows.map((r) => (
-              <TableRow key={r.policy_number}>
-                <TableCell className="font-mono text-[12px] break-all">
-                  {r.policy_number}
-                </TableCell>
-                <TableCell className="text-right font-mono text-[12px] tabular-nums">
+        <div
+          className={
+            isAdmin
+              ? "grid grid-cols-[minmax(0,1fr)_130px_110px] gap-2 px-4 py-2.5 border-b border-border bg-surface-2/40 text-[11px] font-medium text-muted-foreground"
+              : "grid grid-cols-[minmax(0,1fr)_130px] gap-2 px-4 py-2.5 border-b border-border bg-surface-2/40 text-[11px] font-medium text-muted-foreground"
+          }
+        >
+          <button
+            type="button"
+            onClick={() => setAsc((v) => !v)}
+            className="inline-flex items-center gap-1 hover:text-foreground transition-colors justify-self-start"
+          >
+            PolicyNumber <ArrowUpDown className="h-3 w-3" />
+          </button>
+          <div className="text-right truncate">last_seq_endosso</div>
+          {isAdmin && <div className="text-right">Ações</div>}
+        </div>
+
+        {isLoading && (
+          <div className="text-center py-10 text-[12.5px] text-muted-foreground">Carregando…</div>
+        )}
+
+        {!isLoading && rows.length === 0 && (
+          <div className="text-center py-14 text-[12.5px] text-muted-foreground px-4">
+            {latest
+              ? "Nenhuma apólice corresponde à busca."
+              : 'Nenhuma extração ainda. Clique em "Extrair últimos endossos".'}
+          </div>
+        )}
+
+        {!isLoading && rows.length > 0 && (
+          <VirtualList
+            items={rows}
+            getKey={(r) => r.policy_number}
+            estimateSize={48}
+            className="max-h-[65dvh]"
+          >
+            {(r) => (
+              <div
+                className={cn(
+                  "grid gap-2 items-center px-4 py-2.5 border-b border-border/60 hover:bg-surface-2/40 transition-colors",
+                  isAdmin
+                    ? "grid-cols-[minmax(0,1fr)_130px_110px]"
+                    : "grid-cols-[minmax(0,1fr)_130px]",
+                )}
+              >
+                <div className="font-mono text-[12px] break-all min-w-0">{r.policy_number}</div>
+                <div className="text-right font-mono text-[12px] tabular-nums">
                   {r.last_sequencial_endosso_used ?? "—"}
-                </TableCell>
+                </div>
                 {isAdmin && (
-                  <TableCell className="text-right">
+                  <div className="text-right">
                     <Button
                       size="sm"
                       variant="ghost"
@@ -245,12 +247,12 @@ function ExtratorPage() {
                     >
                       <EyeOff className="h-3.5 w-3.5" /> Ignorar
                     </Button>
-                  </TableCell>
+                  </div>
                 )}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+              </div>
+            )}
+          </VirtualList>
+        )}
       </div>
     </div>
   );
