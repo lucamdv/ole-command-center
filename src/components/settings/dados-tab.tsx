@@ -1,16 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Download, Trash2, Database, MessageSquare, FileSearch, FileText, Sparkles } from "lucide-react";
+import { Download, Trash2, Database, FileSearch, FileText } from "lucide-react";
 import { toast } from "sonner";
 import {
   getDataCounters,
-  purgeOliver,
   purgeOldAudits,
   exportPoliciesCSV,
   exportLatestAuditJSON,
 } from "@/lib/settings.functions";
-import { reindexOliverKnowledge } from "@/lib/oliver.functions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,28 +41,12 @@ export function DadosTab() {
     refetchInterval: 30_000,
   });
 
-  const oliverFn = useServerFn(purgeOliver);
   const auditFn = useServerFn(purgeOldAudits);
   const exportCSVFn = useServerFn(exportPoliciesCSV);
   const exportAuditFn = useServerFn(exportLatestAuditJSON);
-  const reindexFn = useServerFn(reindexOliverKnowledge);
 
-  const reindexMut = useMutation({
-    mutationFn: () => reindexFn(),
-    onSuccess: (r) => toast.success(`Oléver reindexado: ${r.policies} apólices, ${r.findings} findings, ${r.memorySections} seções de memória`),
-    onError: (e: Error) => toast.error(e.message),
-  });
+  const [confirm, setConfirm] = useState<null | "audit">(null);
 
-  const [confirm, setConfirm] = useState<null | "oliver" | "audit">(null);
-
-  const purgeOliverMut = useMutation({
-    mutationFn: () => oliverFn(),
-    onSuccess: () => {
-      toast.success("Histórico do Olíver apagado");
-      qc.invalidateQueries({ queryKey: ["data-counters"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
   const purgeAuditMut = useMutation({
     mutationFn: () => auditFn({ data: { days: 90 } }),
     onSuccess: (r) => {
@@ -105,8 +87,6 @@ export function DadosTab() {
           <Stat icon={Database} label="Endossos" value={c?.endorsements} />
           <Stat icon={FileSearch} label="Rodadas de auditoria" value={c?.audit_runs} />
           <Stat icon={FileSearch} label="Achados" value={c?.audit_findings} />
-          <Stat icon={MessageSquare} label="Threads Olíver" value={c?.oliver_threads} />
-          <Stat icon={MessageSquare} label="Mensagens Olíver" value={c?.oliver_messages} />
         </div>
       </div>
 
@@ -129,27 +109,7 @@ export function DadosTab() {
         />
       </Section>
 
-      <Section title="Inteligência do Oléver">
-        <Action
-          icon={Sparkles}
-          title="Reindexar base de conhecimento"
-          desc="Gera embeddings de apólices, findings e memória para o Oléver responder com busca semântica. Roda em background."
-          actionLabel={reindexMut.isPending ? "Indexando…" : "Reindexar"}
-          disabled={reindexMut.isPending}
-          onClick={() => reindexMut.mutate()}
-        />
-      </Section>
-
-
       <Section title="Retenção & limpeza">
-        <Action
-          icon={Trash2}
-          tone="destructive"
-          title="Limpar histórico do Olíver"
-          desc="Apaga todas as conversas e mensagens. Não afeta a memória do Olíver."
-          actionLabel="Limpar"
-          onClick={() => setConfirm("oliver")}
-        />
         <Action
           icon={Trash2}
           tone="destructive"
@@ -166,16 +126,13 @@ export function DadosTab() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar limpeza</AlertDialogTitle>
             <AlertDialogDescription>
-              {confirm === "oliver"
-                ? "Todas as conversas e mensagens do Olíver serão apagadas permanentemente. A memória do Olíver é preservada."
-                : "Todas as rodadas de auditoria anteriores a 90 dias e seus achados serão apagadas."}
+              Todas as rodadas de auditoria anteriores a 90 dias e seus achados serão apagadas.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                if (confirm === "oliver") purgeOliverMut.mutate();
                 if (confirm === "audit") purgeAuditMut.mutate();
                 setConfirm(null);
               }}
