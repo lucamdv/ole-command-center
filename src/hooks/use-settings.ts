@@ -98,6 +98,38 @@ export function useNotifPrefs() {
   return { prefs, update };
 }
 
+// ===== Preferências de visualização de gráficos =====
+
+export interface ChartPrefs {
+  /** Oculta gráficos sem dados suficientes e mostra um aviso discreto. */
+  hideEmptyCharts: boolean;
+}
+
+const CHART_PREFS_KEY = "ole.chart.prefs.v1";
+const DEFAULT_CHART_PREFS: ChartPrefs = { hideEmptyCharts: true };
+
+type ChartPrefsListener = (p: ChartPrefs) => void;
+const chartPrefsListeners = new Set<ChartPrefsListener>();
+
+export function useChartPrefs() {
+  const [prefs, setPrefs] = useState<ChartPrefs>(() =>
+    readJSON(CHART_PREFS_KEY, DEFAULT_CHART_PREFS),
+  );
+  useEffect(() => {
+    const l: ChartPrefsListener = (p) => setPrefs(p);
+    chartPrefsListeners.add(l);
+    return () => {
+      chartPrefsListeners.delete(l);
+    };
+  }, []);
+  const update = useCallback((patch: Partial<ChartPrefs>) => {
+    const next = { ...readJSON(CHART_PREFS_KEY, DEFAULT_CHART_PREFS), ...patch };
+    localStorage.setItem(CHART_PREFS_KEY, JSON.stringify(next));
+    chartPrefsListeners.forEach((l) => l(next));
+  }, []);
+  return { prefs, update };
+}
+
 export function getInitials(name: string): string {
   return name
     .split(/\s+/)

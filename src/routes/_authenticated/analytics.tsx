@@ -21,11 +21,13 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { BarChart3, Download, FileText, Loader2 } from "lucide-react";
+import { BarChart3, Download, EyeOff, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuditHistory, useLatestAudit } from "@/hooks/use-audit";
 import { usePolicies } from "@/hooks/use-policies";
 import { useAnalyticsAggregates } from "@/hooks/use-analytics";
+import { useChartPrefs } from "@/hooks/use-settings";
+
 import {
   buildHeatmap,
   countBySeverity,
@@ -123,6 +125,46 @@ function AnalyticsPage() {
     }
     return buckets.filter((b) => b.count > 0);
   }, [policies]);
+
+  // === Disponibilidade de dados por gráfico ===
+  const { prefs: chartPrefs } = useChartPrefs();
+  const charts = useMemo(() => {
+    const hasIssuances = issuances.length > 0;
+    return [
+      { title: "Tendência de runs", has: series.length > 0 },
+      { title: "Severidade", has: sev.erros + sev.alertas + sev.infos > 0 },
+      { title: "Conformidade ao longo do tempo", has: series.length > 0 },
+      { title: "Volume processado", has: series.length > 0 },
+      { title: "Top 10 tipos de erro", has: errorTypes.length > 0 },
+      { title: "Findings por mês de vigência", has: monthly.length > 0 },
+      { title: "Receita Excelsior (USD)", has: repasse.length > 0 },
+      { title: "Heatmap · tipo de erro × runs", has: heatmap.rows.length > 0 && heatmap.runs.length > 0 },
+      { title: "Apólices mais problemáticas", has: apoliceRank.length > 0 },
+      { title: "Top endossos com inconsistências", has: endossoRank.length > 0 },
+      { title: "Carteira por nº de endossos", has: endorsementsDist.length > 0 },
+      { title: "Apólices emitidas por mês", has: issuances.some((i) => i.apolices > 0) },
+      { title: "Endossos emitidos por mês", has: issuances.some((i) => i.endossosTotal > 0) },
+      { title: "Emissões por mês e por tipo", has: hasIssuances },
+    ] as const;
+  }, [
+    series,
+    sev,
+    errorTypes,
+    monthly,
+    repasse,
+    heatmap,
+    apoliceRank,
+    endossoRank,
+    endorsementsDist,
+    issuances,
+  ]);
+  const hasData = useMemo(
+    () => Object.fromEntries(charts.map((c) => [c.title, c.has])) as Record<string, boolean>,
+    [charts],
+  );
+  const hiddenCharts = chartPrefs.hideEmptyCharts
+    ? charts.filter((c) => !c.has).map((c) => c.title)
+    : [];
 
 
   const chartsRef = useRef<HTMLDivElement>(null);
@@ -267,7 +309,7 @@ function AnalyticsPage() {
             <div className="grid lg:grid-cols-3 gap-6">
               <ChartCard
                 className="lg:col-span-2"
-                title="Tendência de runs"
+                title="Tendência de runs" empty={!hasData["Tendência de runs"]}
                 subtitle="Aprovados vs reprovados nas últimas 12 auditorias"
               >
                 <div className="h-[280px]">
@@ -294,7 +336,7 @@ function AnalyticsPage() {
                 </div>
               </ChartCard>
 
-              <ChartCard title="Severidade" subtitle="Distribuição na última auditoria">
+              <ChartCard title="Severidade" empty={!hasData["Severidade"]} subtitle="Distribuição na última auditoria">
                 <div className="h-[200px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -327,7 +369,7 @@ function AnalyticsPage() {
             </div>
 
             <div className="grid lg:grid-cols-2 gap-6">
-              <ChartCard title="Conformidade ao longo do tempo" subtitle="% aprovado por run">
+              <ChartCard title="Conformidade ao longo do tempo" empty={!hasData["Conformidade ao longo do tempo"]} subtitle="% aprovado por run">
                 <div className="h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={series.map((s) => ({ ...s, conf: s.total ? (s.approved / s.total) * 100 : 0 }))}>
@@ -341,7 +383,7 @@ function AnalyticsPage() {
                 </div>
               </ChartCard>
 
-              <ChartCard title="Volume processado" subtitle="Apólices auditadas por run">
+              <ChartCard title="Volume processado" empty={!hasData["Volume processado"]} subtitle="Apólices auditadas por run">
                 <div className="h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={series}>
@@ -357,7 +399,7 @@ function AnalyticsPage() {
             </div>
 
             <div className="grid lg:grid-cols-2 gap-6">
-              <ChartCard title="Top 10 tipos de erro" subtitle="Última auditoria">
+              <ChartCard title="Top 10 tipos de erro" empty={!hasData["Top 10 tipos de erro"]} subtitle="Última auditoria">
                 {errorTypes.length === 0 ? (
                   <EmptyMsg text="Nenhum tipo de erro nesta run." />
                 ) : (
@@ -382,7 +424,7 @@ function AnalyticsPage() {
                 )}
               </ChartCard>
 
-              <ChartCard title="Findings por mês de vigência" subtitle="Distribuição temporal das inconsistências">
+              <ChartCard title="Findings por mês de vigência" empty={!hasData["Findings por mês de vigência"]} subtitle="Distribuição temporal das inconsistências">
                 {monthly.length === 0 ? (
                   <EmptyMsg text="Sem datas de vigência nos findings." />
                 ) : (
@@ -402,7 +444,7 @@ function AnalyticsPage() {
             </div>
 
             <ChartCard
-              title="Receita Excelsior (USD) por mês de pagamento"
+              title="Receita Excelsior (USD) por mês de pagamento" empty={!hasData["Receita Excelsior (USD)"]}
               subtitle={`Total Repasse = Carregamento (US$ 8.333,33) + Prêmio Direto (40% líquido IOF) − PIS/COFINS (4,65% × comissões Olé+Nomad) · espelha o Mapa de Repasses · Total: ${formatUSD(repasseTotals.excelsiorLiquido, { maximumFractionDigits: 0 })} · Média/mês: ${formatUSD(repasseAvg, { maximumFractionDigits: 0 })} · ${repasse.length} meses`}
             >
               {repasse.length === 0 ? (
@@ -520,7 +562,7 @@ function AnalyticsPage() {
 
 
             <ChartCard
-              title="Heatmap · tipo de erro × runs"
+              title="Heatmap · tipo de erro × runs" empty={!hasData["Heatmap · tipo de erro × runs"]}
               subtitle="Intensidade de inconsistências por tipo nas últimas runs"
             >
               <Heatmap runs={heatmap.runs} rows={heatmap.rows} />
@@ -528,7 +570,7 @@ function AnalyticsPage() {
 
             <div className="grid lg:grid-cols-2 gap-6">
               <ChartCard
-                title="Apólices mais problemáticas"
+                title="Apólices mais problemáticas" empty={!hasData["Apólices mais problemáticas"]}
                 subtitle={`Top ${apoliceRank.length} por nº de inconsistências`}
               >
                 {apoliceRank.length === 0 ? (
@@ -579,7 +621,7 @@ function AnalyticsPage() {
               </ChartCard>
 
               <ChartCard
-                title="Top endossos com inconsistências"
+                title="Top endossos com inconsistências" empty={!hasData["Top endossos com inconsistências"]}
                 subtitle="Endossos que mais acumulam findings"
               >
                 {endossoRank.length === 0 ? (
@@ -620,7 +662,7 @@ function AnalyticsPage() {
 
             <div className="grid lg:grid-cols-2 gap-6">
               <ChartCard
-                title="Carteira por nº de endossos"
+                title="Carteira por nº de endossos" empty={!hasData["Carteira por nº de endossos"]}
                 subtitle="Quantas alterações cada apólice acumulou"
               >
                 {endorsementsDist.length === 0 ? (
@@ -641,7 +683,7 @@ function AnalyticsPage() {
               </ChartCard>
 
               <ChartCard
-                title="Apólices emitidas por mês"
+                title="Apólices emitidas por mês" empty={!hasData["Apólices emitidas por mês"]}
                 subtitle={`${formatInt(totalApolices)} apólices em ${issuances.filter((i) => i.apolices > 0).length} meses`}
               >
                 {issuances.length === 0 ? (
@@ -664,7 +706,7 @@ function AnalyticsPage() {
 
             <div className="grid lg:grid-cols-2 gap-6">
               <ChartCard
-                title="Endossos emitidos por mês"
+                title="Endossos emitidos por mês" empty={!hasData["Endossos emitidos por mês"]}
                 subtitle={`${formatInt(totalEndossos)} endossos em ${issuances.filter((i) => i.endossosTotal > 0).length} meses`}
               >
                 {issuances.length === 0 ? (
@@ -685,7 +727,7 @@ function AnalyticsPage() {
               </ChartCard>
 
               <ChartCard
-                title="Emissões por mês e por tipo"
+                title="Emissões por mês e por tipo" empty={!hasData["Emissões por mês e por tipo"]}
                 subtitle="Apólices e endossos (A, B, C, D) lado a lado"
               >
                 {issuances.length === 0 ? (
@@ -711,7 +753,22 @@ function AnalyticsPage() {
               </ChartCard>
             </div>
           </div>
+
+          {hiddenCharts.length > 0 && (
+            <div className="flex items-start gap-2 rounded-lg border border-dashed border-border bg-surface/40 px-3 py-2 text-[11.5px] text-muted-foreground">
+              <EyeOff className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+              <span>
+                {hiddenCharts.length === 1 ? "1 gráfico oculto" : `${hiddenCharts.length} gráficos ocultos`}{" "}
+                por falta de informação relevante: {hiddenCharts.join(", ")}.{" "}
+                <Link to="/configuracoes" className="underline hover:text-foreground">
+                  Ajustar em Configurações
+                </Link>
+                .
+              </span>
+            </div>
+          )}
         </>
+
       )}
     </div>
   );
@@ -780,13 +837,19 @@ function ChartCard({
   title,
   subtitle,
   className,
+  empty,
   children,
 }: {
   title: string;
   subtitle?: string;
   className?: string;
+  /** true quando o gráfico não tem dados relevantes */
+  empty?: boolean;
   children: React.ReactNode;
 }) {
+  const { prefs } = useChartPrefs();
+  if (empty && prefs.hideEmptyCharts) return null;
+
   return (
     <div
       data-export="chart"
