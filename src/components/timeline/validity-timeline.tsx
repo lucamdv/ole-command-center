@@ -24,7 +24,7 @@ export function ValidityTimeline({ policy }: { policy: Policy }) {
 
   return (
     <div className="rounded-xl border border-border bg-surface p-5">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <div>
           <div className="text-[13px] font-semibold">Linha do Tempo de Vigência</div>
           <div className="text-[11px] text-muted-foreground">Histórico de períodos, renovações e descontinuidades</div>

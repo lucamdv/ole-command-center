@@ -75,7 +75,7 @@ export function KpiCard({
         </div>
 
         <div className="flex items-baseline gap-1.5 mb-2">
-          <span className="text-[26px] font-semibold tracking-tight text-foreground tabular-nums leading-none">
+          <span className="text-[21px] sm:text-[26px] font-semibold tracking-tight text-foreground tabular-nums leading-none">
             {format(animated)}
           </span>
           {suffix && <span className="text-[12px] text-muted-foreground font-mono">{suffix}</span>}

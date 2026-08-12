@@ -99,7 +99,7 @@ function AlertasPage() {
               SOC · INCIDENT VIEW
             </span>
           </div>
-          <h1 className="text-[24px] font-semibold tracking-tight">Alertas</h1>
+          <h1 className="text-[20px] sm:text-[24px] font-semibold tracking-tight">Alertas</h1>
           <p className="text-[13px] text-muted-foreground mt-1">
             {isLoading
               ? "Carregando incidentes…"
@@ -140,7 +140,7 @@ function AlertasPage() {
             </span>
             <span className="h-1.5 w-1.5 rounded-full bg-primary" />
           </div>
-          <div className="text-[24px] font-semibold tabular-nums">
+          <div className="text-[20px] sm:text-[24px] font-semibold tabular-nums">
             {isLoading ? <Skeleton className="h-7 w-12" /> : findings.length}
           </div>
           <div className="text-[11px] text-muted-foreground">incidentes na última run</div>
@@ -165,7 +165,7 @@ function AlertasPage() {
               </span>
               <span className={cn("h-1.5 w-1.5 rounded-full", SEV_DOT[s])} />
             </div>
-            <div className="text-[24px] font-semibold tabular-nums">
+            <div className="text-[20px] sm:text-[24px] font-semibold tabular-nums">
               {isLoading ? <Skeleton className="h-7 w-12" /> : counts[s]}
             </div>
             <div className="text-[11px] text-muted-foreground">incidentes registrados</div>

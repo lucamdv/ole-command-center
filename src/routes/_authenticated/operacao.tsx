@@ -129,7 +129,7 @@ function OperacaoPage() {
             NOC · {statusGeral || "AGUARDANDO"}
           </span>
         </div>
-        <h1 className="text-[24px] font-semibold tracking-tight">Operação</h1>
+        <h1 className="text-[20px] sm:text-[24px] font-semibold tracking-tight">Operação</h1>
         <p className="text-[13px] text-muted-foreground mt-1">
           {run?.mensagem_geral ??
             "Painel operacional · dados da última execução do motor de auditoria."}
@@ -198,7 +198,7 @@ function OperacaoPage() {
 
       {/* Run history chart */}
       <div className="rounded-2xl border border-border bg-surface shadow-elevated overflow-hidden">
-        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+        <div className="px-5 py-4 border-b border-border flex flex-wrap items-center justify-between gap-2">
           <div>
             <div className="text-[13px] font-semibold flex items-center gap-2">
               <Activity className="h-4 w-4 text-primary" /> Histórico de execuções
@@ -212,7 +212,7 @@ function OperacaoPage() {
             <Legend dot="var(--destructive)" label="Reprovadas" />
           </div>
         </div>
-        <div className="h-[240px] p-2">
+        <div className="h-[170px] sm:h-[240px] p-2">
           {isLoading ? (
             <Skeleton className="h-full w-full" />
           ) : series.length === 0 ? (
@@ -280,10 +280,10 @@ function OperacaoPage() {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Error type breakdown */}
         <div className="lg:col-span-2 rounded-2xl border border-border bg-surface shadow-elevated overflow-hidden">
-          <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+          <div className="px-5 py-4 border-b border-border flex flex-wrap items-center justify-between gap-2">
             <div className="text-[13px] font-semibold">Inconsistências por tipo</div>
             <div className="text-[11px] text-muted-foreground">
               {run?.created_at ? `última run · ${relativeTime(run.created_at)}` : "—"}
@@ -332,7 +332,7 @@ function OperacaoPage() {
 
         {/* Critical findings */}
         <div className="rounded-2xl border border-border bg-surface shadow-elevated overflow-hidden">
-          <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+          <div className="px-5 py-4 border-b border-border flex flex-wrap items-center justify-between gap-2">
             <div className="text-[13px] font-semibold flex items-center gap-2">
               <AlertOctagon className="h-4 w-4 text-destructive" /> Findings críticos
             </div>
@@ -464,7 +464,7 @@ function MetricTile({
           {label}
         </span>
       </div>
-      <div className="text-[22px] font-semibold tabular-nums">{value}</div>
+      <div className="text-[18px] sm:text-[22px] font-semibold tabular-nums">{value}</div>
       {(hint || delta !== undefined) && (
         <div className="text-[10.5px] text-muted-foreground mt-1 flex items-center gap-1.5">
           {delta !== undefined && delta !== 0 && (

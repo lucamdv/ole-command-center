@@ -36,7 +36,7 @@ function ConfigPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-[24px] font-semibold tracking-tight">Configurações</h1>
+        <h1 className="text-[20px] sm:text-[24px] font-semibold tracking-tight">Configurações</h1>
         <p className="text-[13px] text-muted-foreground mt-1">
           Preferências do operador, integrações com motores e gestão de dados.
         </p>

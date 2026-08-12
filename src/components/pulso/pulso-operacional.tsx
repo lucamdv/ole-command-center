@@ -46,7 +46,7 @@ export function PulsoOperacional() {
   return (
     <div className="rounded-2xl border border-border bg-surface/80 backdrop-blur overflow-hidden shadow-elevated">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-linear-to-r from-surface to-surface-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3.5 sm:py-4 border-b border-border bg-linear-to-r from-surface to-surface-2">
         <div className="flex items-center gap-3">
           <div className="relative">
             <div className="h-9 w-9 rounded-lg bg-primary/15 grid place-items-center">
@@ -122,7 +122,7 @@ export function PulsoOperacional() {
               <span className="font-mono">+12.4%</span>
             </div>
           </div>
-          <div className="text-[24px] font-semibold tabular-nums leading-tight">{formatInt(12847)}</div>
+          <div className="text-[20px] sm:text-[24px] font-semibold tabular-nums leading-tight">{formatInt(12847)}</div>
           <div className="text-[11px] text-muted-foreground mb-3">execuções no ciclo atual</div>
 
           <div className="h-[140px]">

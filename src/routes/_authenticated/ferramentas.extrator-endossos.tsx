@@ -107,7 +107,7 @@ function ExtratorPage() {
               Extrator
             </span>
           </div>
-          <h1 className="text-[24px] font-semibold tracking-tight flex items-center gap-2">
+          <h1 className="text-[20px] sm:text-[24px] font-semibold tracking-tight flex items-center gap-2">
             <Layers className="h-5 w-5 text-primary" />
             Extrator de Últimos Endossos
           </h1>
