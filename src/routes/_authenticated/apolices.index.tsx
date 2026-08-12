@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { FileText, RefreshCw, Search } from "lucide-react";
 import { usePolicies, useLatestPolicySync, useRunPolicySync } from "@/hooks/use-policies";
 import { formatDateTime, relativeTime } from "@/lib/format";
 import { fmtNum } from "@/components/apolice/cards";
 import { cn } from "@/lib/utils";
+import { VirtualList } from "@/components/ui/virtual-list";
 
 export const Route = createFileRoute("/_authenticated/apolices/")({
   head: () => ({

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { AlertTriangle, ChevronRight, Search } from "lucide-react";
 import { useLatestAudit } from "@/hooks/use-audit";
 import { normalizeFinding, severityOf, type Severity } from "@/lib/audit/derive";
@@ -7,6 +7,7 @@ import type { AuditFindingRow } from "@/lib/audit/types";
 import { relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { VirtualList } from "@/components/ui/virtual-list";
 
 export const Route = createFileRoute("/_authenticated/alertas")({
   head: () => ({
@@ -226,14 +227,22 @@ function AlertasPage() {
             </p>
           </div>
         ) : (
-          filtered.slice(0, 100).map((f) => <IncidentRow key={f.id} f={f} />)
+          <VirtualList
+            items={filtered}
+            getKey={(f) => f.id}
+            estimateSize={96}
+            gap={8}
+            className="max-h-[70dvh]"
+          >
+            {(f) => <IncidentRow f={f} />}
+          </VirtualList>
         )}
       </div>
     </div>
   );
 }
 
-function IncidentRow({ f }: { f: AuditFindingRow }) {
+const IncidentRow = memo(function IncidentRow({ f }: { f: AuditFindingRow }) {
   const s = severityOf(f);
   const norm = normalizeFinding(f);
   return (
