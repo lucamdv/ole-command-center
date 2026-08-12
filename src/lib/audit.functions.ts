@@ -113,15 +113,18 @@ export const runAudit = createServerFn({ method: "POST" }).middleware([requireSu
 
 export const getAuditRunStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator((d: { runId: string }) => d)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { adjustRunCounts, buildIgnoreSets } = await import("./audit/ignore-filter");
     const { data: run, error } = await supabaseAdmin
       .from("audit_runs")
       .select("id, status, status_geral, error_message, total_processado, aprovados, reprovados")
       .eq("id", data.runId)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return run as {
+    if (!run) return null;
+
+    const r = run as {
       id: string;
       status: string;
       status_geral: string | null;
@@ -129,11 +132,28 @@ export const getAuditRunStatus = createServerFn({ method: "GET" }).middleware([r
       total_processado: number;
       aprovados: number;
       reprovados: number;
-    } | null;
+    };
+
+    // Desconta exceções da AUDITORIA (audit_ignores) nos números do toast final.
+    const [{ data: ignores }, { data: findings }] = await Promise.all([
+      context.supabase.from("audit_ignores").select("apolice, tipo_erro"),
+      supabaseAdmin.from("audit_findings").select("apolice, tipo_erro").eq("run_id", r.id),
+    ]);
+    const sets = buildIgnoreSets(
+      (ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>,
+    );
+    const adj = adjustRunCounts(
+      r,
+      sets,
+      (findings ?? []) as Array<{ apolice: string; tipo_erro: string }>,
+    );
+
+    return { ...r, ...adj };
   });
 
 export const getLatestAudit = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { adjustRunCounts, buildIgnoreSets, filterFindings } = await import("./audit/ignore-filter");
 
   const { data: runs, error: runErr } = await supabaseAdmin
     .from("audit_runs")
@@ -162,30 +182,23 @@ export const getLatestAudit = createServerFn({ method: "GET" }).middleware([requ
   const { data: ignores } = await context.supabase
     .from("audit_ignores")
     .select("apolice, tipo_erro");
-  const ignoreList = (ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>;
-  const apoliceWhole = new Set(ignoreList.filter((i) => !i.tipo_erro).map((i) => i.apolice));
-  const apolicePlusTipo = new Set(
-    ignoreList.filter((i) => i.tipo_erro).map((i) => `${i.apolice}::${i.tipo_erro}`),
+  const sets = buildIgnoreSets(
+    (ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>,
   );
 
   const all = (findings ?? []) as Array<{ apolice: string; tipo_erro: string }>;
-  const filtered = all.filter(
-    (f) => !apoliceWhole.has(f.apolice) && !apolicePlusTipo.has(`${f.apolice}::${f.tipo_erro}`),
-  );
-
-  const apolicesAntes = new Set(all.map((f) => f.apolice));
-  const apolicesDepois = new Set(filtered.map((f) => f.apolice));
-  const reprovadosAjustado = apolicesDepois.size;
-  const aprovadosAjustado = (run.aprovados ?? 0) + (apolicesAntes.size - apolicesDepois.size);
+  const filtered = filterFindings(sets, all);
+  const adj = adjustRunCounts(run, sets, all);
 
   return {
-    run: { ...run, aprovados: aprovadosAjustado, reprovados: reprovadosAjustado },
+    run: { ...run, aprovados: adj.aprovados, reprovados: adj.reprovados },
     findings: filtered,
   } as unknown as LatestAudit;
 });
 
-export const getAuditHistory = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
+export const getAuditHistory = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { adjustRunCounts, buildIgnoreSets } = await import("./audit/ignore-filter");
 
   const { data, error } = await supabaseAdmin
     .from("audit_runs")
@@ -195,8 +208,32 @@ export const getAuditHistory = createServerFn({ method: "GET" }).middleware([req
     .limit(30);
 
   if (error) throw new Error(error.message);
-  return (data ?? []) as AuditHistoryItem[];
+  const runs = (data ?? []) as AuditHistoryItem[];
+  if (runs.length === 0) return runs;
+
+  const { data: ignores } = await context.supabase
+    .from("audit_ignores")
+    .select("apolice, tipo_erro");
+  const sets = buildIgnoreSets(
+    (ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>,
+  );
+  if (sets.isEmpty) return runs;
+
+  const { data: findings } = await supabaseAdmin
+    .from("audit_findings")
+    .select("run_id, apolice, tipo_erro")
+    .in("run_id", runs.map((r) => r.id));
+
+  const byRun = new Map<string, Array<{ apolice: string; tipo_erro: string }>>();
+  for (const f of (findings ?? []) as Array<{ run_id: string; apolice: string; tipo_erro: string }>) {
+    const list = byRun.get(f.run_id) ?? [];
+    list.push({ apolice: f.apolice, tipo_erro: f.tipo_erro });
+    byRun.set(f.run_id, list);
+  }
+
+  return runs.map((r) => ({ ...r, ...adjustRunCounts(r, sets, byRun.get(r.id) ?? []) }));
 });
+
 
 // Schema exportado para uso no callback route
 export const CallbackPayloadSchema = z.object({
@@ -238,13 +275,14 @@ export const CallbackPayloadSchema = z.object({
     .default([]),
 });
 
-export const getSystemStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
+export const getSystemStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { adjustRunCounts, buildIgnoreSets } = await import("./audit/ignore-filter");
 
   const [{ data: lastRun }, { data: lastSync }] = await Promise.all([
     supabaseAdmin
       .from("audit_runs")
-      .select("id, status, error_message, created_at, aprovados, total_processado")
+      .select("id, status, error_message, created_at, aprovados, reprovados, total_processado")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
@@ -258,18 +296,49 @@ export const getSystemStatus = createServerFn({ method: "GET" }).middleware([req
   ]);
 
   const run = lastRun as
-    | { status: string; error_message: string | null; created_at: string; aprovados: number | null; total_processado: number | null }
+    | {
+        id: string;
+        status: string;
+        error_message: string | null;
+        created_at: string;
+        aprovados: number | null;
+        reprovados: number | null;
+        total_processado: number | null;
+      }
     | null;
   const sync = lastSync as { status: string; created_at: string } | null;
 
+  // Taxa de aprovação desconta as exceções da AUDITORIA (audit_ignores).
+  let aprovadosAjustado = run?.aprovados ?? 0;
+  if (run && (run.total_processado ?? 0) > 0) {
+    const [{ data: ignores }, { data: findings }] = await Promise.all([
+      context.supabase.from("audit_ignores").select("apolice, tipo_erro"),
+      supabaseAdmin.from("audit_findings").select("apolice, tipo_erro").eq("run_id", run.id),
+    ]);
+    const sets = buildIgnoreSets(
+      (ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>,
+    );
+    const adj = adjustRunCounts(
+      {
+        total_processado: run.total_processado ?? 0,
+        aprovados: run.aprovados ?? 0,
+        reprovados: run.reprovados ?? 0,
+      },
+      sets,
+      (findings ?? []) as Array<{ apolice: string; tipo_erro: string }>,
+    );
+    aprovadosAjustado = adj.aprovados;
+  }
+
   const approvalRate =
     run && (run.total_processado ?? 0) > 0
-      ? ((run.aprovados ?? 0) / (run.total_processado as number)) * 100
+      ? (aprovadosAjustado / (run.total_processado as number)) * 100
       : null;
 
   let state: "operational" | "degraded" | "down" = "operational";
   if (run?.status === "error" || sync?.status === "error") state = "down";
   else if (run?.status === "running" || (approvalRate != null && approvalRate < 95)) state = "degraded";
+
 
   return {
     state,

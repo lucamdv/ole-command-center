@@ -28,6 +28,7 @@ export function useAddAuditIgnore() {
     onSuccess: (res, vars) => {
       qc.invalidateQueries({ queryKey: ["audit-ignores"] });
       qc.invalidateQueries({ queryKey: ["audit"] });
+      qc.invalidateQueries({ queryKey: ["system-status"] });
       const desc = vars.tipo_erro
         ? `${vars.tipo_erro} em ${vars.apolice}`
         : `Apólice ${vars.apolice}`;
@@ -39,6 +40,7 @@ export function useAddAuditIgnore() {
             await removeFn({ data: { id: res.id } });
             qc.invalidateQueries({ queryKey: ["audit-ignores"] });
             qc.invalidateQueries({ queryKey: ["audit"] });
+      qc.invalidateQueries({ queryKey: ["system-status"] });
           },
         },
       });
@@ -57,6 +59,7 @@ export function useRemoveAuditIgnore() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["audit-ignores"] });
       qc.invalidateQueries({ queryKey: ["audit"] });
+      qc.invalidateQueries({ queryKey: ["system-status"] });
       toast.success("Exceção removida");
     },
     onError: (err: Error) => {
