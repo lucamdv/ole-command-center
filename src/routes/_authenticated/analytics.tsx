@@ -264,7 +264,8 @@ function AnalyticsPage() {
             )}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <DateRangeFilter value={range} onChange={setRange} />
           <button
             onClick={handleExportCharts}
             disabled={!latest || exporting !== "none"}
