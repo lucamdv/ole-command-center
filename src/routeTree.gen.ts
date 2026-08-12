@@ -15,19 +15,14 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedAlertasRouteImport } from './routes/_authenticated/alertas'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
-import { Route as AuthenticatedEndossosRouteImport } from './routes/_authenticated/endossos'
 import { Route as AuthenticatedFerramentasRouteImport } from './routes/_authenticated/ferramentas'
-import { Route as AuthenticatedIntelligenceRouteImport } from './routes/_authenticated/intelligence'
 import { Route as AuthenticatedOperacaoRouteImport } from './routes/_authenticated/operacao'
-import { Route as ApiOliverChatRouteImport } from './routes/api/oliver-chat'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
 import { Route as AuthenticatedApolicesIndexRouteImport } from './routes/_authenticated/apolices.index'
 import { Route as AuthenticatedFerramentasIndexRouteImport } from './routes/_authenticated/ferramentas.index'
-import { Route as AuthenticatedFerramentasCalendarioRouteImport } from './routes/_authenticated/ferramentas.calendario'
 import { Route as AuthenticatedFerramentasExtratorEndossosRouteImport } from './routes/_authenticated/ferramentas.extrator-endossos'
 import { Route as ApiPublicAuditCallbackRouteImport } from './routes/api/public/audit-callback'
-import { Route as ApiPublicCalendarRemindersTickRouteImport } from './routes/api/public/calendar-reminders-tick'
 import { Route as ApiPublicEndorsementExtractionCallbackRouteImport } from './routes/api/public/endorsement-extraction-callback'
 import { Route as ApiPublicPolicySyncCallbackRouteImport } from './routes/api/public/policy-sync-callback'
 import { Route as AuthenticatedApolicesIdIndexRouteImport } from './routes/_authenticated/apolices.$id.index'
@@ -64,32 +59,16 @@ const AuthenticatedConfiguracoesRoute =
     path: '/configuracoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedEndossosRoute = AuthenticatedEndossosRouteImport.update({
-  id: '/endossos',
-  path: '/endossos',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedFerramentasRoute =
   AuthenticatedFerramentasRouteImport.update({
     id: '/ferramentas',
     path: '/ferramentas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedIntelligenceRoute =
-  AuthenticatedIntelligenceRouteImport.update({
-    id: '/intelligence',
-    path: '/intelligence',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedOperacaoRoute = AuthenticatedOperacaoRouteImport.update({
   id: '/operacao',
   path: '/operacao',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const ApiOliverChatRoute = ApiOliverChatRouteImport.update({
-  id: '/api/oliver-chat',
-  path: '/api/oliver-chat',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
   id: '/invite/$token',
@@ -114,12 +93,6 @@ const AuthenticatedFerramentasIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedFerramentasRoute,
   } as any)
-const AuthenticatedFerramentasCalendarioRoute =
-  AuthenticatedFerramentasCalendarioRouteImport.update({
-    id: '/calendario',
-    path: '/calendario',
-    getParentRoute: () => AuthenticatedFerramentasRoute,
-  } as any)
 const AuthenticatedFerramentasExtratorEndossosRoute =
   AuthenticatedFerramentasExtratorEndossosRouteImport.update({
     id: '/extrator-endossos',
@@ -131,12 +104,6 @@ const ApiPublicAuditCallbackRoute = ApiPublicAuditCallbackRouteImport.update({
   path: '/api/public/audit-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicCalendarRemindersTickRoute =
-  ApiPublicCalendarRemindersTickRouteImport.update({
-    id: '/api/public/calendar-reminders-tick',
-    path: '/api/public/calendar-reminders-tick',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicEndorsementExtractionCallbackRoute =
   ApiPublicEndorsementExtractionCallbackRouteImport.update({
     id: '/api/public/endorsement-extraction-callback',
@@ -174,17 +141,12 @@ export interface FileRoutesByFullPath {
   '/alertas': typeof AuthenticatedAlertasRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
-  '/endossos': typeof AuthenticatedEndossosRoute
   '/ferramentas': typeof AuthenticatedFerramentasRouteWithChildren
-  '/intelligence': typeof AuthenticatedIntelligenceRoute
   '/operacao': typeof AuthenticatedOperacaoRoute
-  '/api/oliver-chat': typeof ApiOliverChatRoute
   '/invite/$token': typeof InviteTokenRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
-  '/ferramentas/calendario': typeof AuthenticatedFerramentasCalendarioRoute
   '/ferramentas/extrator-endossos': typeof AuthenticatedFerramentasExtratorEndossosRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
-  '/api/public/calendar-reminders-tick': typeof ApiPublicCalendarRemindersTickRoute
   '/api/public/endorsement-extraction-callback': typeof ApiPublicEndorsementExtractionCallbackRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
   '/apolices/': typeof AuthenticatedApolicesIndexRoute
@@ -198,17 +160,12 @@ export interface FileRoutesByTo {
   '/alertas': typeof AuthenticatedAlertasRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
-  '/endossos': typeof AuthenticatedEndossosRoute
-  '/intelligence': typeof AuthenticatedIntelligenceRoute
   '/operacao': typeof AuthenticatedOperacaoRoute
-  '/api/oliver-chat': typeof ApiOliverChatRoute
   '/invite/$token': typeof InviteTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
-  '/ferramentas/calendario': typeof AuthenticatedFerramentasCalendarioRoute
   '/ferramentas/extrator-endossos': typeof AuthenticatedFerramentasExtratorEndossosRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
-  '/api/public/calendar-reminders-tick': typeof ApiPublicCalendarRemindersTickRoute
   '/api/public/endorsement-extraction-callback': typeof ApiPublicEndorsementExtractionCallbackRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
   '/apolices': typeof AuthenticatedApolicesIndexRoute
@@ -224,18 +181,13 @@ export interface FileRoutesById {
   '/_authenticated/alertas': typeof AuthenticatedAlertasRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
-  '/_authenticated/endossos': typeof AuthenticatedEndossosRoute
   '/_authenticated/ferramentas': typeof AuthenticatedFerramentasRouteWithChildren
-  '/_authenticated/intelligence': typeof AuthenticatedIntelligenceRoute
   '/_authenticated/operacao': typeof AuthenticatedOperacaoRoute
-  '/api/oliver-chat': typeof ApiOliverChatRoute
   '/invite/$token': typeof InviteTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
-  '/_authenticated/ferramentas/calendario': typeof AuthenticatedFerramentasCalendarioRoute
   '/_authenticated/ferramentas/extrator-endossos': typeof AuthenticatedFerramentasExtratorEndossosRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
-  '/api/public/calendar-reminders-tick': typeof ApiPublicCalendarRemindersTickRoute
   '/api/public/endorsement-extraction-callback': typeof ApiPublicEndorsementExtractionCallbackRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
   '/_authenticated/apolices/': typeof AuthenticatedApolicesIndexRoute
@@ -252,17 +204,12 @@ export interface FileRouteTypes {
     | '/alertas'
     | '/analytics'
     | '/configuracoes'
-    | '/endossos'
     | '/ferramentas'
-    | '/intelligence'
     | '/operacao'
-    | '/api/oliver-chat'
     | '/invite/$token'
     | '/admin/usuarios'
-    | '/ferramentas/calendario'
     | '/ferramentas/extrator-endossos'
     | '/api/public/audit-callback'
-    | '/api/public/calendar-reminders-tick'
     | '/api/public/endorsement-extraction-callback'
     | '/api/public/policy-sync-callback'
     | '/apolices/'
@@ -276,17 +223,12 @@ export interface FileRouteTypes {
     | '/alertas'
     | '/analytics'
     | '/configuracoes'
-    | '/endossos'
-    | '/intelligence'
     | '/operacao'
-    | '/api/oliver-chat'
     | '/invite/$token'
     | '/'
     | '/admin/usuarios'
-    | '/ferramentas/calendario'
     | '/ferramentas/extrator-endossos'
     | '/api/public/audit-callback'
-    | '/api/public/calendar-reminders-tick'
     | '/api/public/endorsement-extraction-callback'
     | '/api/public/policy-sync-callback'
     | '/apolices'
@@ -301,18 +243,13 @@ export interface FileRouteTypes {
     | '/_authenticated/alertas'
     | '/_authenticated/analytics'
     | '/_authenticated/configuracoes'
-    | '/_authenticated/endossos'
     | '/_authenticated/ferramentas'
-    | '/_authenticated/intelligence'
     | '/_authenticated/operacao'
-    | '/api/oliver-chat'
     | '/invite/$token'
     | '/_authenticated/'
     | '/_authenticated/admin/usuarios'
-    | '/_authenticated/ferramentas/calendario'
     | '/_authenticated/ferramentas/extrator-endossos'
     | '/api/public/audit-callback'
-    | '/api/public/calendar-reminders-tick'
     | '/api/public/endorsement-extraction-callback'
     | '/api/public/policy-sync-callback'
     | '/_authenticated/apolices/'
@@ -325,10 +262,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
-  ApiOliverChatRoute: typeof ApiOliverChatRoute
   InviteTokenRoute: typeof InviteTokenRoute
   ApiPublicAuditCallbackRoute: typeof ApiPublicAuditCallbackRoute
-  ApiPublicCalendarRemindersTickRoute: typeof ApiPublicCalendarRemindersTickRoute
   ApiPublicEndorsementExtractionCallbackRoute: typeof ApiPublicEndorsementExtractionCallbackRoute
   ApiPublicPolicySyncCallbackRoute: typeof ApiPublicPolicySyncCallbackRoute
   ApiPublicHooksPolicySyncRoute: typeof ApiPublicHooksPolicySyncRoute
@@ -378,25 +313,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/endossos': {
-      id: '/_authenticated/endossos'
-      path: '/endossos'
-      fullPath: '/endossos'
-      preLoaderRoute: typeof AuthenticatedEndossosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/ferramentas': {
       id: '/_authenticated/ferramentas'
       path: '/ferramentas'
       fullPath: '/ferramentas'
       preLoaderRoute: typeof AuthenticatedFerramentasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/intelligence': {
-      id: '/_authenticated/intelligence'
-      path: '/intelligence'
-      fullPath: '/intelligence'
-      preLoaderRoute: typeof AuthenticatedIntelligenceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/operacao': {
@@ -405,13 +326,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/operacao'
       preLoaderRoute: typeof AuthenticatedOperacaoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/api/oliver-chat': {
-      id: '/api/oliver-chat'
-      path: '/api/oliver-chat'
-      fullPath: '/api/oliver-chat'
-      preLoaderRoute: typeof ApiOliverChatRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/invite/$token': {
       id: '/invite/$token'
@@ -441,13 +355,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFerramentasIndexRouteImport
       parentRoute: typeof AuthenticatedFerramentasRoute
     }
-    '/_authenticated/ferramentas/calendario': {
-      id: '/_authenticated/ferramentas/calendario'
-      path: '/calendario'
-      fullPath: '/ferramentas/calendario'
-      preLoaderRoute: typeof AuthenticatedFerramentasCalendarioRouteImport
-      parentRoute: typeof AuthenticatedFerramentasRoute
-    }
     '/_authenticated/ferramentas/extrator-endossos': {
       id: '/_authenticated/ferramentas/extrator-endossos'
       path: '/extrator-endossos'
@@ -460,13 +367,6 @@ declare module '@tanstack/react-router' {
       path: '/api/public/audit-callback'
       fullPath: '/api/public/audit-callback'
       preLoaderRoute: typeof ApiPublicAuditCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/calendar-reminders-tick': {
-      id: '/api/public/calendar-reminders-tick'
-      path: '/api/public/calendar-reminders-tick'
-      fullPath: '/api/public/calendar-reminders-tick'
-      preLoaderRoute: typeof ApiPublicCalendarRemindersTickRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/endorsement-extraction-callback': {
@@ -508,15 +408,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedFerramentasRouteChildren {
-  AuthenticatedFerramentasCalendarioRoute: typeof AuthenticatedFerramentasCalendarioRoute
   AuthenticatedFerramentasExtratorEndossosRoute: typeof AuthenticatedFerramentasExtratorEndossosRoute
   AuthenticatedFerramentasIndexRoute: typeof AuthenticatedFerramentasIndexRoute
 }
 
 const AuthenticatedFerramentasRouteChildren: AuthenticatedFerramentasRouteChildren =
   {
-    AuthenticatedFerramentasCalendarioRoute:
-      AuthenticatedFerramentasCalendarioRoute,
     AuthenticatedFerramentasExtratorEndossosRoute:
       AuthenticatedFerramentasExtratorEndossosRoute,
     AuthenticatedFerramentasIndexRoute: AuthenticatedFerramentasIndexRoute,
@@ -531,9 +428,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAlertasRoute: typeof AuthenticatedAlertasRoute
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
-  AuthenticatedEndossosRoute: typeof AuthenticatedEndossosRoute
   AuthenticatedFerramentasRoute: typeof AuthenticatedFerramentasRouteWithChildren
-  AuthenticatedIntelligenceRoute: typeof AuthenticatedIntelligenceRoute
   AuthenticatedOperacaoRoute: typeof AuthenticatedOperacaoRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
@@ -546,9 +441,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAlertasRoute: AuthenticatedAlertasRoute,
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
-  AuthenticatedEndossosRoute: AuthenticatedEndossosRoute,
   AuthenticatedFerramentasRoute: AuthenticatedFerramentasRouteWithChildren,
-  AuthenticatedIntelligenceRoute: AuthenticatedIntelligenceRoute,
   AuthenticatedOperacaoRoute: AuthenticatedOperacaoRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
@@ -564,10 +457,8 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
-  ApiOliverChatRoute: ApiOliverChatRoute,
   InviteTokenRoute: InviteTokenRoute,
   ApiPublicAuditCallbackRoute: ApiPublicAuditCallbackRoute,
-  ApiPublicCalendarRemindersTickRoute: ApiPublicCalendarRemindersTickRoute,
   ApiPublicEndorsementExtractionCallbackRoute:
     ApiPublicEndorsementExtractionCallbackRoute,
   ApiPublicPolicySyncCallbackRoute: ApiPublicPolicySyncCallbackRoute,
