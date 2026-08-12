@@ -93,9 +93,36 @@ export function PerfilTab() {
           </button>
         </div>
       </div>
+
+      <div>
+        <div className="text-[12px] font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+          Visualização de gráficos
+        </div>
+        <label className="flex items-start justify-between gap-4 rounded-lg border border-border bg-surface/60 p-3 cursor-pointer">
+          <span className="min-w-0">
+            <span className="block text-[13px] font-medium">Ocultar gráficos sem dados suficientes</span>
+            <span className="block text-[12px] text-muted-foreground mt-0.5">
+              Quando ativo, gráficos sem informação relevante são escondidos e um aviso discreto
+              lista quais ficaram de fora.
+            </span>
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={chartPrefs.hideEmptyCharts}
+            onClick={() => updateChartPrefs({ hideEmptyCharts: !chartPrefs.hideEmptyCharts })}
+            className={`relative shrink-0 h-5 w-9 rounded-full transition ${chartPrefs.hideEmptyCharts ? "bg-primary" : "bg-muted"}`}
+          >
+            <span
+              className={`absolute top-0.5 h-4 w-4 rounded-full bg-background transition-all ${chartPrefs.hideEmptyCharts ? "left-4.5" : "left-0.5"}`}
+            />
+          </button>
+        </label>
+      </div>
     </div>
   );
 }
+
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
