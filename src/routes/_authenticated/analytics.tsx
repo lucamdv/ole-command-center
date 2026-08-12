@@ -309,7 +309,7 @@ function AnalyticsPage() {
             <div className="grid lg:grid-cols-3 gap-6">
               <ChartCard
                 className="lg:col-span-2"
-                title="Tendência de runs"
+                title="Tendência de runs" empty={!hasData["Tendência de runs"]}
                 subtitle="Aprovados vs reprovados nas últimas 12 auditorias"
               >
                 <div className="h-[280px]">
@@ -336,7 +336,7 @@ function AnalyticsPage() {
                 </div>
               </ChartCard>
 
-              <ChartCard title="Severidade" subtitle="Distribuição na última auditoria">
+              <ChartCard title="Severidade" empty={!hasData["Severidade"]} subtitle="Distribuição na última auditoria">
                 <div className="h-[200px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -369,7 +369,7 @@ function AnalyticsPage() {
             </div>
 
             <div className="grid lg:grid-cols-2 gap-6">
-              <ChartCard title="Conformidade ao longo do tempo" subtitle="% aprovado por run">
+              <ChartCard title="Conformidade ao longo do tempo" empty={!hasData["Conformidade ao longo do tempo"]} subtitle="% aprovado por run">
                 <div className="h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={series.map((s) => ({ ...s, conf: s.total ? (s.approved / s.total) * 100 : 0 }))}>
@@ -383,7 +383,7 @@ function AnalyticsPage() {
                 </div>
               </ChartCard>
 
-              <ChartCard title="Volume processado" subtitle="Apólices auditadas por run">
+              <ChartCard title="Volume processado" empty={!hasData["Volume processado"]} subtitle="Apólices auditadas por run">
                 <div className="h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={series}>
@@ -399,7 +399,7 @@ function AnalyticsPage() {
             </div>
 
             <div className="grid lg:grid-cols-2 gap-6">
-              <ChartCard title="Top 10 tipos de erro" subtitle="Última auditoria">
+              <ChartCard title="Top 10 tipos de erro" empty={!hasData["Top 10 tipos de erro"]} subtitle="Última auditoria">
                 {errorTypes.length === 0 ? (
                   <EmptyMsg text="Nenhum tipo de erro nesta run." />
                 ) : (
@@ -424,7 +424,7 @@ function AnalyticsPage() {
                 )}
               </ChartCard>
 
-              <ChartCard title="Findings por mês de vigência" subtitle="Distribuição temporal das inconsistências">
+              <ChartCard title="Findings por mês de vigência" empty={!hasData["Findings por mês de vigência"]} subtitle="Distribuição temporal das inconsistências">
                 {monthly.length === 0 ? (
                   <EmptyMsg text="Sem datas de vigência nos findings." />
                 ) : (
@@ -444,7 +444,7 @@ function AnalyticsPage() {
             </div>
 
             <ChartCard
-              title="Receita Excelsior (USD) por mês de pagamento"
+              title="Receita Excelsior (USD) por mês de pagamento" empty={!hasData["Receita Excelsior (USD)"]}
               subtitle={`Total Repasse = Carregamento (US$ 8.333,33) + Prêmio Direto (40% líquido IOF) − PIS/COFINS (4,65% × comissões Olé+Nomad) · espelha o Mapa de Repasses · Total: ${formatUSD(repasseTotals.excelsiorLiquido, { maximumFractionDigits: 0 })} · Média/mês: ${formatUSD(repasseAvg, { maximumFractionDigits: 0 })} · ${repasse.length} meses`}
             >
               {repasse.length === 0 ? (
@@ -562,7 +562,7 @@ function AnalyticsPage() {
 
 
             <ChartCard
-              title="Heatmap · tipo de erro × runs"
+              title="Heatmap · tipo de erro × runs" empty={!hasData["Heatmap · tipo de erro × runs"]}
               subtitle="Intensidade de inconsistências por tipo nas últimas runs"
             >
               <Heatmap runs={heatmap.runs} rows={heatmap.rows} />
@@ -570,7 +570,7 @@ function AnalyticsPage() {
 
             <div className="grid lg:grid-cols-2 gap-6">
               <ChartCard
-                title="Apólices mais problemáticas"
+                title="Apólices mais problemáticas" empty={!hasData["Apólices mais problemáticas"]}
                 subtitle={`Top ${apoliceRank.length} por nº de inconsistências`}
               >
                 {apoliceRank.length === 0 ? (
@@ -621,7 +621,7 @@ function AnalyticsPage() {
               </ChartCard>
 
               <ChartCard
-                title="Top endossos com inconsistências"
+                title="Top endossos com inconsistências" empty={!hasData["Top endossos com inconsistências"]}
                 subtitle="Endossos que mais acumulam findings"
               >
                 {endossoRank.length === 0 ? (
@@ -662,7 +662,7 @@ function AnalyticsPage() {
 
             <div className="grid lg:grid-cols-2 gap-6">
               <ChartCard
-                title="Carteira por nº de endossos"
+                title="Carteira por nº de endossos" empty={!hasData["Carteira por nº de endossos"]}
                 subtitle="Quantas alterações cada apólice acumulou"
               >
                 {endorsementsDist.length === 0 ? (
@@ -683,7 +683,7 @@ function AnalyticsPage() {
               </ChartCard>
 
               <ChartCard
-                title="Apólices emitidas por mês"
+                title="Apólices emitidas por mês" empty={!hasData["Apólices emitidas por mês"]}
                 subtitle={`${formatInt(totalApolices)} apólices em ${issuances.filter((i) => i.apolices > 0).length} meses`}
               >
                 {issuances.length === 0 ? (
@@ -706,7 +706,7 @@ function AnalyticsPage() {
 
             <div className="grid lg:grid-cols-2 gap-6">
               <ChartCard
-                title="Endossos emitidos por mês"
+                title="Endossos emitidos por mês" empty={!hasData["Endossos emitidos por mês"]}
                 subtitle={`${formatInt(totalEndossos)} endossos em ${issuances.filter((i) => i.endossosTotal > 0).length} meses`}
               >
                 {issuances.length === 0 ? (
@@ -727,7 +727,7 @@ function AnalyticsPage() {
               </ChartCard>
 
               <ChartCard
-                title="Emissões por mês e por tipo"
+                title="Emissões por mês e por tipo" empty={!hasData["Emissões por mês e por tipo"]}
                 subtitle="Apólices e endossos (A, B, C, D) lado a lado"
               >
                 {issuances.length === 0 ? (
