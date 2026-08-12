@@ -13,6 +13,8 @@ import { Toaster } from "../components/ui/sonner";
 import { ThemeProvider } from "../components/theme/theme-provider";
 import { supabase } from "@/integrations/supabase/client";
 import { useRouter } from "@tanstack/react-router";
+import { PwaUpdatePrompt } from "@/components/pwa-update-prompt";
+
 
 function NotFoundComponent() {
   return (
