@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { VirtualList } from "@/components/ui/virtual-list";
 import { ChevronRight } from "lucide-react";
 import type { AuditFinding } from "@/lib/mock/data";
 import { cn } from "@/lib/utils";
@@ -41,9 +42,15 @@ export function AuditTable({ findings }: { findings: AuditFinding[] }) {
         <div className="col-span-1" />
       </div>
 
-      {findings.map((f, i) => {
-        const open = openRow === i;
-        return (
+      <VirtualList
+        items={findings}
+        getKey={(_, i) => String(i)}
+        estimateSize={52}
+        className="max-h-[70dvh]"
+      >
+        {(f, i) => {
+          const open = openRow === i;
+          return (
           <div key={i} className="border-b border-border/60 last:border-0">
             <button
               onClick={() => setOpenRow(open ? null : i)}
@@ -75,8 +82,9 @@ export function AuditTable({ findings }: { findings: AuditFinding[] }) {
               </div>
             )}
           </div>
-        );
-      })}
+          );
+        }}
+      </VirtualList>
     </div>
   );
 }
