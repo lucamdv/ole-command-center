@@ -753,7 +753,22 @@ function AnalyticsPage() {
               </ChartCard>
             </div>
           </div>
+
+          {hiddenCharts.length > 0 && (
+            <div className="flex items-start gap-2 rounded-lg border border-dashed border-border bg-surface/40 px-3 py-2 text-[11.5px] text-muted-foreground">
+              <EyeOff className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+              <span>
+                {hiddenCharts.length === 1 ? "1 gráfico oculto" : `${hiddenCharts.length} gráficos ocultos`}{" "}
+                por falta de informação relevante: {hiddenCharts.join(", ")}.{" "}
+                <Link to="/configuracoes" className="underline hover:text-foreground">
+                  Ajustar em Configurações
+                </Link>
+                .
+              </span>
+            </div>
+          )}
         </>
+
       )}
     </div>
   );
