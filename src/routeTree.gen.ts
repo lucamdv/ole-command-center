@@ -15,6 +15,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedAlertasRouteImport } from './routes/_authenticated/alertas'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
+import { Route as AuthenticatedEndossosRouteImport } from './routes/_authenticated/endossos'
 import { Route as AuthenticatedFerramentasRouteImport } from './routes/_authenticated/ferramentas'
 import { Route as AuthenticatedOperacaoRouteImport } from './routes/_authenticated/operacao'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
@@ -59,6 +60,11 @@ const AuthenticatedConfiguracoesRoute =
     path: '/configuracoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEndossosRoute = AuthenticatedEndossosRouteImport.update({
+  id: '/endossos',
+  path: '/endossos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedFerramentasRoute =
   AuthenticatedFerramentasRouteImport.update({
     id: '/ferramentas',
@@ -141,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/alertas': typeof AuthenticatedAlertasRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/endossos': typeof AuthenticatedEndossosRoute
   '/ferramentas': typeof AuthenticatedFerramentasRouteWithChildren
   '/operacao': typeof AuthenticatedOperacaoRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -160,6 +167,7 @@ export interface FileRoutesByTo {
   '/alertas': typeof AuthenticatedAlertasRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/endossos': typeof AuthenticatedEndossosRoute
   '/operacao': typeof AuthenticatedOperacaoRoute
   '/invite/$token': typeof InviteTokenRoute
   '/': typeof AuthenticatedIndexRoute
@@ -181,6 +189,7 @@ export interface FileRoutesById {
   '/_authenticated/alertas': typeof AuthenticatedAlertasRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/_authenticated/endossos': typeof AuthenticatedEndossosRoute
   '/_authenticated/ferramentas': typeof AuthenticatedFerramentasRouteWithChildren
   '/_authenticated/operacao': typeof AuthenticatedOperacaoRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -204,6 +213,7 @@ export interface FileRouteTypes {
     | '/alertas'
     | '/analytics'
     | '/configuracoes'
+    | '/endossos'
     | '/ferramentas'
     | '/operacao'
     | '/invite/$token'
@@ -223,6 +233,7 @@ export interface FileRouteTypes {
     | '/alertas'
     | '/analytics'
     | '/configuracoes'
+    | '/endossos'
     | '/operacao'
     | '/invite/$token'
     | '/'
@@ -243,6 +254,7 @@ export interface FileRouteTypes {
     | '/_authenticated/alertas'
     | '/_authenticated/analytics'
     | '/_authenticated/configuracoes'
+    | '/_authenticated/endossos'
     | '/_authenticated/ferramentas'
     | '/_authenticated/operacao'
     | '/invite/$token'
@@ -311,6 +323,13 @@ declare module '@tanstack/react-router' {
       path: '/configuracoes'
       fullPath: '/configuracoes'
       preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/endossos': {
+      id: '/_authenticated/endossos'
+      path: '/endossos'
+      fullPath: '/endossos'
+      preLoaderRoute: typeof AuthenticatedEndossosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ferramentas': {
@@ -428,6 +447,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAlertasRoute: typeof AuthenticatedAlertasRoute
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
+  AuthenticatedEndossosRoute: typeof AuthenticatedEndossosRoute
   AuthenticatedFerramentasRoute: typeof AuthenticatedFerramentasRouteWithChildren
   AuthenticatedOperacaoRoute: typeof AuthenticatedOperacaoRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -441,6 +461,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAlertasRoute: AuthenticatedAlertasRoute,
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
+  AuthenticatedEndossosRoute: AuthenticatedEndossosRoute,
   AuthenticatedFerramentasRoute: AuthenticatedFerramentasRouteWithChildren,
   AuthenticatedOperacaoRoute: AuthenticatedOperacaoRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
