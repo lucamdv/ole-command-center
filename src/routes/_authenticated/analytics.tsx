@@ -230,7 +230,7 @@ function AnalyticsPage() {
     if (nodes.length === 0) return;
     setExporting("charts");
     try {
-      await exportChartsPdf(nodes);
+      await exportChartsPdf(nodes, formatRangeBadge(range));
       toast.success(`${nodes.length} gráficos exportados`);
     } catch (e) {
       toast.error("Falha ao exportar gráficos", { description: (e as Error).message });
