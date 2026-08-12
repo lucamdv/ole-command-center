@@ -5,9 +5,9 @@ import {
   Cell,
   Pie,
   PieChart,
-  ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import { ResponsiveContainer } from "@/components/charts/in-view-container";
 import { Activity, AlertOctagon, CheckCircle2, Loader2, TrendingUp } from "lucide-react";
 import { HOURLY_THROUGHPUT } from "@/lib/mock/data";
 import { formatInt, formatPct } from "@/lib/format";

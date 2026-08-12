@@ -1,4 +1,8 @@
-import { Area, AreaChart, ResponsiveContainer } from "recharts";
+import {
+  Area,
+  AreaChart,
+} from "recharts";
+import { ResponsiveContainer } from "@/components/charts/in-view-container";
 import { ArrowDown, ArrowUp, Minus } from "lucide-react";
 import { useAnimatedCounter } from "@/hooks/use-animated-counter";
 import { cn } from "@/lib/utils";

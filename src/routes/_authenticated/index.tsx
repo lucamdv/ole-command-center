@@ -9,11 +9,11 @@ import {
   Cell,
   Pie,
   PieChart,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+import { ResponsiveContainer } from "@/components/charts/in-view-container";
 import { toast } from "sonner";
 import { KpiCard } from "@/components/kpi/kpi-card";
 import { RunAuditButton } from "@/components/audit/run-audit-button";

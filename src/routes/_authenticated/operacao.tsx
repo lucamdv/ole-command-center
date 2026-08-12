@@ -13,11 +13,11 @@ import {
 import {
   Area,
   AreaChart,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+import { ResponsiveContainer } from "@/components/charts/in-view-container";
 import { useAuditHistory, useLatestAudit } from "@/hooks/use-audit";
 import { useLatestPolicySync, usePolicies } from "@/hooks/use-policies";
 import {
