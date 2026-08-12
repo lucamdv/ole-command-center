@@ -7,7 +7,6 @@ import {
   FileText,
   LayoutDashboard,
   Settings,
-  Sparkles,
   Radio,
   Wrench,
   ShieldCheck,
@@ -24,7 +23,6 @@ const NAV = [
   { to: "/apolices", label: "Apólices", icon: FileText },
   { to: "/alertas", label: "Alertas", icon: AlertTriangle },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
-  { to: "/intelligence", label: "Oléver", icon: Sparkles },
   { to: "/ferramentas", label: "Ferramentas", icon: Wrench },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ] as const;
