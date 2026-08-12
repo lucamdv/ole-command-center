@@ -461,12 +461,14 @@ function AnalyticsPage() {
                         strokeDasharray="5 5"
                         strokeOpacity={0.7}
                         label={{
-                          value: "Piso contratual · US$ 8.333,33",
-                          position: "insideBottomLeft",
+                          value: "Piso US$ 8.333,33",
+                          position: "right",
                           fill: "var(--muted-foreground)",
                           fontSize: 10,
-                          offset: 8,
+                          dy: -6,
+                          dx: -6,
                         }}
+
                       />
                       <Bar
                         dataKey="carregamentoExcelsior"
