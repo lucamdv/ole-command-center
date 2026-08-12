@@ -60,7 +60,7 @@ export function VirtualList<T>({
     <div
       ref={parentRef}
       className={cn("overflow-y-auto overflow-x-hidden overscroll-contain", className)}
-      style={{ contain: "strict" }}
+      style={{ contain: "paint" }}
     >
       <div style={{ height: virtualizer.getTotalSize(), position: "relative", width: "100%" }}>
         {virtualItems.map((vi) => {
