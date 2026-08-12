@@ -275,13 +275,14 @@ export const CallbackPayloadSchema = z.object({
     .default([]),
 });
 
-export const getSystemStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
+export const getSystemStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { adjustRunCounts, buildIgnoreSets } = await import("./audit/ignore-filter");
 
   const [{ data: lastRun }, { data: lastSync }] = await Promise.all([
     supabaseAdmin
       .from("audit_runs")
-      .select("id, status, error_message, created_at, aprovados, total_processado")
+      .select("id, status, error_message, created_at, aprovados, reprovados, total_processado")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
@@ -295,18 +296,49 @@ export const getSystemStatus = createServerFn({ method: "GET" }).middleware([req
   ]);
 
   const run = lastRun as
-    | { status: string; error_message: string | null; created_at: string; aprovados: number | null; total_processado: number | null }
+    | {
+        id: string;
+        status: string;
+        error_message: string | null;
+        created_at: string;
+        aprovados: number | null;
+        reprovados: number | null;
+        total_processado: number | null;
+      }
     | null;
   const sync = lastSync as { status: string; created_at: string } | null;
 
+  // Taxa de aprovação desconta as exceções da AUDITORIA (audit_ignores).
+  let aprovadosAjustado = run?.aprovados ?? 0;
+  if (run && (run.total_processado ?? 0) > 0) {
+    const [{ data: ignores }, { data: findings }] = await Promise.all([
+      context.supabase.from("audit_ignores").select("apolice, tipo_erro"),
+      supabaseAdmin.from("audit_findings").select("apolice, tipo_erro").eq("run_id", run.id),
+    ]);
+    const sets = buildIgnoreSets(
+      (ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>,
+    );
+    const adj = adjustRunCounts(
+      {
+        total_processado: run.total_processado ?? 0,
+        aprovados: run.aprovados ?? 0,
+        reprovados: run.reprovados ?? 0,
+      },
+      sets,
+      (findings ?? []) as Array<{ apolice: string; tipo_erro: string }>,
+    );
+    aprovadosAjustado = adj.aprovados;
+  }
+
   const approvalRate =
     run && (run.total_processado ?? 0) > 0
-      ? ((run.aprovados ?? 0) / (run.total_processado as number)) * 100
+      ? (aprovadosAjustado / (run.total_processado as number)) * 100
       : null;
 
   let state: "operational" | "degraded" | "down" = "operational";
   if (run?.status === "error" || sync?.status === "error") state = "down";
   else if (run?.status === "running" || (approvalRate != null && approvalRate < 95)) state = "degraded";
+
 
   return {
     state,
