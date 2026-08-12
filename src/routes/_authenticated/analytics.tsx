@@ -37,8 +37,6 @@ import {
   groupByEndosso,
   runSeries,
 } from "@/lib/audit/derive";
-import { exportAuditPdf } from "@/lib/audit/export-pdf";
-import { exportChartsPdf } from "@/lib/analytics/export-charts";
 import { formatBRL, formatCompact, formatInt, formatPct, formatUSD, relativeTime } from "@/lib/format";
 import { REPASSE_RULES } from "@/lib/analytics/repasse-rules";
 import { DateRangeFilter } from "@/components/analytics/date-range-filter";
@@ -213,6 +211,7 @@ function AnalyticsPage() {
     if (!latest) return;
     setExporting("report");
     try {
+      const { exportAuditPdf } = await import("@/lib/audit/export-pdf");
       exportAuditPdf(latest, history);
       toast.success("Relatório gerado");
     } catch (e) {
@@ -230,6 +229,7 @@ function AnalyticsPage() {
     if (nodes.length === 0) return;
     setExporting("charts");
     try {
+      const { exportChartsPdf } = await import("@/lib/analytics/export-charts");
       await exportChartsPdf(nodes, formatRangeBadge(range));
       toast.success(`${nodes.length} gráficos exportados`);
     } catch (e) {
