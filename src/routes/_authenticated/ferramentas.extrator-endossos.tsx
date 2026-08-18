@@ -42,6 +42,7 @@ import {
   useRunEndorsementExtraction,
   useUpdateEndorsementException,
 } from "@/hooks/use-endorsement-extraction";
+import type { EndorsementExceptionRow } from "@/lib/endorsement-extraction.functions";
 import { useExceptionTags } from "@/hooks/use-exception-tags";
 import { IgnoreReasonDialog } from "@/components/exceptions/ignore-reason-dialog";
 import { ReasonDisplay } from "@/components/exceptions/reason-chip";
