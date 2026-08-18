@@ -82,7 +82,7 @@ export function sortAlerts(items: AlertItem[], key: SortKey): AlertItem[] {
       case "reincidencia":
         return b.occurrences - a.occurrences || u(b) - u(a);
       case "apolice":
-        return a.apolice_cmp(b);
+        return a.f.apolice.localeCompare(b.f.apolice);
       case "urgencia":
       default:
         return u(b) - u(a) || b.occurrences - a.occurrences || b.daysOpen - a.daysOpen;
@@ -90,7 +90,3 @@ export function sortAlerts(items: AlertItem[], key: SortKey): AlertItem[] {
   });
   return out;
 }
-
-// Helper de comparação por apólice sem poluir o tipo público.
-declare module "./alert-view" {}
-Object.defineProperty(Object.prototype, "apolice_cmp", { value: undefined, writable: true });
