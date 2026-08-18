@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, EyeOff, Pencil, Search, Trash2, X } from "lucide-react";
+import { EyeOff, Pencil, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,27 +15,20 @@ import {
   useRemoveAuditIgnore,
   useUpdateAuditIgnore,
 } from "@/hooks/use-audit-ignores";
+import { useExceptionTags } from "@/hooks/use-exception-tags";
+import { ReasonDisplay } from "@/components/exceptions/reason-chip";
+import { IgnoreReasonDialog } from "@/components/exceptions/ignore-reason-dialog";
+import { ReasonTagsManager } from "@/components/settings/reason-tags-manager";
 import { formatDateTime } from "@/lib/format";
+import type { AuditIgnoreRow } from "@/lib/audit-ignores.functions";
 
 export function ExcecoesTab() {
   const { data: ignores = [], isLoading } = useAuditIgnores();
+  const { data: tags = [] } = useExceptionTags();
   const remove = useRemoveAuditIgnore();
   const update = useUpdateAuditIgnore();
   const [q, setQ] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
-
-  const startEdit = (id: string, motivo: string | null) => {
-    setEditingId(id);
-    setDraft(motivo ?? "");
-  };
-  const saveEdit = (id: string) => {
-    update.mutate(
-      { id, motivo: draft.trim() ? draft.trim() : null },
-      { onSuccess: () => setEditingId(null) },
-    );
-  };
-
+  const [editing, setEditing] = useState<AuditIgnoreRow | null>(null);
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -46,8 +39,8 @@ export function ExcecoesTab() {
   }, [ignores, q]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-start justify-between gap-4">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <h2 className="text-[15px] font-semibold flex items-center gap-2">
             <EyeOff className="h-4 w-4" /> Exceções de Auditoria
@@ -57,7 +50,7 @@ export function ExcecoesTab() {
             uma exceção faz o erro voltar a aparecer na próxima visualização do relatório.
           </p>
         </div>
-        <div className="relative w-[260px]">
+        <div className="relative w-full sm:w-[260px]">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             value={q}
@@ -106,84 +99,67 @@ export function ExcecoesTab() {
                     <span className="text-muted-foreground italic">Todos os erros</span>
                   )}
                 </TableCell>
-                <TableCell className="text-[12.5px] text-muted-foreground max-w-[320px]">
-                  {editingId === i.id ? (
-                    <Input
-                      autoFocus
-                      value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") saveEdit(i.id);
-                        if (e.key === "Escape") setEditingId(null);
-                      }}
-                      maxLength={500}
-                      placeholder="Motivo da exceção…"
-                      className="h-8 text-[12.5px]"
-                    />
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => startEdit(i.id, i.motivo)}
-                      className="text-left hover:text-foreground transition-colors w-full"
-                    >
-                      {i.motivo || <span className="italic">Adicionar motivo…</span>}
-                    </button>
-                  )}
+                <TableCell className="text-[12.5px] max-w-[320px]">
+                  <ReasonDisplay motivo={i.motivo} tagId={i.reason_tag_id} tags={tags} />
                 </TableCell>
                 <TableCell className="text-[11.5px] font-mono text-muted-foreground">
                   {formatDateTime(i.created_at)}
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap">
-                  {editingId === i.id ? (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 text-[11.5px] gap-1 text-primary"
-                        disabled={update.isPending}
-                        onClick={() => saveEdit(i.id)}
-                      >
-                        <Check className="h-3.5 w-3.5" /> Salvar
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0 text-muted-foreground"
-                        onClick={() => setEditingId(null)}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 text-[11.5px] gap-1 text-muted-foreground hover:text-foreground"
-                        onClick={() => startEdit(i.id, i.motivo)}
-                      >
-                        <Pencil className="h-3.5 w-3.5" /> Editar
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                        disabled={remove.isPending}
-                        onClick={() => {
-                          if (confirm(`Remover a exceção da apólice ${i.apolice}?`)) {
-                            remove.mutate({ id: i.id });
-                          }
-                        }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </>
-                  )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 text-[11.5px] gap-1 text-muted-foreground hover:text-foreground"
+                    onClick={() => setEditing(i)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" /> Editar motivo
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                    disabled={remove.isPending}
+                    onClick={() => {
+                      if (confirm(`Remover a exceção da apólice ${i.apolice}?`)) {
+                        remove.mutate({ id: i.id });
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
+      </div>
+
+      <IgnoreReasonDialog
+        open={!!editing}
+        onOpenChange={(v) => !v && setEditing(null)}
+        title="Editar motivo da exceção"
+        confirmLabel="Salvar motivo"
+        targetLabel={
+          editing
+            ? editing.tipo_erro
+              ? `${editing.tipo_erro} · apólice ${editing.apolice}`
+              : `Todos os erros da apólice ${editing.apolice}`
+            : undefined
+        }
+        initialMotivo={editing?.motivo ?? ""}
+        initialTagId={editing?.reason_tag_id ?? null}
+        pending={update.isPending}
+        onConfirm={({ motivo, reason_tag_id }) => {
+          if (!editing) return;
+          update.mutate(
+            { id: editing.id, motivo, reason_tag_id },
+            { onSuccess: () => setEditing(null) },
+          );
+        }}
+      />
+
+      <div className="border-t border-border pt-6">
+        <ReasonTagsManager />
       </div>
     </div>
   );
