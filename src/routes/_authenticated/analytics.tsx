@@ -29,7 +29,7 @@ import { useAnalyticsAggregates } from "@/hooks/use-analytics";
 import { useChartPrefs } from "@/hooks/use-settings";
 import { useOperationKpis } from "@/hooks/use-operation-kpis";
 import { useKpiTargets } from "@/hooks/use-kpi-targets";
-import { statusMax, statusMin } from "@/lib/kpis/derive";
+import { statusMax, statusMin, yoyPct } from "@/lib/kpis/derive";
 
 import {
   buildHeatmap,
