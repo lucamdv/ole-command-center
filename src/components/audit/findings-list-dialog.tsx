@@ -72,8 +72,13 @@ export function FindingsListDialog({
   const [view, setView] = useState<View>("agrupado");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
+  const [pendingIgnore, setPendingIgnore] = useState<{
+    apolice: string;
+    tipo_erro: string | null;
+  } | null>(null);
+
   const handleIgnore = (apolice: string, tipo_erro?: string) => {
-    addIgnore.mutate({ apolice, tipo_erro: tipo_erro ?? null });
+    setPendingIgnore({ apolice, tipo_erro: tipo_erro ?? null });
   };
 
   const handleResolve = (f: AuditFindingRow) => {
