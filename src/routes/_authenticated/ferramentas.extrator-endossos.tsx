@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
   ArrowUpDown,
-  Check,
   Download,
   EyeOff,
   FileDown,
@@ -12,7 +11,6 @@ import {
   RefreshCw,
   Search,
   Trash2,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VirtualList } from "@/components/ui/virtual-list";
