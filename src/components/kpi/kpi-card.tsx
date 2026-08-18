@@ -63,6 +63,8 @@ export const KpiCard = memo(function KpiCard({
   tone = "default",
   suffix,
   hint,
+  target,
+  status,
 }: KpiProps) {
   const animated = useAnimatedCounter(value);
   const sparkData = useMemo(() => spark?.map((v, i) => ({ i, v })) ?? [], [spark]);
