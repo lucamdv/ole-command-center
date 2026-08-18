@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { ResolutionTimeSummary } from "@/lib/audit/resolution-filter";
 import type {
   DailyKpis,
   FindingLite,
@@ -22,6 +23,10 @@ export interface OperationKpis {
   yearPrev: YearlyPoint;
   /** Corte do acumulado do ano, em DD/MM. */
   ytdLabel: string;
+  /** Tempo de resolução (primeira detecção → resolução manual), geral e por tipo. */
+  resolutionTime: ResolutionTimeSummary;
+  /** Resoluções manuais registradas desde a run anterior. */
+  resolvidasManuais: number;
 }
 
 export const getOperationKpis = createServerFn({ method: "GET" })
@@ -29,6 +34,9 @@ export const getOperationKpis = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<OperationKpis> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { buildIgnoreSets, filterFindings } = await import("@/lib/audit/ignore-filter");
+    const { deriveResolutionTimes, resolutionsAsIgnoreEntries } = await import(
+      "@/lib/audit/resolution-filter"
+    );
     const { deriveDaily, deriveMonthlyReincidencia, deriveWeekly, findingKey, isCritical } =
       await import("@/lib/kpis/derive");
 
@@ -53,8 +61,12 @@ export const getOperationKpis = createServerFn({ method: "GET" })
 
     const byRun = new Map<string, FindingLite[]>();
     if (runsAsc.length > 0) {
-      const [{ data: ignores }, { data: findings }] = await Promise.all([
+      const [{ data: ignores }, { data: resolvidosAtivos }, { data: findings }] = await Promise.all([
         context.supabase.from("audit_ignores").select("apolice, tipo_erro"),
+        context.supabase
+          .from("audit_resolutions")
+          .select("apolice, tipo_erro")
+          .is("reopened_at", null),
         supabaseAdmin
           .from("audit_findings")
           .select("run_id, apolice, tipo_erro, detalhes")
@@ -63,9 +75,12 @@ export const getOperationKpis = createServerFn({ method: "GET" })
             runsAsc.map((r) => r.id),
           ),
       ]);
-      const sets = buildIgnoreSets(
-        (ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>,
-      );
+      const sets = buildIgnoreSets([
+        ...((ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>),
+        ...resolutionsAsIgnoreEntries(
+          (resolvidosAtivos ?? []) as Array<{ apolice: string; tipo_erro: string }>,
+        ),
+      ]);
       const all = (findings ?? []) as Array<{
         run_id: string;
         apolice: string;
@@ -86,7 +101,28 @@ export const getOperationKpis = createServerFn({ method: "GET" })
       }
     }
 
+    // === Resoluções manuais (tempo de resolução por tipo) ===
+    const { data: resolucoes } = await context.supabase
+      .from("audit_resolutions")
+      .select("apolice, tipo_erro, first_seen_at, resolved_at")
+      .order("resolved_at", { ascending: false })
+      .limit(2000);
+    const resolucoesRows = (resolucoes ?? []) as Array<{
+      apolice: string;
+      tipo_erro: string;
+      first_seen_at: string | null;
+      resolved_at: string;
+    }>;
+    const resolutionTime = deriveResolutionTimes(resolucoesRows);
+
     const daily = deriveDaily(runsAsc, byRun);
+    // Resoluções manuais desde a run anterior (ou últimas 24h quando só há uma run).
+    const prevRunAt = runsAsc.length > 1 ? runsAsc[runsAsc.length - 2].at : null;
+    const desde = prevRunAt ? +new Date(prevRunAt) : Date.now() - 86_400_000;
+    const resolvidasManuais = resolucoesRows.filter(
+      (r) => +new Date(r.resolved_at) >= desde,
+    ).length;
+    daily.resolvidas += resolvidasManuais;
     const weekly = deriveWeekly(runsAsc, byRun, 7);
     const monthlyReincidencia = deriveMonthlyReincidencia(runsAsc, byRun);
 
@@ -196,6 +232,8 @@ export const getOperationKpis = createServerFn({ method: "GET" })
       yearCur: yearly.find((y) => y.year === nowYear) ?? emptyYear(nowYear),
       yearPrev: yearly.find((y) => y.year === nowYear - 1) ?? emptyYear(nowYear - 1),
       ytdLabel: cutoff.split("-").reverse().join("/"),
+      resolutionTime,
+      resolvidasManuais,
     };
   });
 
