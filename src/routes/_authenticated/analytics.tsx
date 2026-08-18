@@ -469,7 +469,7 @@ function AnalyticsPage() {
               label="Redução de incidentes"
               value={formatPct(reducaoIncidentes, 1)}
               hint={
-                yearCur && yearPrev
+                yearCur && yearPrev && yearPrev.criticos > 0
                   ? `${formatInt(yearPrev.criticos)} → ${formatInt(yearCur.criticos)} críticos`
                   : "histórico insuficiente"
               }
