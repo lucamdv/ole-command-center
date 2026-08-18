@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   AlertTriangle,
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
   Copy,
@@ -46,6 +47,7 @@ import {
 } from "@/lib/audit/derive";
 import { useAuditHistory } from "@/hooks/use-audit";
 import { useAddAuditIgnore, useAuditIgnores } from "@/hooks/use-audit-ignores";
+import { useResolveFinding } from "@/hooks/use-audit-resolutions";
 import type { AuditFindingRow, LatestAudit } from "@/lib/audit/types";
 import { formatDate, formatDateTime, formatInt } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -64,6 +66,7 @@ export function FindingsListDialog({
   const { data: history = [] } = useAuditHistory();
   const { data: ignores = [] } = useAuditIgnores();
   const addIgnore = useAddAuditIgnore();
+  const resolve = useResolveFinding();
   const [tipo, setTipo] = useState<string>("__all__");
   const [sev, setSev] = useState<Severity | "__all__">("__all__");
   const [view, setView] = useState<View>("agrupado");
@@ -71,6 +74,15 @@ export function FindingsListDialog({
 
   const handleIgnore = (apolice: string, tipo_erro?: string) => {
     addIgnore.mutate({ apolice, tipo_erro: tipo_erro ?? null });
+  };
+
+  const handleResolve = (f: AuditFindingRow) => {
+    resolve.mutate({
+      apolice: f.apolice,
+      tipo_erro: f.tipo_erro,
+      endosso: f.endosso,
+      run_id: latest.run.id,
+    });
   };
 
   const tipos = useMemo(
@@ -247,9 +259,15 @@ export function FindingsListDialog({
               onToggle={(k) => setCollapsed((s) => ({ ...s, [k]: !s[k] }))}
               onCopy={copy}
               onIgnore={handleIgnore}
+              onResolve={handleResolve}
             />
           ) : (
-            <TableView findings={filtered} onCopy={copy} onIgnore={handleIgnore} />
+            <TableView
+              findings={filtered}
+              onCopy={copy}
+              onIgnore={handleIgnore}
+              onResolve={handleResolve}
+            />
           )}
         </div>
       </DialogContent>
@@ -286,12 +304,14 @@ function GroupedView({
   onToggle,
   onCopy,
   onIgnore,
+  onResolve,
 }: {
   groups: ReturnType<typeof groupByApolice>;
   collapsed: Record<string, boolean>;
   onToggle: (apolice: string) => void;
   onCopy: (txt: string, msg?: string) => void;
   onIgnore: (apolice: string, tipo_erro?: string) => void;
+  onResolve: (f: AuditFindingRow) => void;
 }) {
   if (groups.length === 0) {
     return (
@@ -359,7 +379,7 @@ function GroupedView({
             {!isCollapsed && (
               <ul className="px-5 py-3 space-y-2.5">
                 {g.findings.map((f) => (
-                  <FindingBullet key={f.id} f={f} onIgnore={onIgnore} />
+                  <FindingBullet key={f.id} f={f} onIgnore={onIgnore} onResolve={onResolve} />
                 ))}
               </ul>
             )}
@@ -370,7 +390,15 @@ function GroupedView({
   );
 }
 
-function FindingBullet({ f, onIgnore }: { f: AuditFindingRow; onIgnore: (apolice: string, tipo_erro?: string) => void }) {
+function FindingBullet({
+  f,
+  onIgnore,
+  onResolve,
+}: {
+  f: AuditFindingRow;
+  onIgnore: (apolice: string, tipo_erro?: string) => void;
+  onResolve: (f: AuditFindingRow) => void;
+}) {
   const sev = severityOf(f);
   const Icon = sev === "erro" ? XCircle : AlertTriangle;
   const n = normalizeFinding(f);
@@ -419,6 +447,14 @@ function FindingBullet({ f, onIgnore }: { f: AuditFindingRow; onIgnore: (apolice
           >
             <EyeOff className="h-3 w-3" /> Ignorar
           </button>
+          <button
+            type="button"
+            onClick={() => onResolve(f)}
+            className="inline-flex items-center gap-1 text-[10.5px] text-success/80 hover:text-success opacity-80 hover:opacity-100 transition"
+            title="Marcar como resolvido (alimenta os KPIs de resolução)"
+          >
+            <CheckCircle2 className="h-3 w-3" /> Resolvido
+          </button>
         </div>
 
         {n.motivo && (
@@ -454,10 +490,12 @@ function TableView({
   findings,
   onCopy,
   onIgnore,
+  onResolve,
 }: {
   findings: AuditFindingRow[];
   onCopy: (txt: string, msg?: string) => void;
   onIgnore: (apolice: string, tipo_erro?: string) => void;
+  onResolve: (f: AuditFindingRow) => void;
 }) {
   return (
     <Table>
@@ -470,7 +508,7 @@ function TableView({
           <TableHead className="text-[11px]">Início</TableHead>
           <TableHead className="text-[11px]">Fim</TableHead>
           <TableHead className="text-[11px]">Detalhe</TableHead>
-          <TableHead className="text-[11px] w-[80px]" />
+          <TableHead className="text-[11px] w-[110px]" />
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -532,18 +570,28 @@ function TableView({
                 })()}
               </TableCell>
               <TableCell className="align-top">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (confirm(`Ignorar "${f.tipo_erro}" na apólice ${f.apolice}?`)) {
-                      onIgnore(f.apolice, f.tipo_erro);
-                    }
-                  }}
-                  className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
-                  title="Ignorar este erro"
-                >
-                  <EyeOff className="h-3.5 w-3.5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm(`Ignorar "${f.tipo_erro}" na apólice ${f.apolice}?`)) {
+                        onIgnore(f.apolice, f.tipo_erro);
+                      }
+                    }}
+                    className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+                    title="Ignorar este erro"
+                  >
+                    <EyeOff className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onResolve(f)}
+                    className="inline-flex items-center gap-1 text-[11px] text-success/80 hover:text-success"
+                    title="Marcar como resolvido"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </TableCell>
             </TableRow>
           );
