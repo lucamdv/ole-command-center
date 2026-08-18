@@ -368,6 +368,128 @@ function AnalyticsPage() {
             />
           </div>
 
+          {/* === KPIs semanais (cadência 5.2) === */}
+          <SectionTitle
+            title="KPIs semanais"
+            subtitle="Reincidência de inconsistências e volume de repasse nos últimos 7 dias de execução"
+          />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Kpi
+              label="Reincidência semanal"
+              value={formatPct(ops?.weekly.reincidenciaPct ?? 0, 1)}
+              hint={`${formatInt(ops?.weekly.repetidas ?? 0)} de ${formatInt(ops?.weekly.total ?? 0)} achados`}
+              tone="warning"
+              target={`meta ≤ ${targets.reincidenciaMaxPct}%`}
+              status={statusMax(ops?.weekly.reincidenciaPct ?? 0, targets.reincidenciaMaxPct)}
+            />
+            <Kpi
+              label="Apólices reincidentes"
+              value={formatInt(ops?.weekly.apolicesReincidentes ?? 0)}
+              hint={`${formatInt(ops?.weekly.runs ?? 0)} run(s) na janela`}
+              tone="destructive"
+            />
+            <Kpi
+              label="Inconsistências novas"
+              value={formatInt(ops?.weekly.novasUnicas ?? 0)}
+              hint="Ocorrências inéditas na semana"
+            />
+            <Kpi
+              label="Repasse do último mês (USD)"
+              value={formatUSD(repasse.length ? repasse[repasse.length - 1].excelsiorLiquido : 0, {
+                maximumFractionDigits: 0,
+              })}
+              hint={repasse.length ? repasse[repasse.length - 1].label : "sem dados"}
+              tone="success"
+            />
+          </div>
+
+          {/* === KPIs mensais (cadência 5.3) === */}
+          <SectionTitle
+            title="KPIs mensais"
+            subtitle="Reincidência consolidada e capacidade operacional da carteira"
+          />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Kpi
+              label="Reincidência consolidada"
+              value={formatPct(reincMensalAtual?.reincidenciaPct ?? 0, 1)}
+              hint={reincMensalAtual ? `${reincMensalAtual.label} · média 3m ${formatPct(reincMensalAtual.mm3, 1)}` : "sem dados"}
+              tone="warning"
+              target={`meta ≤ ${targets.reincidenciaMaxPct}%`}
+              status={statusMax(reincMensalAtual?.reincidenciaPct ?? 0, targets.reincidenciaMaxPct)}
+            />
+            <Kpi
+              label="Contratos ativos"
+              value={formatInt(ops?.contratosAtivos ?? 0)}
+              hint={`${formatInt(ops?.carteiraTotal ?? 0)} apólices registradas`}
+              tone="success"
+            />
+            <Kpi
+              label="Capacidade operacional"
+              value={formatPct(
+                targets.capacidadeContratos > 0
+                  ? ((ops?.contratosAtivos ?? 0) / targets.capacidadeContratos) * 100
+                  : 0,
+                1,
+              )}
+              hint={`Capacidade declarada: ${formatInt(targets.capacidadeContratos)} contratos`}
+              target={`meta ≤ 100%`}
+              status={statusMax(
+                targets.capacidadeContratos > 0
+                  ? ((ops?.contratosAtivos ?? 0) / targets.capacidadeContratos) * 100
+                  : 0,
+                100,
+              )}
+            />
+            <Kpi
+              label="Emissões no último mês"
+              value={formatInt(issuances.length ? issuances[issuances.length - 1].total : 0)}
+              hint={issuances.length ? issuances[issuances.length - 1].label : "sem dados"}
+            />
+          </div>
+
+          {/* === KPIs anuais (cadência 5.4) === */}
+          <SectionTitle
+            title="KPIs anuais"
+            subtitle="Crescimento da carteira, redução de incidentes e prêmio consolidado"
+          />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Kpi
+              label="Crescimento da carteira"
+              value={formatPct(crescimentoCarteira, 1)}
+              hint={
+                yearCur && yearPrev
+                  ? `${yearPrev.year}: ${formatInt(yearPrev.contratos)} → ${yearCur.year}: ${formatInt(yearCur.contratos)}`
+                  : "histórico insuficiente"
+              }
+              tone="success"
+              target={`meta ≥ ${targets.crescimentoAnualMinPct}%`}
+              status={statusMin(crescimentoCarteira, targets.crescimentoAnualMinPct)}
+            />
+            <Kpi
+              label="Redução de incidentes"
+              value={formatPct(reducaoIncidentes, 1)}
+              hint={
+                yearCur && yearPrev
+                  ? `${formatInt(yearPrev.criticos)} → ${formatInt(yearCur.criticos)} críticos`
+                  : "histórico insuficiente"
+              }
+              tone={reducaoIncidentes >= 0 ? "success" : "destructive"}
+            />
+            <Kpi
+              label="Contratos emitidos no ano"
+              value={formatInt(yearCur?.contratos ?? 0)}
+              hint={yearCur ? `Ano ${yearCur.year}` : "sem dados"}
+            />
+            <Kpi
+              label="Prêmio direto do ano (USD)"
+              value={formatUSD(yearCur?.premioUsd ?? 0, { maximumFractionDigits: 0 })}
+              hint={yearCur ? `Ano ${yearCur.year}` : "sem dados"}
+              tone="success"
+            />
+          </div>
+
+
+
 
           <div ref={chartsRef} className="space-y-6">
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
