@@ -423,7 +423,7 @@ function AnalyticsPage() {
               label="Tempo médio de resolução"
               value={formatDuracaoHoras(ops?.resolutionTime.mediaHoras ?? 0)}
               hint="Média geral (primeira detecção → resolução)"
-              tone="info"
+              tone="success"
             />
             <Kpi
               label="Tempo mediano"
