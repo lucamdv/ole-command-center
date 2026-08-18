@@ -36,6 +36,18 @@ import type { AuditFindingRow, LatestAudit } from "@/lib/audit/types";
 import { formatDateTime, formatInt, formatPct, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useProfile } from "@/hooks/use-settings";
+import { useOperationKpis } from "@/hooks/use-operation-kpis";
+import { useKpiTargets } from "@/hooks/use-kpi-targets";
+import { statusMax } from "@/lib/kpis/derive";
+
+function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 pt-1">
+      <h2 className="text-[13px] font-semibold uppercase tracking-wider text-foreground">{title}</h2>
+      {subtitle && <span className="text-[11px] text-muted-foreground">{subtitle}</span>}
+    </div>
+  );
+}
 
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -177,6 +189,16 @@ function Dashboard({
   history: ReturnType<typeof useAuditHistory>["data"] extends infer T ? Exclude<T, undefined> : never;
 }) {
   const k = deriveKpis({ latest, history });
+  const { data: ops } = useOperationKpis();
+  const { targets } = useKpiTargets();
+  const daily = ops?.daily ?? {
+    runAt: null,
+    novas: 0,
+    criticasAbertas: 0,
+    resolvidas: 0,
+    mediaMovel: 0,
+    desvioPct: 0,
+  };
   if (!k) return null;
 
   const series = runSeries(history);
@@ -203,7 +225,11 @@ function Dashboard({
       {/* Banner consolidado estilo Notion */}
       <ConsolidatedBanner latest={latest} sev={sev} grouped={grouped.length} />
 
-      {/* KPIs executivos — 6 cartões */}
+      {/* === Estado da execução === */}
+      <SectionTitle
+        title="Estado da execução"
+        subtitle="Resultado consolidado da última auditoria"
+      />
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <KpiCard label="Conformidade da Carteira" value={k.approvedRate} suffix="%" delta={Number(k.deltaApproved.toFixed(1))} spark={series.map((s) => 100 - s.risk)} tone="success" hint="Taxa de aprovação" />
         <KpiCard label="Saúde Operacional" value={Math.max(0, 100 - k.operationalRisk)} suffix="pts" spark={series.map((s) => 100 - s.risk)} tone="info" hint="Score executivo (100 - risco)" />
@@ -212,6 +238,54 @@ function Dashboard({
         <KpiCard label="Regras Críticas Acionadas" value={k.uniqueErrorTypes} format={formatInt} spark={sparkRejected} tone="warning" hint={k.topErrorType ? `Top: ${k.topErrorType}` : "—"} />
         <KpiCard label="Velocidade Operacional" value={latest.run.duration_ms ? Number((latest.run.duration_ms / 1000).toFixed(1)) : 0} suffix="s" spark={sparkTotal} tone="info" hint="Duração da última run" />
       </div>
+
+      {/* === KPIs diários (cadência 5.1) === */}
+      <SectionTitle
+        title="KPIs diários"
+        subtitle="Inconsistências detectadas, criticidade e tempo de resposta do motor"
+      />
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <KpiCard
+          label="Inconsistências detectadas"
+          value={daily.novas}
+          format={formatInt}
+          tone="warning"
+          hint={`Média móvel: ${daily.mediaMovel.toLocaleString("pt-BR")} / run`}
+          target={`meta ≤ ${targets.picoDesvioPct}% acima da média`}
+          status={statusMax(Math.max(0, daily.desvioPct), targets.picoDesvioPct)}
+        />
+        <KpiCard
+          label="Ocorrências críticas"
+          value={daily.criticasAbertas}
+          format={formatInt}
+          tone="destructive"
+          hint="Achados de nível ERRO em aberto"
+          target={`meta ≤ ${formatInt(targets.criticasAbertasMax)}`}
+          status={statusMax(daily.criticasAbertas, targets.criticasAbertasMax)}
+        />
+        <KpiCard
+          label="Inconsistências resolvidas"
+          value={daily.resolvidas}
+          format={formatInt}
+          tone="success"
+          hint="Deixaram de aparecer vs. run anterior"
+        />
+        <KpiCard
+          label="Desvio vs. média móvel"
+          value={daily.desvioPct}
+          suffix="%"
+          tone={daily.desvioPct > 0 ? "warning" : "success"}
+          hint="Variação do volume de achados"
+        />
+        <KpiCard
+          label="Tempo de resposta"
+          value={latest.run.duration_ms ? Number((latest.run.duration_ms / 1000).toFixed(1)) : 0}
+          suffix="s"
+          tone="info"
+          hint={daily.runAt ? `Run de ${relativeTime(daily.runAt)}` : "Duração da última run"}
+        />
+      </div>
+
 
       {/* Severidade split + linha secundária */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
