@@ -90,10 +90,51 @@ export interface MonthlyReincidencia {
 
 export interface YearlyPoint {
   year: number;
+  /** Contratos emitidos no ano (ano fechado). */
   contratos: number;
-  premioUsd: number;
+  /** Contratos emitidos até o mesmo dia/mês do ano de referência. */
+  contratosYtd: number;
+  /** Prêmio emitido (todos os componentes das parcelas) no ano. */
+  premioEmitidoUsd: number;
+  premioEmitidoYtdUsd: number;
+  /** Prêmio direto puro (DIRETO/PREMIO) das apólices emitidas no ano. */
+  premioDiretoUsd: number;
+  premioDiretoYtdUsd: number;
+  /** Achados críticos DISTINTOS (apólice + tipo de erro) no ano. */
   criticos: number;
+  criticosYtd: number;
 }
+
+export function emptyYear(year: number): YearlyPoint {
+  return {
+    year,
+    contratos: 0,
+    contratosYtd: 0,
+    premioEmitidoUsd: 0,
+    premioEmitidoYtdUsd: 0,
+    premioDiretoUsd: 0,
+    premioDiretoYtdUsd: 0,
+    criticos: 0,
+    criticosYtd: 0,
+  };
+}
+
+/** "MM-DD" da data de referência, usado para recortar o acumulado do ano (YTD). */
+export function ytdCutoff(ref = new Date()): string {
+  return ref.toISOString().slice(5, 10);
+}
+
+/** A data (YYYY-MM-DD) está dentro do acumulado até o corte MM-DD? */
+export function withinYtd(date: string, cutoffMonthDay: string): boolean {
+  return date.slice(5, 10) <= cutoffMonthDay;
+}
+
+/** Variação percentual ano a ano; null quando a base é zero (histórico insuficiente). */
+export function yoyPct(current: number, previous: number): number | null {
+  if (previous <= 0) return null;
+  return Math.round(((current - previous) / previous) * 1000) / 10;
+}
+
 
 function monthLabel(month: string): string {
   const [y, m] = month.split("-").map(Number);
