@@ -42,6 +42,9 @@ import {
   useRunEndorsementExtraction,
   useUpdateEndorsementException,
 } from "@/hooks/use-endorsement-extraction";
+import { useExceptionTags } from "@/hooks/use-exception-tags";
+import { IgnoreReasonDialog } from "@/components/exceptions/ignore-reason-dialog";
+import { ReasonDisplay } from "@/components/exceptions/reason-chip";
 import { formatDateTime, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -76,6 +79,7 @@ function ExtratorPage() {
 
   const [q, setQ] = useState("");
   const [asc, setAsc] = useState(true);
+  const [pendingPolicy, setPendingPolicy] = useState<string | null>(null);
 
   const rows = useMemo(() => {
     const items = latest?.items ?? [];
@@ -241,9 +245,7 @@ function ExtratorPage() {
                       variant="ghost"
                       className="h-8 text-[11.5px] gap-1 text-muted-foreground hover:text-foreground"
                       disabled={addException.isPending}
-                      onClick={() =>
-                        addException.mutate({ policy_number: r.policy_number, motivo: null })
-                      }
+                      onClick={() => setPendingPolicy(r.policy_number)}
                     >
                       <EyeOff className="h-3.5 w-3.5" /> Ignorar
                     </Button>
@@ -254,6 +256,21 @@ function ExtratorPage() {
           </VirtualList>
         )}
       </div>
+
+      <IgnoreReasonDialog
+        open={!!pendingPolicy}
+        onOpenChange={(v) => !v && setPendingPolicy(null)}
+        targetLabel={pendingPolicy ? `Apólice ${pendingPolicy}` : undefined}
+        description="A apólice deixa de aparecer na tabela, nas exportações e no envio ao fluxo. O motivo é obrigatório."
+        pending={addException.isPending}
+        onConfirm={({ motivo, reason_tag_id }) => {
+          if (!pendingPolicy) return;
+          addException.mutate(
+            { policy_number: pendingPolicy, motivo, reason_tag_id },
+            { onSuccess: () => setPendingPolicy(null) },
+          );
+        }}
+      />
     </div>
   );
 }
@@ -264,22 +281,14 @@ function ExceptionsDialog({ isAdmin }: { isAdmin: boolean }) {
   const update = useUpdateEndorsementException();
   const remove = useRemoveEndorsementException();
 
+  const { data: tags = [] } = useExceptionTags();
   const [policy, setPolicy] = useState("");
-  const [motivo, setMotivo] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
+  const [askReasonFor, setAskReasonFor] = useState<string | null>(null);
+  const [editing, setEditing] = useState<EndorsementExceptionRow | null>(null);
 
   const submit = () => {
     if (!policy.trim()) return;
-    add.mutate(
-      { policy_number: policy.trim(), motivo: motivo.trim() || null },
-      {
-        onSuccess: () => {
-          setPolicy("");
-          setMotivo("");
-        },
-      },
-    );
+    setAskReasonFor(policy.trim());
   };
 
   return (
