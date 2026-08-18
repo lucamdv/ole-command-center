@@ -1,6 +1,8 @@
-import { RotateCcw, Target } from "lucide-react";
+import { RotateCcw, Target, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { useKpiTargets } from "@/hooks/use-kpi-targets";
+import { useEscalationRules } from "@/hooks/use-escalation-rules";
+import { URGENCY_LABEL, URGENCY_ORDER, type Urgency } from "@/lib/audit/escalation";
 import type { KpiTargets } from "@/lib/kpis/derive";
 
 const FIELDS: Array<{
