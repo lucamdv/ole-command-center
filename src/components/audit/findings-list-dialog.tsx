@@ -397,11 +397,7 @@ function GroupedView({
                 size="sm"
                 variant="ghost"
                 className="h-7 px-2 text-[11px] gap-1 text-muted-foreground hover:text-foreground"
-                onClick={() => {
-                  if (confirm(`Ignorar TODOS os erros da apólice ${g.apolice} em execuções futuras?`)) {
-                    onIgnore(g.apolice);
-                  }
-                }}
+                onClick={() => onIgnore(g.apolice)}
                 title="Ignorar apólice em futuras auditorias"
               >
                 <EyeOff className="h-3.5 w-3.5" /> Ignorar apólice
@@ -469,11 +465,7 @@ function FindingBullet({
           )}
           <button
             type="button"
-            onClick={() => {
-              if (confirm(`Ignorar "${f.tipo_erro}" na apólice ${f.apolice} em execuções futuras?`)) {
-                onIgnore(f.apolice, f.tipo_erro);
-              }
-            }}
+            onClick={() => onIgnore(f.apolice, f.tipo_erro)}
             className="ml-auto inline-flex items-center gap-1 text-[10.5px] text-muted-foreground hover:text-foreground opacity-70 hover:opacity-100 transition"
             title="Ignorar este erro em futuras auditorias"
           >
@@ -605,11 +597,7 @@ function TableView({
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      if (confirm(`Ignorar "${f.tipo_erro}" na apólice ${f.apolice}?`)) {
-                        onIgnore(f.apolice, f.tipo_erro);
-                      }
-                    }}
+                    onClick={() => onIgnore(f.apolice, f.tipo_erro)}
                     className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
                     title="Ignorar este erro"
                   >
