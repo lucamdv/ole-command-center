@@ -109,6 +109,24 @@ export const KpiCard = memo(function KpiCard({
 
         {hint && <div className="text-[10.5px] text-muted-foreground mb-2">{hint}</div>}
 
+        {(target || status) && (
+          <div className="mb-2 flex flex-wrap items-center gap-1.5">
+            {target && (
+              <span className="text-[10px] font-mono text-muted-foreground/90">{target}</span>
+            )}
+            {status && (
+              <span
+                className={cn(
+                  "rounded border px-1.5 py-px text-[9.5px] font-semibold uppercase tracking-wide",
+                  STATUS_STYLE[status],
+                )}
+              >
+                {STATUS_LABEL[status]}
+              </span>
+            )}
+          </div>
+        )}
+
         {sparkData.length > 0 && (
           <div className="h-10 -mx-1 -mb-1">
             <ResponsiveContainer width="100%" height="100%">
