@@ -71,6 +71,27 @@ function AnalyticsPage() {
   const historyQ = useAuditHistory();
   const policiesQ = usePolicies();
   const aggregatesQ = useAnalyticsAggregates();
+  const opsQ = useOperationKpis();
+  const { targets } = useKpiTargets();
+
+  const ops = opsQ.data ?? null;
+  const monthlyReinc = useMemo(
+    () => (ops?.monthlyReincidencia ?? []),
+    [ops],
+  );
+  const yearly = ops?.yearly ?? [];
+  const yearCur = yearly.length > 0 ? yearly[yearly.length - 1] : null;
+  const yearPrev = yearly.length > 1 ? yearly[yearly.length - 2] : null;
+  const crescimentoCarteira =
+    yearCur && yearPrev && yearPrev.contratos > 0
+      ? ((yearCur.contratos - yearPrev.contratos) / yearPrev.contratos) * 100
+      : 0;
+  const reducaoIncidentes =
+    yearCur && yearPrev && yearPrev.criticos > 0
+      ? ((yearPrev.criticos - yearCur.criticos) / yearPrev.criticos) * 100
+      : 0;
+  const reincMensalAtual =
+    monthlyReinc.length > 0 ? monthlyReinc[monthlyReinc.length - 1] : null;
 
   const [range, setRange] = useState<DateRangeState>(DEFAULT_RANGE);
   const bounds = useMemo(() => resolveRange(range), [range]);
