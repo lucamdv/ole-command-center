@@ -824,6 +824,27 @@ const tooltipProps = {
   cursor: { fill: "var(--accent)", opacity: 0.3 },
 } as const;
 
+function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 pt-1">
+      <h2 className="text-[13px] font-semibold uppercase tracking-wider text-foreground">{title}</h2>
+      {subtitle && <span className="text-[11px] text-muted-foreground">{subtitle}</span>}
+    </div>
+  );
+}
+
+const KPI_STATUS_STYLE: Record<"ok" | "warn" | "bad", string> = {
+  ok: "text-success bg-success/10 border-success/30",
+  warn: "text-warning bg-warning/10 border-warning/30",
+  bad: "text-destructive bg-destructive/10 border-destructive/30",
+};
+
+const KPI_STATUS_LABEL: Record<"ok" | "warn" | "bad", string> = {
+  ok: "na meta",
+  warn: "atenção",
+  bad: "fora da meta",
+};
+
 function Kpi({
   label,
   value,
@@ -832,6 +853,8 @@ function Kpi({
   deltaSuffix = "%",
   tone,
   invertDelta,
+  target,
+  status,
 }: {
   label: string;
   value: string;
@@ -840,6 +863,8 @@ function Kpi({
   deltaSuffix?: string;
   tone?: "success" | "warning" | "destructive";
   invertDelta?: boolean;
+  target?: string;
+  status?: "ok" | "warn" | "bad";
 }) {
   const toneClass =
     tone === "success"
@@ -869,9 +894,22 @@ function Kpi({
         )}
         {hint && <span className="text-muted-foreground truncate">{hint}</span>}
       </div>
+      {(target || status) && (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {target && <span className="text-[10px] font-mono text-muted-foreground/90">{target}</span>}
+          {status && (
+            <span
+              className={`rounded border px-1.5 py-px text-[9.5px] font-semibold uppercase tracking-wide ${KPI_STATUS_STYLE[status]}`}
+            >
+              {KPI_STATUS_LABEL[status]}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
+
 
 function ChartCard({
   title,
