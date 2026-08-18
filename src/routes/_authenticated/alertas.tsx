@@ -58,7 +58,7 @@ export const Route = createFileRoute("/_authenticated/alertas")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: AlertasPage;
+  component: AlertasPage,
 });
 
 type Tab = "abertos" | "resolvidos" | "excecoes";
