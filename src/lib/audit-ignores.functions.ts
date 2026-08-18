@@ -9,6 +9,7 @@ export interface AuditIgnoreRow {
   apolice: string;
   tipo_erro: string | null;
   motivo: string | null;
+  reason_tag_id: string | null;
   created_at: string;
 }
 
