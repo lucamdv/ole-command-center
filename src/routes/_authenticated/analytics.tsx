@@ -79,17 +79,14 @@ function AnalyticsPage() {
     () => (ops?.monthlyReincidencia ?? []),
     [ops],
   );
-  const yearly = ops?.yearly ?? [];
-  const yearCur = yearly.length > 0 ? yearly[yearly.length - 1] : null;
-  const yearPrev = yearly.length > 1 ? yearly[yearly.length - 2] : null;
+  const yearCur = ops?.yearCur ?? null;
+  const yearPrev = ops?.yearPrev ?? null;
+  const ytdLabel = ops?.ytdLabel ?? "";
   const crescimentoCarteira =
-    yearCur && yearPrev && yearPrev.contratos > 0
-      ? ((yearCur.contratos - yearPrev.contratos) / yearPrev.contratos) * 100
-      : 0;
+    yearCur && yearPrev ? yoyPct(yearCur.contratosYtd, yearPrev.contratosYtd) : null;
   const reducaoIncidentes =
-    yearCur && yearPrev && yearPrev.criticos > 0
-      ? ((yearPrev.criticos - yearCur.criticos) / yearPrev.criticos) * 100
-      : 0;
+    yearCur && yearPrev ? yoyPct(yearPrev.criticosYtd, yearCur.criticosYtd) : null;
+
   const reincMensalAtual =
     monthlyReinc.length > 0 ? monthlyReinc[monthlyReinc.length - 1] : null;
 
