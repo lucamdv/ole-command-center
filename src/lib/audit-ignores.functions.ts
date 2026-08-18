@@ -65,7 +65,8 @@ export const addAuditIgnore = createServerFn({ method: "POST" })
 
 const UpdateSchema = z.object({
   id: z.string().uuid(),
-  motivo: z.string().max(500).nullable(),
+  motivo: z.string().trim().min(1, "Motivo obrigatório").max(500),
+  reason_tag_id: z.string().uuid().optional().nullable(),
 });
 
 export const updateAuditIgnore = createServerFn({ method: "POST" })
@@ -74,7 +75,10 @@ export const updateAuditIgnore = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("audit_ignores")
-      .update({ motivo: data.motivo?.trim() ? data.motivo.trim() : null } as never)
+      .update({
+        motivo: data.motivo.trim(),
+        reason_tag_id: data.reason_tag_id ?? null,
+      } as never)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
