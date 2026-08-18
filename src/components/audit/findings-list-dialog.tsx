@@ -275,6 +275,32 @@ export function FindingsListDialog({
             />
           )}
         </div>
+
+        <IgnoreReasonDialog
+          open={!!pendingIgnore}
+          onOpenChange={(v) => !v && setPendingIgnore(null)}
+          targetLabel={
+            pendingIgnore
+              ? pendingIgnore.tipo_erro
+                ? `${pendingIgnore.tipo_erro} · apólice ${pendingIgnore.apolice}`
+                : `Todos os erros da apólice ${pendingIgnore.apolice}`
+              : undefined
+          }
+          description="Esta exceção oculta o achado nas próximas auditorias. O motivo é obrigatório."
+          pending={addIgnore.isPending}
+          onConfirm={({ motivo, reason_tag_id }) => {
+            if (!pendingIgnore) return;
+            addIgnore.mutate(
+              {
+                apolice: pendingIgnore.apolice,
+                tipo_erro: pendingIgnore.tipo_erro,
+                motivo,
+                reason_tag_id,
+              },
+              { onSuccess: () => setPendingIgnore(null) },
+            );
+          }}
+        />
       </DialogContent>
     </Dialog>
   );
