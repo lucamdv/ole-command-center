@@ -175,6 +175,7 @@ export const getOperationKpis = createServerFn({ method: "GET" })
       cur.criticosYtd = sets.ytd.size;
     }
 
+    const round2 = (n: number) => Math.round(n * 100) / 100;
     const yearly = Array.from(yearMap.values())
       .map((y) => ({
         ...y,
@@ -198,7 +199,4 @@ export const getOperationKpis = createServerFn({ method: "GET" })
     };
   });
 
-function round2(n: number) {
-  return Math.round(n * 100) / 100;
-}
 
