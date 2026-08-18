@@ -27,6 +27,9 @@ import { useAuditHistory, useLatestAudit } from "@/hooks/use-audit";
 import { usePolicies } from "@/hooks/use-policies";
 import { useAnalyticsAggregates } from "@/hooks/use-analytics";
 import { useChartPrefs } from "@/hooks/use-settings";
+import { useOperationKpis } from "@/hooks/use-operation-kpis";
+import { useKpiTargets } from "@/hooks/use-kpi-targets";
+import { statusMax, statusMin } from "@/lib/kpis/derive";
 
 import {
   buildHeatmap,
