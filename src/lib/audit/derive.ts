@@ -134,9 +134,7 @@ export interface RunPoint {
 }
 
 export function runSeries(history: AuditHistoryItem[]): RunPoint[] {
-  const asc = [...history].sort(
-    (a, b) => +new Date(a.created_at) - +new Date(b.created_at),
-  );
+  const asc = [...history].sort((a, b) => +new Date(a.created_at) - +new Date(b.created_at));
   return asc.map((h, i) => ({
     id: h.id,
     label: `R${i + 1}`,
@@ -204,7 +202,7 @@ export function normalizeFinding(f: Pick<AuditFindingRow, "endosso" | "detalhes"
   const s = (k: string) => (typeof d[k] === "string" ? (d[k] as string).trim() : "");
   const motivo = s("motivo") || s("detalhe_erro") || s("mensagem") || s("message");
   const detalhe = s("detalhe") || s("descricao") || s("description") || "";
-  const endosso = (f.endosso?.trim() || s("endosso_com_erro") || s("endosso") || "") || null;
+  const endosso = f.endosso?.trim() || s("endosso_com_erro") || s("endosso") || "" || null;
   const nivel = s("nivel") || null;
   const endossoAnterior = s("endosso_anterior") || null;
   return { motivo, detalhe, endosso, nivel, endossoAnterior };
@@ -215,7 +213,8 @@ export function severityOf(f: Pick<AuditFindingRow, "tipo_erro" | "detalhes">): 
   const nivel = typeof d.nivel === "string" ? d.nivel.toUpperCase() : "";
   if (nivel === "ERRO") return "erro";
   if (nivel === "ALERTA" || nivel === "WARN" || nivel === "ATENÇÃO") return "alerta";
-  const hay = `${f.tipo_erro ?? ""} ${d.motivo ?? ""} ${d.detalhe ?? ""} ${d.detalhe_erro ?? ""}`.toUpperCase();
+  const hay =
+    `${f.tipo_erro ?? ""} ${d.motivo ?? ""} ${d.detalhe ?? ""} ${d.detalhe_erro ?? ""}`.toUpperCase();
   if (hay.includes("ERRO")) return "erro";
   if (hay.includes("ALERTA") || hay.includes("ATENÇÃO") || hay.includes("WARN")) return "alerta";
   return "info";

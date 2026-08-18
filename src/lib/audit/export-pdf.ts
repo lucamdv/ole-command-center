@@ -72,14 +72,16 @@ export function exportAuditPdf(latest: LatestAudit, history: AuditHistoryItem[] 
     styles: { fontSize: 10, cellPadding: 7, halign: "center" },
     headStyles: { fillColor: COLORS.header, textColor: 255, fontStyle: "bold" },
     head: [["Total processado", "OK", "Intervencoes", "Erros", "Alertas", "Conformidade"]],
-    body: [[
-      formatInt(total),
-      formatInt(aprov),
-      formatInt(reprov),
-      formatInt(sev.erros),
-      formatInt(sev.alertas),
-      formatPct(conformidade, 1),
-    ]],
+    body: [
+      [
+        formatInt(total),
+        formatInt(aprov),
+        formatInt(reprov),
+        formatInt(sev.erros),
+        formatInt(sev.alertas),
+        formatPct(conformidade, 1),
+      ],
+    ],
     margin: { left: margin, right: margin },
   });
 
@@ -98,9 +100,10 @@ export function exportAuditPdf(latest: LatestAudit, history: AuditHistoryItem[] 
     head: [["#", "Apolice", "Endossos", "Principais motivos", "Erros", "Alertas", "Total"]],
     body: grouped.map((g, i) => {
       const s = countBySeverity(g.findings);
-      const endossos = Array.from(
-        new Set(g.findings.map((f) => normalizeFinding(f).endosso).filter(Boolean)),
-      ).join(", ") || "—";
+      const endossos =
+        Array.from(
+          new Set(g.findings.map((f) => normalizeFinding(f).endosso).filter(Boolean)),
+        ).join(", ") || "—";
       const motivos = Array.from(
         new Set(
           g.findings
@@ -189,15 +192,19 @@ export function exportAuditPdf(latest: LatestAudit, history: AuditHistoryItem[] 
       const textW = usableWidth - 60;
 
       // Linhas a renderizar
-      const lines: { label?: string; text: string; color?: [number, number, number]; bold?: boolean }[] = [];
+      const lines: {
+        label?: string;
+        text: string;
+        color?: [number, number, number];
+        bold?: boolean;
+      }[] = [];
       lines.push({ text: tipoTxt, bold: true });
       if (nrm.motivo) lines.push({ label: "Motivo:", text: nrm.motivo });
       if (detalheErro && detalheErro !== nrm.motivo)
         lines.push({ label: "Detalhe do erro:", text: detalheErro });
       if (nrm.detalhe && nrm.detalhe !== nrm.motivo && nrm.detalhe !== detalheErro)
         lines.push({ label: "Detalhe:", text: nrm.detalhe });
-      if (endossoCom)
-        lines.push({ label: "Endosso com erro:", text: endossoCom });
+      if (endossoCom) lines.push({ label: "Endosso com erro:", text: endossoCom });
       if (nrm.endossoAnterior && nrm.endossoAnterior !== "N/A")
         lines.push({ label: "Endosso anterior:", text: nrm.endossoAnterior });
       if (f.data_inicio || f.data_fim) {
@@ -259,7 +266,9 @@ export function exportAuditPdf(latest: LatestAudit, history: AuditHistoryItem[] 
     doc.setPage(i);
     doc.setFontSize(8);
     doc.setTextColor(...COLORS.muted);
-    doc.text(`Pagina ${i} de ${pageCount}`, pageWidth - margin, pageHeight - 16, { align: "right" });
+    doc.text(`Pagina ${i} de ${pageCount}`, pageWidth - margin, pageHeight - 16, {
+      align: "right",
+    });
     doc.text("OLE COPILOT — Relatorio de Auditoria", margin, pageHeight - 16);
   }
 
@@ -305,18 +314,11 @@ function renderAnalyticsPage(
   // 1) Severidade — barras horizontais
   const sev = countBySeverity(latest.findings);
   drawCard(doc, margin, y, colW, chartH, "Distribuicao por severidade");
-  drawHBarChart(
-    doc,
-    margin + 12,
-    y + 32,
-    colW - 24,
-    chartH - 44,
-    [
-      { label: "Erros", value: sev.erros, color: COLORS.danger },
-      { label: "Alertas", value: sev.alertas, color: COLORS.warn },
-      { label: "Info", value: sev.infos, color: COLORS.info },
-    ],
-  );
+  drawHBarChart(doc, margin + 12, y + 32, colW - 24, chartH - 44, [
+    { label: "Erros", value: sev.erros, color: COLORS.danger },
+    { label: "Alertas", value: sev.alertas, color: COLORS.warn },
+    { label: "Info", value: sev.infos, color: COLORS.info },
+  ]);
 
   // 2) Top tipos de erro
   const breakdown = errorTypeBreakdown(latest.findings).slice(0, 6);
@@ -414,14 +416,7 @@ function renderAnalyticsPage(
   void pageWidth;
 }
 
-function drawCard(
-  doc: jsPDF,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  title: string,
-) {
+function drawCard(doc: jsPDF, x: number, y: number, w: number, h: number, title: string) {
   doc.setFillColor(...COLORS.chartBg);
   doc.setDrawColor(...COLORS.grid);
   doc.roundedRect(x, y, w, h, 6, 6, "FD");
@@ -437,14 +432,7 @@ interface BarDatum {
   color: [number, number, number];
 }
 
-function drawHBarChart(
-  doc: jsPDF,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  data: BarDatum[],
-) {
+function drawHBarChart(doc: jsPDF, x: number, y: number, w: number, h: number, data: BarDatum[]) {
   if (data.length === 0) {
     doc.setFont("helvetica", "italic");
     doc.setFontSize(9);
@@ -472,14 +460,7 @@ function drawHBarChart(
   });
 }
 
-function drawVBarChart(
-  doc: jsPDF,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  data: BarDatum[],
-) {
+function drawVBarChart(doc: jsPDF, x: number, y: number, w: number, h: number, data: BarDatum[]) {
   if (data.length === 0) {
     doc.setFont("helvetica", "italic");
     doc.setFontSize(9);
@@ -515,14 +496,7 @@ interface LinePoint {
   reprovados: number;
 }
 
-function drawLineChart(
-  doc: jsPDF,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  data: LinePoint[],
-) {
+function drawLineChart(doc: jsPDF, x: number, y: number, w: number, h: number, data: LinePoint[]) {
   if (data.length === 0) return;
   const plotH = h - 24;
   const max = Math.max(...data.flatMap((d) => [d.aprovados, d.reprovados]), 1);
