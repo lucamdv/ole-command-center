@@ -76,7 +76,8 @@ export function useUpdateAuditIgnore() {
   const qc = useQueryClient();
   const updateFn = useServerFn(updateAuditIgnore);
   return useMutation({
-    mutationFn: (input: { id: string; motivo: string | null }) => updateFn({ data: input }),
+    mutationFn: (input: { id: string; motivo: string; reason_tag_id?: string | null }) =>
+      updateFn({ data: input }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["audit-ignores"] });
       toast.success("Motivo atualizado");
