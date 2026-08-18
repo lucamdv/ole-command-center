@@ -447,43 +447,60 @@ function AnalyticsPage() {
           {/* === KPIs anuais (cadência 5.4) === */}
           <SectionTitle
             title="KPIs anuais"
-            subtitle="Crescimento da carteira, redução de incidentes e prêmio consolidado"
+            subtitle={
+              ytdLabel
+                ? `Comparação do acumulado até ${ytdLabel} contra o mesmo período do ano anterior`
+                : "Crescimento da carteira, redução de incidentes e prêmio consolidado"
+            }
           />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Kpi
               label="Crescimento da carteira"
-              value={formatPct(crescimentoCarteira, 1)}
+              value={crescimentoCarteira === null ? "—" : formatPct(crescimentoCarteira, 1)}
               hint={
-                yearCur && yearPrev
-                  ? `${yearPrev.year}: ${formatInt(yearPrev.contratos)} → ${yearCur.year}: ${formatInt(yearCur.contratos)}`
-                  : "histórico insuficiente"
+                crescimentoCarteira === null || !yearCur || !yearPrev
+                  ? "histórico insuficiente"
+                  : `${yearPrev.year}: ${formatInt(yearPrev.contratosYtd)} → ${yearCur.year}: ${formatInt(yearCur.contratosYtd)} contratos (YTD ${ytdLabel})`
               }
               tone="success"
               target={`meta ≥ ${targets.crescimentoAnualMinPct}%`}
-              status={statusMin(crescimentoCarteira, targets.crescimentoAnualMinPct)}
+              status={
+                crescimentoCarteira === null
+                  ? undefined
+                  : statusMin(crescimentoCarteira, targets.crescimentoAnualMinPct)
+              }
             />
             <Kpi
               label="Redução de incidentes"
-              value={formatPct(reducaoIncidentes, 1)}
+              value={reducaoIncidentes === null ? "—" : formatPct(reducaoIncidentes, 1)}
               hint={
-                yearCur && yearPrev && yearPrev.criticos > 0
-                  ? `${formatInt(yearPrev.criticos)} → ${formatInt(yearCur.criticos)} críticos`
-                  : "histórico insuficiente"
+                reducaoIncidentes === null || !yearCur || !yearPrev
+                  ? "histórico insuficiente"
+                  : `${formatInt(yearPrev.criticosYtd)} → ${formatInt(yearCur.criticosYtd)} críticos distintos (YTD ${ytdLabel})`
               }
-              tone={reducaoIncidentes >= 0 ? "success" : "destructive"}
+              tone={(reducaoIncidentes ?? 0) >= 0 ? "success" : "destructive"}
             />
             <Kpi
               label="Contratos emitidos no ano"
-              value={formatInt(yearCur?.contratos ?? 0)}
-              hint={yearCur ? `Ano ${yearCur.year}` : "sem dados"}
+              value={formatInt(yearCur?.contratosYtd ?? 0)}
+              hint={
+                yearCur
+                  ? `${yearCur.year} até ${ytdLabel} · ${formatInt(yearCur.contratos)} no ano`
+                  : "sem dados"
+              }
             />
             <Kpi
-              label="Prêmio direto do ano (USD)"
-              value={formatUSD(yearCur?.premioUsd ?? 0, { maximumFractionDigits: 0 })}
-              hint={yearCur ? `Ano ${yearCur.year}` : "sem dados"}
+              label="Prêmio emitido no ano (USD)"
+              value={formatUSD(yearCur?.premioEmitidoYtdUsd ?? 0, { maximumFractionDigits: 0 })}
+              hint={
+                yearCur
+                  ? `${yearCur.year} até ${ytdLabel} · prêmio direto ${formatUSD(yearCur.premioDiretoYtdUsd, { maximumFractionDigits: 0 })}`
+                  : "sem dados"
+              }
               tone="success"
             />
           </div>
+
 
 
 
