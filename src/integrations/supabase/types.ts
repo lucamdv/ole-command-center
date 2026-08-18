@@ -88,6 +88,59 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_resolutions: {
+        Row: {
+          apolice: string
+          created_at: string
+          endosso: string | null
+          first_seen_at: string | null
+          id: string
+          motivo: string | null
+          reopened_at: string | null
+          resolved_at: string
+          resolved_by: string | null
+          run_id: string | null
+          tipo_erro: string
+          updated_at: string
+        }
+        Insert: {
+          apolice: string
+          created_at?: string
+          endosso?: string | null
+          first_seen_at?: string | null
+          id?: string
+          motivo?: string | null
+          reopened_at?: string | null
+          resolved_at?: string
+          resolved_by?: string | null
+          run_id?: string | null
+          tipo_erro: string
+          updated_at?: string
+        }
+        Update: {
+          apolice?: string
+          created_at?: string
+          endosso?: string | null
+          first_seen_at?: string | null
+          id?: string
+          motivo?: string | null
+          reopened_at?: string | null
+          resolved_at?: string
+          resolved_by?: string | null
+          run_id?: string | null
+          tipo_erro?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_resolutions_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "audit_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_runs: {
         Row: {
           aprovados: number
