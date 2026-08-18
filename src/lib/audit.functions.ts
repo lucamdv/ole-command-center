@@ -116,6 +116,7 @@ export const getAuditRunStatus = createServerFn({ method: "GET" }).middleware([r
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { adjustRunCounts, buildIgnoreSets } = await import("./audit/ignore-filter");
+  const { resolutionsAsIgnoreEntries } = await import("./audit/resolution-filter");
     const { data: run, error } = await supabaseAdmin
       .from("audit_runs")
       .select("id, status, status_geral, error_message, total_processado, aprovados, reprovados")
@@ -135,13 +136,20 @@ export const getAuditRunStatus = createServerFn({ method: "GET" }).middleware([r
     };
 
     // Desconta exceções da AUDITORIA (audit_ignores) nos números do toast final.
-    const [{ data: ignores }, { data: findings }] = await Promise.all([
+    const [{ data: ignores }, { data: resolvidos }, { data: findings }] = await Promise.all([
       context.supabase.from("audit_ignores").select("apolice, tipo_erro"),
+      context.supabase
+        .from("audit_resolutions")
+        .select("apolice, tipo_erro")
+        .is("reopened_at", null),
       supabaseAdmin.from("audit_findings").select("apolice, tipo_erro").eq("run_id", r.id),
     ]);
-    const sets = buildIgnoreSets(
-      (ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>,
-    );
+    const sets = buildIgnoreSets([
+      ...((ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>),
+      ...resolutionsAsIgnoreEntries(
+        (resolvidos ?? []) as Array<{ apolice: string; tipo_erro: string }>,
+      ),
+    ]);
     const adj = adjustRunCounts(
       r,
       sets,
@@ -154,6 +162,7 @@ export const getAuditRunStatus = createServerFn({ method: "GET" }).middleware([r
 export const getLatestAudit = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { adjustRunCounts, buildIgnoreSets, filterFindings } = await import("./audit/ignore-filter");
+  const { resolutionsAsIgnoreEntries } = await import("./audit/resolution-filter");
 
   const { data: runs, error: runErr } = await supabaseAdmin
     .from("audit_runs")
@@ -182,9 +191,16 @@ export const getLatestAudit = createServerFn({ method: "GET" }).middleware([requ
   const { data: ignores } = await context.supabase
     .from("audit_ignores")
     .select("apolice, tipo_erro");
-  const sets = buildIgnoreSets(
-    (ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>,
-  );
+  const { data: resolvidos } = await context.supabase
+    .from("audit_resolutions")
+    .select("apolice, tipo_erro")
+    .is("reopened_at", null);
+  const sets = buildIgnoreSets([
+    ...((ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>),
+    ...resolutionsAsIgnoreEntries(
+      (resolvidos ?? []) as Array<{ apolice: string; tipo_erro: string }>,
+    ),
+  ]);
 
   const all = (findings ?? []) as Array<{ apolice: string; tipo_erro: string }>;
   const filtered = filterFindings(sets, all);
@@ -199,6 +215,7 @@ export const getLatestAudit = createServerFn({ method: "GET" }).middleware([requ
 export const getAuditHistory = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { adjustRunCounts, buildIgnoreSets } = await import("./audit/ignore-filter");
+  const { resolutionsAsIgnoreEntries } = await import("./audit/resolution-filter");
 
   const { data, error } = await supabaseAdmin
     .from("audit_runs")
@@ -214,9 +231,16 @@ export const getAuditHistory = createServerFn({ method: "GET" }).middleware([req
   const { data: ignores } = await context.supabase
     .from("audit_ignores")
     .select("apolice, tipo_erro");
-  const sets = buildIgnoreSets(
-    (ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>,
-  );
+  const { data: resolvidos } = await context.supabase
+    .from("audit_resolutions")
+    .select("apolice, tipo_erro")
+    .is("reopened_at", null);
+  const sets = buildIgnoreSets([
+    ...((ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>),
+    ...resolutionsAsIgnoreEntries(
+      (resolvidos ?? []) as Array<{ apolice: string; tipo_erro: string }>,
+    ),
+  ]);
   if (sets.isEmpty) return runs;
 
   const { data: findings } = await supabaseAdmin
@@ -278,6 +302,7 @@ export const CallbackPayloadSchema = z.object({
 export const getSystemStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { adjustRunCounts, buildIgnoreSets } = await import("./audit/ignore-filter");
+  const { resolutionsAsIgnoreEntries } = await import("./audit/resolution-filter");
 
   const [{ data: lastRun }, { data: lastSync }] = await Promise.all([
     supabaseAdmin
@@ -311,13 +336,20 @@ export const getSystemStatus = createServerFn({ method: "GET" }).middleware([req
   // Taxa de aprovação desconta as exceções da AUDITORIA (audit_ignores).
   let aprovadosAjustado = run?.aprovados ?? 0;
   if (run && (run.total_processado ?? 0) > 0) {
-    const [{ data: ignores }, { data: findings }] = await Promise.all([
+    const [{ data: ignores }, { data: resolvidos }, { data: findings }] = await Promise.all([
       context.supabase.from("audit_ignores").select("apolice, tipo_erro"),
+      context.supabase
+        .from("audit_resolutions")
+        .select("apolice, tipo_erro")
+        .is("reopened_at", null),
       supabaseAdmin.from("audit_findings").select("apolice, tipo_erro").eq("run_id", run.id),
     ]);
-    const sets = buildIgnoreSets(
-      (ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>,
-    );
+    const sets = buildIgnoreSets([
+      ...((ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>),
+      ...resolutionsAsIgnoreEntries(
+        (resolvidos ?? []) as Array<{ apolice: string; tipo_erro: string }>,
+      ),
+    ]);
     const adj = adjustRunCounts(
       {
         total_processado: run.total_processado ?? 0,

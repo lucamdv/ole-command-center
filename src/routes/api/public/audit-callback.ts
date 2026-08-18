@@ -181,10 +181,39 @@ export const Route = createFileRoute("/api/public/audit-callback")({
           if (findErr) return json({ error: findErr.message }, 500);
         }
 
+        // 6. Reabre automaticamente resoluções manuais cujo problema voltou a aparecer.
+        let reopened = 0;
+        if (findings.length > 0) {
+          const { data: ativas } = await supabaseAdmin
+            .from("audit_resolutions")
+            .select("id, apolice, tipo_erro")
+            .is("reopened_at", null);
+          const chaves = new Set(findings.map((f) => `${f.apolice}::${f.tipo_erro}`));
+          const paraReabrir = ((ativas ?? []) as Array<{
+            id: string;
+            apolice: string;
+            tipo_erro: string;
+          }>)
+            .filter((r) => chaves.has(`${r.apolice}::${r.tipo_erro}`))
+            .map((r) => r.id);
+          if (paraReabrir.length > 0) {
+            const { error: reopenErr } = await supabaseAdmin
+              .from("audit_resolutions")
+              .update({ reopened_at: new Date().toISOString() } as never)
+              .in("id", paraReabrir);
+            if (reopenErr) {
+              console.error("[audit-callback] falha ao reabrir resoluções", reopenErr.message);
+            } else {
+              reopened = paraReabrir.length;
+            }
+          }
+        }
+
         return json({
           ok: true,
           run_id: runId,
           findings: findings.length,
+          reopened_resolutions: reopened,
           duration_ms: durationMs,
         });
       },

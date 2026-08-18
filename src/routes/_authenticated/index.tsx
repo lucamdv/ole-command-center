@@ -16,6 +16,7 @@ import {
 import { ResponsiveContainer } from "@/components/charts/in-view-container";
 import { toast } from "sonner";
 import { KpiCard } from "@/components/kpi/kpi-card";
+import { formatDuracaoHoras } from "@/lib/audit/resolution-filter";
 import { RunAuditButton } from "@/components/audit/run-audit-button";
 import { AuditEmptyState } from "@/components/audit/empty-state";
 import { FindingsListDialog } from "@/components/audit/findings-list-dialog";
@@ -199,6 +200,7 @@ function Dashboard({
     mediaMovel: 0,
     desvioPct: 0,
   };
+  const resolution = ops?.resolutionTime;
   if (!k) return null;
 
   const series = runSeries(history);
@@ -244,7 +246,7 @@ function Dashboard({
         title="KPIs diários"
         subtitle="Inconsistências detectadas, criticidade e tempo de resposta do motor"
       />
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <KpiCard
           label="Inconsistências detectadas"
           value={daily.novas}
@@ -268,7 +270,18 @@ function Dashboard({
           value={daily.resolvidas}
           format={formatInt}
           tone="success"
-          hint="Deixaram de aparecer vs. run anterior"
+          hint={`Resolvidas manualmente: ${formatInt(ops?.resolvidasManuais ?? 0)}`}
+        />
+        <KpiCard
+          label="Tempo médio de resolução"
+          value={resolution?.mediaHoras ?? 0}
+          format={(v) => formatDuracaoHoras(Number(v))}
+          tone="info"
+          hint={
+            resolution && resolution.totalResolvidas > 0
+              ? `${formatInt(resolution.totalResolvidas)} resolução(ões) · mediana ${formatDuracaoHoras(resolution.medianaHoras)}`
+              : "Marque achados como resolvidos para alimentar"
+          }
         />
         <KpiCard
           label="Desvio vs. média móvel"

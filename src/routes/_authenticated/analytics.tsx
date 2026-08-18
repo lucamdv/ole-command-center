@@ -28,6 +28,7 @@ import { usePolicies } from "@/hooks/use-policies";
 import { useAnalyticsAggregates } from "@/hooks/use-analytics";
 import { useChartPrefs } from "@/hooks/use-settings";
 import { useOperationKpis } from "@/hooks/use-operation-kpis";
+import { formatDuracaoHoras } from "@/lib/audit/resolution-filter";
 import { useKpiTargets } from "@/hooks/use-kpi-targets";
 import { statusMax, statusMin, yoyPct } from "@/lib/kpis/derive";
 
@@ -404,6 +405,64 @@ function AnalyticsPage() {
               hint={repasse.length ? repasse[repasse.length - 1].label : "sem dados"}
               tone="success"
             />
+          </div>
+
+          {/* === Tempo de resolução por tipo de problema === */}
+          <SectionTitle
+            title="Tempo de resolução por tipo de problema"
+            subtitle="Da primeira detecção até a marcação de resolvido na auditoria"
+          />
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <Kpi
+              label="Inconsistências resolvidas"
+              value={formatInt(ops?.resolutionTime.totalResolvidas ?? 0)}
+              hint="Marcadas manualmente como resolvidas"
+              tone="success"
+            />
+            <Kpi
+              label="Tempo médio de resolução"
+              value={formatDuracaoHoras(ops?.resolutionTime.mediaHoras ?? 0)}
+              hint="Média geral (primeira detecção → resolução)"
+              tone="success"
+            />
+            <Kpi
+              label="Tempo mediano"
+              value={formatDuracaoHoras(ops?.resolutionTime.medianaHoras ?? 0)}
+              hint="Metade das resoluções abaixo deste tempo"
+            />
+          </div>
+          <div className="rounded-xl border border-border bg-surface/60 overflow-x-auto">
+            {(ops?.resolutionTime.byTipo.length ?? 0) === 0 ? (
+              <div className="px-4 py-6 text-[12.5px] text-muted-foreground">
+                Nenhuma inconsistência foi marcada como resolvida ainda. Use o botão
+                “Resolvido” na lista de achados da auditoria para alimentar este indicador.
+              </div>
+            ) : (
+              <table className="w-full text-[12.5px]">
+                <thead className="bg-surface-2/60 text-[11px] uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="text-left px-4 py-2 font-medium">Tipo de problema</th>
+                    <th className="text-right px-4 py-2 font-medium">Resolvidas</th>
+                    <th className="text-right px-4 py-2 font-medium">Tempo médio</th>
+                    <th className="text-right px-4 py-2 font-medium">Mediana</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {(ops?.resolutionTime.byTipo ?? []).map((t) => (
+                    <tr key={t.tipo_erro}>
+                      <td className="px-4 py-2 text-foreground/90">{t.tipo_erro}</td>
+                      <td className="px-4 py-2 text-right font-mono">{formatInt(t.resolvidas)}</td>
+                      <td className="px-4 py-2 text-right font-mono text-info">
+                        {formatDuracaoHoras(t.mediaHoras)}
+                      </td>
+                      <td className="px-4 py-2 text-right font-mono text-muted-foreground">
+                        {formatDuracaoHoras(t.medianaHoras)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
 
           {/* === KPIs mensais (cadência 5.3) === */}
