@@ -47,6 +47,7 @@ import {
 } from "@/lib/audit/derive";
 import { useAuditHistory } from "@/hooks/use-audit";
 import { useAddAuditIgnore, useAuditIgnores } from "@/hooks/use-audit-ignores";
+import { IgnoreReasonDialog } from "@/components/exceptions/ignore-reason-dialog";
 import { useResolveFinding } from "@/hooks/use-audit-resolutions";
 import type { AuditFindingRow, LatestAudit } from "@/lib/audit/types";
 import { formatDate, formatDateTime, formatInt } from "@/lib/format";
@@ -72,8 +73,13 @@ export function FindingsListDialog({
   const [view, setView] = useState<View>("agrupado");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
+  const [pendingIgnore, setPendingIgnore] = useState<{
+    apolice: string;
+    tipo_erro: string | null;
+  } | null>(null);
+
   const handleIgnore = (apolice: string, tipo_erro?: string) => {
-    addIgnore.mutate({ apolice, tipo_erro: tipo_erro ?? null });
+    setPendingIgnore({ apolice, tipo_erro: tipo_erro ?? null });
   };
 
   const handleResolve = (f: AuditFindingRow) => {
@@ -270,6 +276,32 @@ export function FindingsListDialog({
             />
           )}
         </div>
+
+        <IgnoreReasonDialog
+          open={!!pendingIgnore}
+          onOpenChange={(v) => !v && setPendingIgnore(null)}
+          targetLabel={
+            pendingIgnore
+              ? pendingIgnore.tipo_erro
+                ? `${pendingIgnore.tipo_erro} · apólice ${pendingIgnore.apolice}`
+                : `Todos os erros da apólice ${pendingIgnore.apolice}`
+              : undefined
+          }
+          description="Esta exceção oculta o achado nas próximas auditorias. O motivo é obrigatório."
+          pending={addIgnore.isPending}
+          onConfirm={({ motivo, reason_tag_id }) => {
+            if (!pendingIgnore) return;
+            addIgnore.mutate(
+              {
+                apolice: pendingIgnore.apolice,
+                tipo_erro: pendingIgnore.tipo_erro,
+                motivo,
+                reason_tag_id,
+              },
+              { onSuccess: () => setPendingIgnore(null) },
+            );
+          }}
+        />
       </DialogContent>
     </Dialog>
   );
@@ -365,11 +397,7 @@ function GroupedView({
                 size="sm"
                 variant="ghost"
                 className="h-7 px-2 text-[11px] gap-1 text-muted-foreground hover:text-foreground"
-                onClick={() => {
-                  if (confirm(`Ignorar TODOS os erros da apólice ${g.apolice} em execuções futuras?`)) {
-                    onIgnore(g.apolice);
-                  }
-                }}
+                onClick={() => onIgnore(g.apolice)}
                 title="Ignorar apólice em futuras auditorias"
               >
                 <EyeOff className="h-3.5 w-3.5" /> Ignorar apólice
@@ -437,11 +465,7 @@ function FindingBullet({
           )}
           <button
             type="button"
-            onClick={() => {
-              if (confirm(`Ignorar "${f.tipo_erro}" na apólice ${f.apolice} em execuções futuras?`)) {
-                onIgnore(f.apolice, f.tipo_erro);
-              }
-            }}
+            onClick={() => onIgnore(f.apolice, f.tipo_erro)}
             className="ml-auto inline-flex items-center gap-1 text-[10.5px] text-muted-foreground hover:text-foreground opacity-70 hover:opacity-100 transition"
             title="Ignorar este erro em futuras auditorias"
           >
@@ -573,11 +597,7 @@ function TableView({
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      if (confirm(`Ignorar "${f.tipo_erro}" na apólice ${f.apolice}?`)) {
-                        onIgnore(f.apolice, f.tipo_erro);
-                      }
-                    }}
+                    onClick={() => onIgnore(f.apolice, f.tipo_erro)}
                     className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
                     title="Ignorar este erro"
                   >

@@ -9,6 +9,7 @@ export interface AuditIgnoreRow {
   apolice: string;
   tipo_erro: string | null;
   motivo: string | null;
+  reason_tag_id: string | null;
   created_at: string;
 }
 
@@ -26,7 +27,8 @@ export const listAuditIgnores = createServerFn({ method: "GET" })
 const AddSchema = z.object({
   apolice: z.string().min(1).max(120),
   tipo_erro: z.string().min(1).max(200).optional().nullable(),
-  motivo: z.string().max(500).optional().nullable(),
+  motivo: z.string().trim().min(1, "Motivo obrigatório").max(500),
+  reason_tag_id: z.string().uuid().optional().nullable(),
 });
 
 export const addAuditIgnore = createServerFn({ method: "POST" })
@@ -39,7 +41,8 @@ export const addAuditIgnore = createServerFn({ method: "POST" })
       scope,
       apolice: data.apolice,
       tipo_erro: data.tipo_erro ?? null,
-      motivo: data.motivo ?? null,
+      motivo: data.motivo.trim(),
+      reason_tag_id: data.reason_tag_id ?? null,
     };
     // Idempotente em escopo global (apolice, coalesce(tipo_erro,''))
     let q = context.supabase
@@ -62,7 +65,8 @@ export const addAuditIgnore = createServerFn({ method: "POST" })
 
 const UpdateSchema = z.object({
   id: z.string().uuid(),
-  motivo: z.string().max(500).nullable(),
+  motivo: z.string().trim().min(1, "Motivo obrigatório").max(500),
+  reason_tag_id: z.string().uuid().optional().nullable(),
 });
 
 export const updateAuditIgnore = createServerFn({ method: "POST" })
@@ -71,7 +75,10 @@ export const updateAuditIgnore = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("audit_ignores")
-      .update({ motivo: data.motivo?.trim() ? data.motivo.trim() : null } as never)
+      .update({
+        motivo: data.motivo.trim(),
+        reason_tag_id: data.reason_tag_id ?? null,
+      } as never)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };

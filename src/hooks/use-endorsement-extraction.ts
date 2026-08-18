@@ -102,7 +102,11 @@ export function useAddEndorsementException() {
   const qc = useQueryClient();
   const fn = useServerFn(addEndorsementException);
   return useMutation({
-    mutationFn: (input: { policy_number: string; motivo?: string | null }) => fn({ data: input }),
+    mutationFn: (input: {
+      policy_number: string;
+      motivo: string;
+      reason_tag_id?: string | null;
+    }) => fn({ data: input }),
     onSuccess: (res, vars) => {
       qc.invalidateQueries({ queryKey: ["endorsement-exceptions"] });
       qc.invalidateQueries({ queryKey: ["endorsement-extraction"] });
@@ -122,7 +126,8 @@ export function useUpdateEndorsementException() {
   const qc = useQueryClient();
   const fn = useServerFn(updateEndorsementException);
   return useMutation({
-    mutationFn: (input: { id: string; motivo: string | null }) => fn({ data: input }),
+    mutationFn: (input: { id: string; motivo: string; reason_tag_id?: string | null }) =>
+      fn({ data: input }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["endorsement-exceptions"] });
       toast.success("Motivo atualizado");

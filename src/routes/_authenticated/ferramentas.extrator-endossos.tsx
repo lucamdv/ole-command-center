@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
   ArrowUpDown,
-  Check,
   Download,
   EyeOff,
   FileDown,
@@ -12,7 +11,6 @@ import {
   RefreshCw,
   Search,
   Trash2,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VirtualList } from "@/components/ui/virtual-list";
@@ -42,6 +40,10 @@ import {
   useRunEndorsementExtraction,
   useUpdateEndorsementException,
 } from "@/hooks/use-endorsement-extraction";
+import type { EndorsementExceptionRow } from "@/lib/endorsement-extraction.functions";
+import { useExceptionTags } from "@/hooks/use-exception-tags";
+import { IgnoreReasonDialog } from "@/components/exceptions/ignore-reason-dialog";
+import { ReasonDisplay } from "@/components/exceptions/reason-chip";
 import { formatDateTime, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -76,6 +78,7 @@ function ExtratorPage() {
 
   const [q, setQ] = useState("");
   const [asc, setAsc] = useState(true);
+  const [pendingPolicy, setPendingPolicy] = useState<string | null>(null);
 
   const rows = useMemo(() => {
     const items = latest?.items ?? [];
@@ -241,9 +244,7 @@ function ExtratorPage() {
                       variant="ghost"
                       className="h-8 text-[11.5px] gap-1 text-muted-foreground hover:text-foreground"
                       disabled={addException.isPending}
-                      onClick={() =>
-                        addException.mutate({ policy_number: r.policy_number, motivo: null })
-                      }
+                      onClick={() => setPendingPolicy(r.policy_number)}
                     >
                       <EyeOff className="h-3.5 w-3.5" /> Ignorar
                     </Button>
@@ -254,6 +255,21 @@ function ExtratorPage() {
           </VirtualList>
         )}
       </div>
+
+      <IgnoreReasonDialog
+        open={!!pendingPolicy}
+        onOpenChange={(v) => !v && setPendingPolicy(null)}
+        targetLabel={pendingPolicy ? `Apólice ${pendingPolicy}` : undefined}
+        description="A apólice deixa de aparecer na tabela, nas exportações e no envio ao fluxo. O motivo é obrigatório."
+        pending={addException.isPending}
+        onConfirm={({ motivo, reason_tag_id }) => {
+          if (!pendingPolicy) return;
+          addException.mutate(
+            { policy_number: pendingPolicy, motivo, reason_tag_id },
+            { onSuccess: () => setPendingPolicy(null) },
+          );
+        }}
+      />
     </div>
   );
 }
@@ -264,22 +280,14 @@ function ExceptionsDialog({ isAdmin }: { isAdmin: boolean }) {
   const update = useUpdateEndorsementException();
   const remove = useRemoveEndorsementException();
 
+  const { data: tags = [] } = useExceptionTags();
   const [policy, setPolicy] = useState("");
-  const [motivo, setMotivo] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
+  const [askReasonFor, setAskReasonFor] = useState<string | null>(null);
+  const [editing, setEditing] = useState<EndorsementExceptionRow | null>(null);
 
   const submit = () => {
     if (!policy.trim()) return;
-    add.mutate(
-      { policy_number: policy.trim(), motivo: motivo.trim() || null },
-      {
-        onSuccess: () => {
-          setPolicy("");
-          setMotivo("");
-        },
-      },
-    );
+    setAskReasonFor(policy.trim());
   };
 
   return (
@@ -310,22 +318,14 @@ function ExceptionsDialog({ isAdmin }: { isAdmin: boolean }) {
               onChange={(e) => setPolicy(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
               placeholder="Número da apólice"
-              className="h-9 text-[12.5px] sm:w-[200px] font-mono"
-            />
-            <Input
-              value={motivo}
-              onChange={(e) => setMotivo(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && submit()}
-              placeholder="Motivo (opcional)"
-              maxLength={500}
-              className="h-9 text-[12.5px] flex-1"
+              className="h-9 text-[12.5px] sm:w-[240px] font-mono"
             />
             <Button
               className="h-9 gap-1 text-[12.5px]"
               disabled={add.isPending || !policy.trim()}
               onClick={submit}
             >
-              <Plus className="h-3.5 w-3.5" /> Adicionar
+              <Plus className="h-3.5 w-3.5" /> Adicionar com motivo
             </Button>
           </div>
         ) : (
@@ -372,92 +372,31 @@ function ExceptionsDialog({ isAdmin }: { isAdmin: boolean }) {
                   <TableCell className="font-mono text-[12px] break-all">
                     {e.policy_number}
                   </TableCell>
-                  <TableCell className="text-[12.5px] text-muted-foreground max-w-[260px]">
-                    {editingId === e.id ? (
-                      <Input
-                        autoFocus
-                        value={draft}
-                        onChange={(ev) => setDraft(ev.target.value)}
-                        onKeyDown={(ev) => {
-                          if (ev.key === "Enter")
-                            update.mutate(
-                              { id: e.id, motivo: draft.trim() ? draft.trim() : null },
-                              { onSuccess: () => setEditingId(null) },
-                            );
-                          if (ev.key === "Escape") setEditingId(null);
-                        }}
-                        maxLength={500}
-                        className="h-8 text-[12.5px]"
-                      />
-                    ) : isAdmin ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingId(e.id);
-                          setDraft(e.motivo ?? "");
-                        }}
-                        className="text-left hover:text-foreground transition-colors w-full"
-                      >
-                        {e.motivo || <span className="italic">Adicionar motivo…</span>}
-                      </button>
-                    ) : (
-                      e.motivo || <span className="italic">—</span>
-                    )}
+                  <TableCell className="text-[12.5px] max-w-[260px]">
+                    <ReasonDisplay motivo={e.motivo} tagId={e.reason_tag_id} tags={tags} />
                   </TableCell>
                   <TableCell className="text-[11.5px] font-mono text-muted-foreground">
                     {formatDateTime(e.created_at)}
                   </TableCell>
                   {isAdmin && (
                     <TableCell className="text-right whitespace-nowrap">
-                      {editingId === e.id ? (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 text-[11.5px] gap-1 text-primary"
-                            disabled={update.isPending}
-                            onClick={() =>
-                              update.mutate(
-                                { id: e.id, motivo: draft.trim() ? draft.trim() : null },
-                                { onSuccess: () => setEditingId(null) },
-                              )
-                            }
-                          >
-                            <Check className="h-3.5 w-3.5" /> Salvar
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0 text-muted-foreground"
-                            onClick={() => setEditingId(null)}
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 text-[11.5px] gap-1 text-muted-foreground hover:text-foreground"
-                            onClick={() => {
-                              setEditingId(e.id);
-                              setDraft(e.motivo ?? "");
-                            }}
-                          >
-                            <Pencil className="h-3.5 w-3.5" /> Editar
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                            disabled={remove.isPending}
-                            onClick={() => remove.mutate({ id: e.id })}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </>
-                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 text-[11.5px] gap-1 text-muted-foreground hover:text-foreground"
+                        onClick={() => setEditing(e)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" /> Editar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                        disabled={remove.isPending}
+                        onClick={() => remove.mutate({ id: e.id })}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </TableCell>
                   )}
                 </TableRow>
@@ -465,6 +404,43 @@ function ExceptionsDialog({ isAdmin }: { isAdmin: boolean }) {
             </TableBody>
           </Table>
         </div>
+
+        <IgnoreReasonDialog
+          open={!!askReasonFor}
+          onOpenChange={(v) => !v && setAskReasonFor(null)}
+          targetLabel={askReasonFor ? `Apólice ${askReasonFor}` : undefined}
+          pending={add.isPending}
+          onConfirm={({ motivo, reason_tag_id }) => {
+            if (!askReasonFor) return;
+            add.mutate(
+              { policy_number: askReasonFor, motivo, reason_tag_id },
+              {
+                onSuccess: () => {
+                  setAskReasonFor(null);
+                  setPolicy("");
+                },
+              },
+            );
+          }}
+        />
+
+        <IgnoreReasonDialog
+          open={!!editing}
+          onOpenChange={(v) => !v && setEditing(null)}
+          title="Editar motivo da exceção"
+          confirmLabel="Salvar motivo"
+          targetLabel={editing ? `Apólice ${editing.policy_number}` : undefined}
+          initialMotivo={editing?.motivo ?? ""}
+          initialTagId={editing?.reason_tag_id ?? null}
+          pending={update.isPending}
+          onConfirm={({ motivo, reason_tag_id }) => {
+            if (!editing) return;
+            update.mutate(
+              { id: editing.id, motivo, reason_tag_id },
+              { onSuccess: () => setEditing(null) },
+            );
+          }}
+        />
       </DialogContent>
     </Dialog>
   );

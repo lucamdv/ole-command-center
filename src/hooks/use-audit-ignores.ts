@@ -23,8 +23,12 @@ export function useAddAuditIgnore() {
   const addFn = useServerFn(addAuditIgnore);
   const removeFn = useServerFn(removeAuditIgnore);
   return useMutation({
-    mutationFn: (input: { apolice: string; tipo_erro?: string | null; motivo?: string | null }) =>
-      addFn({ data: input }),
+    mutationFn: (input: {
+      apolice: string;
+      tipo_erro?: string | null;
+      motivo: string;
+      reason_tag_id?: string | null;
+    }) => addFn({ data: input }),
     onSuccess: (res, vars) => {
       qc.invalidateQueries({ queryKey: ["audit-ignores"] });
       qc.invalidateQueries({ queryKey: ["audit"] });
@@ -72,7 +76,8 @@ export function useUpdateAuditIgnore() {
   const qc = useQueryClient();
   const updateFn = useServerFn(updateAuditIgnore);
   return useMutation({
-    mutationFn: (input: { id: string; motivo: string | null }) => updateFn({ data: input }),
+    mutationFn: (input: { id: string; motivo: string; reason_tag_id?: string | null }) =>
+      updateFn({ data: input }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["audit-ignores"] });
       toast.success("Motivo atualizado");

@@ -65,6 +65,7 @@ export type Database = {
           created_by: string | null
           id: string
           motivo: string | null
+          reason_tag_id: string | null
           scope: string
           tipo_erro: string | null
         }
@@ -74,6 +75,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           motivo?: string | null
+          reason_tag_id?: string | null
           scope: string
           tipo_erro?: string | null
         }
@@ -83,10 +85,19 @@ export type Database = {
           created_by?: string | null
           id?: string
           motivo?: string | null
+          reason_tag_id?: string | null
           scope?: string
           tipo_erro?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "audit_ignores_reason_tag_id_fkey"
+            columns: ["reason_tag_id"]
+            isOneToOne: false
+            referencedRelation: "exception_reason_tags"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       audit_resolutions: {
         Row: {
@@ -193,6 +204,7 @@ export type Database = {
           id: string
           motivo: string | null
           policy_number: string
+          reason_tag_id: string | null
           updated_at: string
         }
         Insert: {
@@ -201,6 +213,7 @@ export type Database = {
           id?: string
           motivo?: string | null
           policy_number: string
+          reason_tag_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -209,9 +222,18 @@ export type Database = {
           id?: string
           motivo?: string | null
           policy_number?: string
+          reason_tag_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "endorsement_exceptions_reason_tag_id_fkey"
+            columns: ["reason_tag_id"]
+            isOneToOne: false
+            referencedRelation: "exception_reason_tags"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       endorsement_extraction_items: {
         Row: {
@@ -321,6 +343,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      exception_reason_tags: {
+        Row: {
+          color: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       policies: {
         Row: {
