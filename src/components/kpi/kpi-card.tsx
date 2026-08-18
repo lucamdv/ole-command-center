@@ -8,6 +8,8 @@ import { ArrowDown, ArrowUp, Minus } from "lucide-react";
 import { useAnimatedCounter } from "@/hooks/use-animated-counter";
 import { cn } from "@/lib/utils";
 
+export type KpiStatusTone = "ok" | "warn" | "bad";
+
 export interface KpiProps {
   label: string;
   value: number;
@@ -17,7 +19,24 @@ export interface KpiProps {
   tone?: "default" | "success" | "warning" | "destructive" | "info";
   suffix?: string;
   hint?: string;
+  /** Texto curto da meta configurada, ex.: "meta ≤ 15%". */
+  target?: string;
+  /** Situação em relação à meta. */
+  status?: KpiStatusTone;
 }
+
+const STATUS_STYLE: Record<KpiStatusTone, string> = {
+  ok: "text-success bg-success/10 border-success/30",
+  warn: "text-warning bg-warning/10 border-warning/30",
+  bad: "text-destructive bg-destructive/10 border-destructive/30",
+};
+
+const STATUS_LABEL: Record<KpiStatusTone, string> = {
+  ok: "na meta",
+  warn: "atenção",
+  bad: "fora da meta",
+};
+
 
 const TONE_RING: Record<NonNullable<KpiProps["tone"]>, string> = {
   default: "from-primary/30 to-transparent",
