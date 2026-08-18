@@ -84,8 +84,14 @@ function AnalyticsPage() {
   const ytdLabel = ops?.ytdLabel ?? "";
   const crescimentoCarteira =
     yearCur && yearPrev ? yoyPct(yearCur.contratosYtd, yearPrev.contratosYtd) : null;
+  // Redução = queda dos críticos do ano anterior para o atual (base: ano anterior).
   const reducaoIncidentes =
-    yearCur && yearPrev ? yoyPct(yearPrev.criticosYtd, yearCur.criticosYtd) : null;
+    yearCur && yearPrev && yearPrev.criticosYtd > 0
+      ? Math.round(
+          ((yearPrev.criticosYtd - yearCur.criticosYtd) / yearPrev.criticosYtd) * 1000,
+        ) / 10
+      : null;
+
 
   const reincMensalAtual =
     monthlyReinc.length > 0 ? monthlyReinc[monthlyReinc.length - 1] : null;
