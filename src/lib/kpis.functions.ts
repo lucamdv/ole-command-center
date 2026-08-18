@@ -85,39 +85,98 @@ export const getOperationKpis = createServerFn({ method: "GET" })
     const monthlyReincidencia = deriveMonthlyReincidencia(runsAsc, byRun);
 
     // === Carteira: contratos ativos e agregados por ano ===
+    const { emptyYear, withinYtd, ytdCutoff } = await import("@/lib/kpis/derive");
+    const { issuanceFacts } = await import("@/lib/kpis/policy-facts");
+    const cutoff = ytdCutoff();
+    const nowYear = new Date().getUTCFullYear();
+
+    const yearMap = new Map<number, YearlyPoint>();
+    const yearOf = (date: string) => Number(date.slice(0, 4)) || null;
+    const bucket = (year: number) => {
+      const cur = yearMap.get(year) ?? emptyYear(year);
+      yearMap.set(year, cur);
+      return cur;
+    };
+    bucket(nowYear);
+    bucket(nowYear - 1);
+
     const { data: policies, error: pErr } = await supabaseAdmin
       .from("policies")
       .select("numero_apolice, proposta");
     if (pErr) throw new Error(pErr.message);
 
-    const yearMap = new Map<number, YearlyPoint>();
     let contratosAtivos = 0;
     const rows = (policies ?? []) as Array<{ numero_apolice: string; proposta: unknown }>;
     for (const p of rows) {
       const facts = policyFacts(p.proposta);
       if (isActive(facts)) contratosAtivos++;
-      if (!facts.inicio) continue;
-      const year = Number(facts.inicio.slice(0, 4));
+      // contratos e prêmio direto são atribuídos ao ano de EMISSÃO
+      if (!facts.emissao) continue;
+      const year = yearOf(facts.emissao);
       if (!year) continue;
-      const cur = yearMap.get(year) ?? { year, contratos: 0, premioUsd: 0, criticos: 0 };
+      const cur = bucket(year);
       cur.contratos += 1;
-      cur.premioUsd += facts.premioUsd;
-      yearMap.set(year, cur);
+      cur.premioDiretoUsd += facts.premioUsd;
+      if (withinYtd(facts.emissao, cutoff)) {
+        cur.contratosYtd += 1;
+        cur.premioDiretoYtdUsd += facts.premioUsd;
+      }
     }
 
-    // Incidentes críticos por ano (ano da run onde o achado apareceu)
+    // === Prêmio emitido por ano (mesma base do Mapa de Repasses) ===
+    const { data: emissions, error: emErr } = await supabaseAdmin
+      .from("endorsements")
+      .select("numero_endosso, proposta");
+    if (emErr) throw new Error(emErr.message);
+
+    for (const e of (emissions ?? []) as Array<{ proposta: unknown }>) {
+      const facts = issuanceFacts(e.proposta);
+      const addPremio = (date: string | null, valor: number) => {
+        if (!date || valor <= 0) return;
+        const year = yearOf(date);
+        if (!year) return;
+        const cur = bucket(year);
+        cur.premioEmitidoUsd += valor;
+        if (withinYtd(date, cutoff)) cur.premioEmitidoYtdUsd += valor;
+      };
+      if (facts.parcelas.length > 0) {
+        for (const parc of facts.parcelas) addPremio(parc.data ?? facts.emissao, parc.valor);
+      } else {
+        addPremio(facts.emissao, facts.premioTotalCoberturas);
+      }
+    }
+
+    // Incidentes críticos DISTINTOS por ano (chave apólice|tipo_erro),
+    // para não contar o mesmo achado repetido em cada run.
+    const criticosPorAno = new Map<number, { all: Set<string>; ytd: Set<string> }>();
     for (const r of runsAsc) {
-      const year = Number(r.at.slice(0, 4));
+      const date = r.at.slice(0, 10);
+      const year = yearOf(date);
       if (!year) continue;
-      const criticos = (byRun.get(r.id) ?? []).filter(isCritical).length;
-      if (criticos === 0 && !yearMap.has(year)) continue;
-      const cur = yearMap.get(year) ?? { year, contratos: 0, premioUsd: 0, criticos: 0 };
-      cur.criticos += criticos;
-      yearMap.set(year, cur);
+      const sets =
+        criticosPorAno.get(year) ?? { all: new Set<string>(), ytd: new Set<string>() };
+      for (const f of byRun.get(r.id) ?? []) {
+        if (!isCritical(f)) continue;
+        const key = findingKey(f);
+        sets.all.add(key);
+        if (withinYtd(date, cutoff)) sets.ytd.add(key);
+      }
+      criticosPorAno.set(year, sets);
+    }
+    for (const [year, sets] of criticosPorAno) {
+      const cur = bucket(year);
+      cur.criticos = sets.all.size;
+      cur.criticosYtd = sets.ytd.size;
     }
 
     const yearly = Array.from(yearMap.values())
-      .map((y) => ({ ...y, premioUsd: Math.round(y.premioUsd * 100) / 100 }))
+      .map((y) => ({
+        ...y,
+        premioEmitidoUsd: round2(y.premioEmitidoUsd),
+        premioEmitidoYtdUsd: round2(y.premioEmitidoYtdUsd),
+        premioDiretoUsd: round2(y.premioDiretoUsd),
+        premioDiretoYtdUsd: round2(y.premioDiretoYtdUsd),
+      }))
       .sort((a, b) => a.year - b.year);
 
     return {
@@ -127,5 +186,13 @@ export const getOperationKpis = createServerFn({ method: "GET" })
       contratosAtivos,
       carteiraTotal: rows.length,
       yearly,
+      yearCur: yearly.find((y) => y.year === nowYear) ?? emptyYear(nowYear),
+      yearPrev: yearly.find((y) => y.year === nowYear - 1) ?? emptyYear(nowYear - 1),
+      ytdLabel: cutoff.split("-").reverse().join("/"),
     };
   });
+
+function round2(n: number) {
+  return Math.round(n * 100) / 100;
+}
+
