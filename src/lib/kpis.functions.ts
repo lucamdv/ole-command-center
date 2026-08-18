@@ -16,6 +16,12 @@ export interface OperationKpis {
   contratosAtivos: number;
   carteiraTotal: number;
   yearly: YearlyPoint[];
+  /** Ano corrente do calendário (pode estar zerado se não houver dados). */
+  yearCur: YearlyPoint;
+  /** Ano anterior ao corrente. */
+  yearPrev: YearlyPoint;
+  /** Corte do acumulado do ano, em DD/MM. */
+  ytdLabel: string;
 }
 
 export const getOperationKpis = createServerFn({ method: "GET" })
@@ -23,9 +29,9 @@ export const getOperationKpis = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<OperationKpis> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { buildIgnoreSets, filterFindings } = await import("@/lib/audit/ignore-filter");
-    const { deriveDaily, deriveMonthlyReincidencia, deriveWeekly, isCritical } = await import(
-      "@/lib/kpis/derive"
-    );
+    const { deriveDaily, deriveMonthlyReincidencia, deriveWeekly, findingKey, isCritical } =
+      await import("@/lib/kpis/derive");
+
     const { isActive, policyFacts } = await import("@/lib/kpis/policy-facts");
 
     // === Runs de auditoria (mais recentes primeiro no banco) ===
