@@ -47,6 +47,7 @@ import {
 } from "@/lib/audit/derive";
 import { useAuditHistory } from "@/hooks/use-audit";
 import { useAddAuditIgnore, useAuditIgnores } from "@/hooks/use-audit-ignores";
+import { IgnoreReasonDialog } from "@/components/exceptions/ignore-reason-dialog";
 import { useResolveFinding } from "@/hooks/use-audit-resolutions";
 import type { AuditFindingRow, LatestAudit } from "@/lib/audit/types";
 import { formatDate, formatDateTime, formatInt } from "@/lib/format";
