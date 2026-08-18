@@ -36,6 +36,18 @@ import type { AuditFindingRow, LatestAudit } from "@/lib/audit/types";
 import { formatDateTime, formatInt, formatPct, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useProfile } from "@/hooks/use-settings";
+import { useOperationKpis } from "@/hooks/use-operation-kpis";
+import { useKpiTargets } from "@/hooks/use-kpi-targets";
+import { statusMax } from "@/lib/kpis/derive";
+
+function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 pt-1">
+      <h2 className="text-[13px] font-semibold uppercase tracking-wider text-foreground">{title}</h2>
+      {subtitle && <span className="text-[11px] text-muted-foreground">{subtitle}</span>}
+    </div>
+  );
+}
 
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -177,6 +189,16 @@ function Dashboard({
   history: ReturnType<typeof useAuditHistory>["data"] extends infer T ? Exclude<T, undefined> : never;
 }) {
   const k = deriveKpis({ latest, history });
+  const { data: ops } = useOperationKpis();
+  const { targets } = useKpiTargets();
+  const daily = ops?.daily ?? {
+    runAt: null,
+    novas: 0,
+    criticasAbertas: 0,
+    resolvidas: 0,
+    mediaMovel: 0,
+    desvioPct: 0,
+  };
   if (!k) return null;
 
   const series = runSeries(history);
