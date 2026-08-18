@@ -2,7 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type {
   DailyKpis,
+  FindingLite,
   MonthlyReincidencia,
+  RunLite,
   WeeklyKpis,
   YearlyPoint,
 } from "@/lib/kpis/derive";
@@ -21,14 +23,9 @@ export const getOperationKpis = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<OperationKpis> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { buildIgnoreSets, filterFindings } = await import("@/lib/audit/ignore-filter");
-    const {
-      deriveDaily,
-      deriveMonthlyReincidencia,
-      deriveWeekly,
-      isCritical,
-      type FindingLite,
-      type RunLite,
-    } = await import("@/lib/kpis/derive");
+    const { deriveDaily, deriveMonthlyReincidencia, deriveWeekly, isCritical } = await import(
+      "@/lib/kpis/derive"
+    );
     const { isActive, policyFacts } = await import("@/lib/kpis/policy-facts");
 
     // === Runs de auditoria (mais recentes primeiro no banco) ===
