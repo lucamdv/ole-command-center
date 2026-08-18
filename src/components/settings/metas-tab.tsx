@@ -76,10 +76,7 @@ export function MetasTab() {
 
       <div className="rounded-xl border border-border bg-surface divide-y divide-border">
         {FIELDS.map((f) => (
-          <div
-            key={f.key}
-            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3.5"
-          >
+          <div key={f.key} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3.5">
             <div className="min-w-0">
               <div className="text-[13px] font-medium">{f.label}</div>
               <div className="text-[11.5px] text-muted-foreground">{f.desc}</div>
@@ -132,9 +129,8 @@ function EscalationSection() {
         <div>
           <div className="text-[13px] font-medium">Escalonamento de alertas</div>
           <p className="text-[12px] text-muted-foreground">
-            Define quando a urgência de um incidente sobe de nível na página de Alertas
-            (baixa → média → alta → crítica) por persistência em auditorias, tempo em aberto
-            ou reabertura.
+            Define quando a urgência de um incidente sobe de nível na página de Alertas (baixa →
+            média → alta → crítica) por persistência em auditorias, tempo em aberto ou reabertura.
           </p>
         </div>
       </div>
@@ -155,8 +151,7 @@ function EscalationSection() {
               value={rules.auditsToEscalate}
               onChange={(e) => {
                 const v = Number(e.target.value);
-                if (Number.isFinite(v))
-                  update({ auditsToEscalate: Math.min(50, Math.max(0, v)) });
+                if (Number.isFinite(v)) update({ auditsToEscalate: Math.min(50, Math.max(0, v)) });
               }}
               className="h-9 w-24 rounded-md border border-border bg-surface-2 px-2 text-right text-[13px] font-mono tabular-nums outline-none focus:border-primary"
             />
@@ -179,8 +174,7 @@ function EscalationSection() {
               value={rules.daysToEscalate}
               onChange={(e) => {
                 const v = Number(e.target.value);
-                if (Number.isFinite(v))
-                  update({ daysToEscalate: Math.min(365, Math.max(0, v)) });
+                if (Number.isFinite(v)) update({ daysToEscalate: Math.min(365, Math.max(0, v)) });
               }}
               className="h-9 w-24 rounded-md border border-border bg-surface-2 px-2 text-right text-[13px] font-mono tabular-nums outline-none focus:border-primary"
             />

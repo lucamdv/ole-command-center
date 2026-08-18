@@ -1,12 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import {
-  CheckCircle2,
-  Clock,
-  EyeOff,
-  ExternalLink,
-  History,
-  RotateCcw,
-} from "lucide-react";
+import { CheckCircle2, Clock, EyeOff, ExternalLink, History, RotateCcw } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -87,17 +80,13 @@ export function IncidentDetail({
               <div className="flex items-center gap-1 text-[10.5px] uppercase tracking-wider text-muted-foreground">
                 <History className="h-3 w-3" /> auditorias
               </div>
-              <div className="mt-1 text-[18px] font-semibold tabular-nums">
-                {item.occurrences}
-              </div>
+              <div className="mt-1 text-[18px] font-semibold tabular-nums">{item.occurrences}</div>
             </div>
             <div className="rounded-lg border border-border bg-surface p-3">
               <div className="flex items-center gap-1 text-[10.5px] uppercase tracking-wider text-muted-foreground">
                 <Clock className="h-3 w-3" /> dias abertos
               </div>
-              <div className="mt-1 text-[18px] font-semibold tabular-nums">
-                {item.daysOpen}
-              </div>
+              <div className="mt-1 text-[18px] font-semibold tabular-nums">{item.daysOpen}</div>
             </div>
             <div className="rounded-lg border border-border bg-surface p-3">
               <div className="flex items-center gap-1 text-[10.5px] uppercase tracking-wider text-muted-foreground">
@@ -131,9 +120,7 @@ export function IncidentDetail({
             <Field label="Vigência">
               {f.data_inicio
                 ? `${new Date(f.data_inicio).toLocaleDateString("pt-BR")}${
-                    f.data_fim
-                      ? ` → ${new Date(f.data_fim).toLocaleDateString("pt-BR")}`
-                      : ""
+                    f.data_fim ? ` → ${new Date(f.data_fim).toLocaleDateString("pt-BR")}` : ""
                   }`
                 : "—"}
             </Field>
@@ -187,9 +174,7 @@ export function IncidentDetail({
                       · reaberto {formatDateTime(r.reopened_at)}
                     </span>
                   )}
-                  {r.motivo && (
-                    <div className="text-muted-foreground">{r.motivo}</div>
-                  )}
+                  {r.motivo && <div className="text-muted-foreground">{r.motivo}</div>}
                 </div>
               ))}
               {ignores.map((i) => (
@@ -199,9 +184,7 @@ export function IncidentDetail({
                 >
                   <span className="font-semibold text-warning">Exceção</span>{" "}
                   {formatDateTime(i.created_at)}
-                  {i.motivo && (
-                    <div className="text-muted-foreground">{i.motivo}</div>
-                  )}
+                  {i.motivo && <div className="text-muted-foreground">{i.motivo}</div>}
                 </div>
               ))}
             </div>

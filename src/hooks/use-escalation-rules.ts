@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  DEFAULT_ESCALATION_RULES,
-  type EscalationRules,
-} from "@/lib/audit/escalation";
+import { DEFAULT_ESCALATION_RULES, type EscalationRules } from "@/lib/audit/escalation";
 
 const KEY = "ole.alert.escalation.v1";
 

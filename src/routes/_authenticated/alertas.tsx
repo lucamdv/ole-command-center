@@ -51,8 +51,7 @@ export const Route = createFileRoute("/_authenticated/alertas")({
       { property: "og:title", content: "Alertas · OLÉ COPILOT" },
       {
         property: "og:description",
-        content:
-          "Incidentes abertos, reincidência por auditoria e histórico de erros resolvidos.",
+        content: "Incidentes abertos, reincidência por auditoria e histórico de erros resolvidos.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -93,10 +92,7 @@ function AlertasPage() {
     [latest, recurrence, rules],
   );
 
-  const tipos = useMemo(
-    () => Array.from(new Set(items.map((i) => i.f.tipo_erro))).sort(),
-    [items],
-  );
+  const tipos = useMemo(() => Array.from(new Set(items.map((i) => i.f.tipo_erro))).sort(), [items]);
 
   const counts = useMemo(() => {
     const c: Record<Urgency, number> = { baixa: 0, media: 0, alta: 0, critica: 0 };
@@ -182,8 +178,7 @@ function AlertasPage() {
   const [bulkIgnoreOpen, setBulkIgnoreOpen] = useState(false);
 
   const detailKey = detail ? keyOf(detail.f.apolice, detail.f.tipo_erro) : null;
-  const detailRuns =
-    (recurrence?.items ?? []).find((r) => r.key === detailKey)?.runs ?? [];
+  const detailRuns = (recurrence?.items ?? []).find((r) => r.key === detailKey)?.runs ?? [];
 
   return (
     <div className="space-y-5">
@@ -412,9 +407,7 @@ function AlertasPage() {
           {selected.size > 0 && (
             <div className="flex flex-wrap items-center gap-2 rounded-xl border border-primary/40 bg-primary/5 px-4 py-2.5">
               <Sparkles className="h-3.5 w-3.5 text-primary" />
-              <span className="text-[12.5px] font-medium">
-                {selected.size} selecionado(s)
-              </span>
+              <span className="text-[12.5px] font-medium">{selected.size} selecionado(s)</span>
               <button
                 onClick={bulkResolve}
                 className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 text-[12px] transition hover:border-success/60 hover:text-success"
@@ -512,9 +505,7 @@ function AlertasPage() {
         itemRuns={detailRuns}
         resolutions={resolutions.filter(
           (r) =>
-            detail != null &&
-            r.apolice === detail.f.apolice &&
-            r.tipo_erro === detail.f.tipo_erro,
+            detail != null && r.apolice === detail.f.apolice && r.tipo_erro === detail.f.tipo_erro,
         )}
         ignores={ignores.filter(
           (g) =>

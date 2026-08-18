@@ -29,7 +29,9 @@ export function isIgnoredFinding(
   sets: IgnoreSets,
   f: { apolice: string; tipo_erro: string },
 ): boolean {
-  return sets.apoliceWhole.has(f.apolice) || sets.apolicePlusTipo.has(`${f.apolice}::${f.tipo_erro}`);
+  return (
+    sets.apoliceWhole.has(f.apolice) || sets.apolicePlusTipo.has(`${f.apolice}::${f.tipo_erro}`)
+  );
 }
 
 export function filterFindings<T extends { apolice: string; tipo_erro: string }>(

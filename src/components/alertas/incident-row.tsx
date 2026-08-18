@@ -39,10 +39,7 @@ export const IncidentRow = memo(function IncidentRow({
           aria-label="Selecionar incidente"
           className="mt-1 h-3.5 w-3.5 shrink-0 accent-[var(--primary)]"
         />
-        <button
-          onClick={() => onOpen(item)}
-          className="min-w-0 flex-1 text-left"
-        >
+        <button onClick={() => onOpen(item)} className="min-w-0 flex-1 text-left">
           <div className="mb-1 flex flex-wrap items-center gap-1.5">
             <span
               className={cn(
@@ -86,30 +83,22 @@ export const IncidentRow = memo(function IncidentRow({
             </div>
           )}
           <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
-            <span className="font-mono text-foreground/80">
-              apólice …{f.apolice.slice(-12)}
-            </span>
+            <span className="font-mono text-foreground/80">apólice …{f.apolice.slice(-12)}</span>
             <span>·</span>
-            <span>
-              {item.daysOpen === 0 ? "aberto hoje" : `${item.daysOpen} d em aberto`}
-            </span>
+            <span>{item.daysOpen === 0 ? "aberto hoje" : `${item.daysOpen} d em aberto`}</span>
             {f.data_inicio && (
               <>
                 <span>·</span>
                 <span>
                   vig. {new Date(f.data_inicio).toLocaleDateString("pt-BR")}
-                  {f.data_fim
-                    ? ` → ${new Date(f.data_fim).toLocaleDateString("pt-BR")}`
-                    : ""}
+                  {f.data_fim ? ` → ${new Date(f.data_fim).toLocaleDateString("pt-BR")}` : ""}
                 </span>
               </>
             )}
           </div>
         </button>
         <div className="flex shrink-0 flex-col items-end gap-1.5">
-          <span className="text-[11px] text-muted-foreground">
-            {relativeTime(f.created_at)}
-          </span>
+          <span className="text-[11px] text-muted-foreground">{relativeTime(f.created_at)}</span>
           <div className="flex items-center gap-1">
             <button
               onClick={() => onResolve(item)}
