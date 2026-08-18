@@ -102,7 +102,11 @@ export function useAddEndorsementException() {
   const qc = useQueryClient();
   const fn = useServerFn(addEndorsementException);
   return useMutation({
-    mutationFn: (input: { policy_number: string; motivo?: string | null }) => fn({ data: input }),
+    mutationFn: (input: {
+      policy_number: string;
+      motivo: string;
+      reason_tag_id?: string | null;
+    }) => fn({ data: input }),
     onSuccess: (res, vars) => {
       qc.invalidateQueries({ queryKey: ["endorsement-exceptions"] });
       qc.invalidateQueries({ queryKey: ["endorsement-extraction"] });
