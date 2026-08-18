@@ -319,22 +319,14 @@ function ExceptionsDialog({ isAdmin }: { isAdmin: boolean }) {
               onChange={(e) => setPolicy(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
               placeholder="Número da apólice"
-              className="h-9 text-[12.5px] sm:w-[200px] font-mono"
-            />
-            <Input
-              value={motivo}
-              onChange={(e) => setMotivo(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && submit()}
-              placeholder="Motivo (opcional)"
-              maxLength={500}
-              className="h-9 text-[12.5px] flex-1"
+              className="h-9 text-[12.5px] sm:w-[240px] font-mono"
             />
             <Button
               className="h-9 gap-1 text-[12.5px]"
               disabled={add.isPending || !policy.trim()}
               onClick={submit}
             >
-              <Plus className="h-3.5 w-3.5" /> Adicionar
+              <Plus className="h-3.5 w-3.5" /> Adicionar com motivo
             </Button>
           </div>
         ) : (
