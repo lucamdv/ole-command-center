@@ -26,6 +26,7 @@ export interface EndorsementExceptionRow {
   id: string;
   policy_number: string;
   motivo: string | null;
+  reason_tag_id: string | null;
   created_by: string | null;
   created_at: string;
 }
