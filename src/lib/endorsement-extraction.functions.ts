@@ -192,7 +192,7 @@ export const listEndorsementExceptions = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("endorsement_exceptions")
-      .select("id, policy_number, motivo, created_by, created_at")
+      .select("id, policy_number, motivo, reason_tag_id, created_by, created_at")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return (data ?? []) as unknown as EndorsementExceptionRow[];
@@ -200,7 +200,8 @@ export const listEndorsementExceptions = createServerFn({ method: "GET" })
 
 const AddSchema = z.object({
   policy_number: z.string().min(1).max(120),
-  motivo: z.string().max(500).optional().nullable(),
+  motivo: z.string().trim().min(1, "Motivo obrigatório").max(500),
+  reason_tag_id: z.string().uuid().optional().nullable(),
 });
 
 export const addEndorsementException = createServerFn({ method: "POST" })
@@ -221,7 +222,8 @@ export const addEndorsementException = createServerFn({ method: "POST" })
       .from("endorsement_exceptions")
       .insert({
         policy_number: policy,
-        motivo: data.motivo?.trim() ? data.motivo.trim() : null,
+        motivo: data.motivo.trim(),
+        reason_tag_id: data.reason_tag_id ?? null,
         created_by: context.userId,
       } as never)
       .select("id")
@@ -232,7 +234,8 @@ export const addEndorsementException = createServerFn({ method: "POST" })
 
 const UpdateSchema = z.object({
   id: z.string().uuid(),
-  motivo: z.string().max(500).nullable(),
+  motivo: z.string().trim().min(1, "Motivo obrigatório").max(500),
+  reason_tag_id: z.string().uuid().optional().nullable(),
 });
 
 export const updateEndorsementException = createServerFn({ method: "POST" })
@@ -242,7 +245,10 @@ export const updateEndorsementException = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { error } = await context.supabase
       .from("endorsement_exceptions")
-      .update({ motivo: data.motivo?.trim() ? data.motivo.trim() : null } as never)
+      .update({
+        motivo: data.motivo.trim(),
+        reason_tag_id: data.reason_tag_id ?? null,
+      } as never)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
