@@ -1,17 +1,31 @@
-// Filtro de RESOLUÇÕES MANUAIS (tabela audit_resolutions).
-// Um achado marcado como resolvido deixa de contar como aberto até que a
-// auditoria o detecte novamente (reabertura automática no callback).
+// Filtro de RESOLUÇÕES (tabela audit_resolutions).
+// Uma inconsistência é resolvida em duas situações:
+//   1) marcada manualmente como resolvida (origem = 'manual');
+//   2) estava na auditoria anterior e não aparece mais na atual (origem = 'auto').
+// Achados com EXCEÇÃO cadastrada (audit_ignores) nunca geram resolução.
+// Um achado resolvido deixa de contar como aberto até que a auditoria o
+// detecte novamente (reabertura automática no callback).
 
 import type { IgnoreEntry } from "./ignore-filter";
+
+export type ResolutionOrigem = "manual" | "auto";
 
 export interface ActiveResolution {
   apolice: string;
   tipo_erro: string;
+  endosso?: string | null;
 }
 
-/** Converte resoluções ativas em entradas compatíveis com o filtro de exceções. */
+/**
+ * Converte resoluções ativas em entradas compatíveis com o filtro de exceções.
+ * A chave inclui o endosso: resolver o endosso 3 não silencia o endosso 4.
+ */
 export function resolutionsAsIgnoreEntries(rows: ActiveResolution[]): IgnoreEntry[] {
-  return rows.map((r) => ({ apolice: r.apolice, tipo_erro: r.tipo_erro }));
+  return rows.map((r) => ({
+    apolice: r.apolice,
+    tipo_erro: r.tipo_erro,
+    endosso: r.endosso ?? null,
+  }));
 }
 
 export interface ResolutionRow {
@@ -19,6 +33,8 @@ export interface ResolutionRow {
   tipo_erro: string;
   first_seen_at: string | null;
   resolved_at: string;
+  reopened_at?: string | null;
+  origem?: string | null;
 }
 
 export interface ResolutionTimeStat {
@@ -37,6 +53,7 @@ function horas(r: ResolutionRow): number | null {
   if (!Number.isFinite(delta) || delta < 0) return null;
   return delta / HOUR;
 }
+
 
 function media(vals: number[]): number {
   if (vals.length === 0) return 0;
