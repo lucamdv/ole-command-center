@@ -48,17 +48,22 @@ export const resolveFinding = createServerFn({ method: "POST" })
       .eq("apolice", data.apolice)
       .eq("tipo_erro", data.tipo_erro)
       .is("reopened_at", null)
+      .is("endosso", data.endosso ?? null)
       .maybeSingle();
     if (selErr) throw new Error(selErr.message);
     if (existing) return { id: (existing as { id: string }).id, alreadyExists: true };
 
     // Primeira detecção do problema em qualquer auditoria.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: first } = await supabaseAdmin
+    let firstQuery = supabaseAdmin
       .from("audit_findings")
       .select("created_at")
       .eq("apolice", data.apolice)
-      .eq("tipo_erro", data.tipo_erro)
+      .eq("tipo_erro", data.tipo_erro);
+    firstQuery = data.endosso
+      ? firstQuery.eq("endosso", data.endosso)
+      : firstQuery.is("endosso", null);
+    const { data: first } = await firstQuery
       .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle();
@@ -75,6 +80,7 @@ export const resolveFinding = createServerFn({ method: "POST" })
         first_seen_at: firstSeenAt,
         resolved_at: new Date().toISOString(),
         resolved_by: context.userId,
+        origem: "manual",
         motivo: data.motivo?.trim() ? data.motivo.trim() : null,
       } as never)
       .select("id")
@@ -101,7 +107,7 @@ export const getResolutionTimeStats = createServerFn({ method: "GET" })
     const { deriveResolutionTimes } = await import("@/lib/audit/resolution-filter");
     const { data, error } = await context.supabase
       .from("audit_resolutions")
-      .select("apolice, tipo_erro, first_seen_at, resolved_at")
+      .select("apolice, tipo_erro, first_seen_at, resolved_at, reopened_at, origem")
       .order("resolved_at", { ascending: false })
       .limit(2000);
     if (error) throw new Error(error.message);
@@ -111,6 +117,8 @@ export const getResolutionTimeStats = createServerFn({ method: "GET" })
         tipo_erro: string;
         first_seen_at: string | null;
         resolved_at: string;
+        reopened_at: string | null;
+        origem: string | null;
       }>,
     );
   });
