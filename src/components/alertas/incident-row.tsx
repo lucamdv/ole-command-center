@@ -2,9 +2,10 @@ import { memo } from "react";
 import { CheckCircle2, ChevronRight, EyeOff, History, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { relativeTime } from "@/lib/format";
-import { URGENCY_LABEL } from "@/lib/audit/escalation";
+import { URGENCY_LABEL, type Urgency } from "@/lib/audit/escalation";
 import type { AlertItem } from "@/lib/audit/alert-view";
 import { URG_BG, URG_BORDER, URG_TEXT } from "./urgency-ui";
+import { UrgencyPicker } from "./urgency-picker";
 
 export const IncidentRow = memo(function IncidentRow({
   item,
@@ -13,6 +14,8 @@ export const IncidentRow = memo(function IncidentRow({
   onOpen,
   onResolve,
   onIgnore,
+  onSetUrgency,
+  onClearUrgency,
 }: {
   item: AlertItem;
   selected: boolean;
@@ -20,6 +23,8 @@ export const IncidentRow = memo(function IncidentRow({
   onOpen: (item: AlertItem) => void;
   onResolve: (item: AlertItem) => void;
   onIgnore: (item: AlertItem) => void;
+  onSetUrgency: (item: AlertItem, u: Urgency) => void;
+  onClearUrgency: (item: AlertItem) => void;
 }) {
   const { f } = item;
   const id = `${f.id}`;
@@ -100,6 +105,12 @@ export const IncidentRow = memo(function IncidentRow({
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           <span className="text-[11px] text-muted-foreground">{relativeTime(f.created_at)}</span>
           <div className="flex items-center gap-1">
+            <UrgencyPicker
+              value={item.urgency}
+              manual={item.manualUrgency}
+              onSet={(u) => onSetUrgency(item, u)}
+              onClear={() => onClearUrgency(item)}
+            />
             <button
               onClick={() => onResolve(item)}
               title="Marcar como resolvido"
