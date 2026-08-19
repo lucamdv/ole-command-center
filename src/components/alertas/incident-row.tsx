@@ -105,6 +105,12 @@ export const IncidentRow = memo(function IncidentRow({
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           <span className="text-[11px] text-muted-foreground">{relativeTime(f.created_at)}</span>
           <div className="flex items-center gap-1">
+            <UrgencyPicker
+              value={item.urgency}
+              manual={item.manualUrgency}
+              onSet={(u) => onSetUrgency(item, u)}
+              onClear={() => onClearUrgency(item)}
+            />
             <button
               onClick={() => onResolve(item)}
               title="Marcar como resolvido"
