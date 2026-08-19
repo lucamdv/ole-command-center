@@ -34,7 +34,14 @@ export const Route = createFileRoute("/api/public/hooks/scheduler")({
             headers: { "Content-Type": "application/json" },
           });
 
-        if (expected && request.headers.get("x-hook-secret") !== expected) {
+        if (!expected) {
+          return json(
+            { ok: false, error: "SCHEDULER_HOOK_SECRET não configurado" },
+            500,
+          );
+        }
+        const provided = request.headers.get("x-hook-secret");
+        if (!provided || provided !== expected) {
           return json({ ok: false, error: "unauthorized" }, 401);
         }
 
