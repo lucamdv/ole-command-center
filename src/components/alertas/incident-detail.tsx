@@ -36,6 +36,8 @@ export function IncidentDetail({
   onOpenChange,
   onResolve,
   onIgnore,
+  onSetUrgency,
+  onClearUrgency,
 }: {
   item: AlertItem | null;
   runs: RecurrenceRunRef[];
@@ -45,6 +47,8 @@ export function IncidentDetail({
   onOpenChange: (v: boolean) => void;
   onResolve: (item: AlertItem) => void;
   onIgnore: (item: AlertItem) => void;
+  onSetUrgency: (item: AlertItem, u: Urgency) => void;
+  onClearUrgency: (item: AlertItem) => void;
 }) {
   if (!item) return null;
   const { f } = item;
