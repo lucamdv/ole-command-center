@@ -11,7 +11,7 @@ import {
   type Urgency,
 } from "./escalation";
 import type { AuditFindingRow } from "./types";
-import type { RecurrenceItem } from "@/lib/audit-recurrence.functions";
+import type { PolicyHistoryEntry, RecurrenceItem } from "@/lib/audit-recurrence.functions";
 
 export interface AlertItem {
   f: AuditFindingRow;
@@ -25,8 +25,12 @@ export interface AlertItem {
   baseUrgency: Urgency;
   bumps: number;
   escalationReasons: string[];
+  /** Auditorias consecutivas em aberto (apólice + tipo + endosso). */
   occurrences: number;
   totalOccurrences: number;
+  /** Mesmo tipo de erro já ocorreu em outro endosso desta apólice. */
+  recorrenteNaApolice: boolean;
+  policyHistory: PolicyHistoryEntry[];
   streak: number;
   firstSeenAt: string;
   firstSeenEverAt: string;
@@ -40,8 +44,8 @@ export interface AlertItem {
   key: string;
 }
 
-export function keyOf(apolice: string, tipo: string) {
-  return `${apolice}||${tipo}`;
+export function keyOf(apolice: string, tipo: string, endosso?: string | null) {
+  return `${apolice}||${tipo}||${(endosso ?? "").trim()}`;
 }
 
 export function buildAlertItems(
@@ -52,7 +56,7 @@ export function buildAlertItems(
 ): AlertItem[] {
   const rec = new Map(recurrence.map((r) => [r.key, r] as const));
   return findings.map((f) => {
-    const key = keyOf(f.apolice, f.tipo_erro);
+    const key = keyOf(f.apolice, f.tipo_erro, f.endosso);
     const r = rec.get(key);
     const severity = severityOf(f);
     const firstSeenAt = r?.firstSeenAt ?? f.created_at;
@@ -60,9 +64,15 @@ export function buildAlertItems(
     const occurrences = r?.occurrences ?? 1;
     const totalOccurrences = r?.totalOccurrences ?? occurrences;
     const reopened = r?.reopened ?? false;
-    const esc = escalate(severity, { occurrences, daysOpen, reopened }, rules);
+    const recorrenteNaApolice = r?.recorrenteNaApolice ?? false;
+    const esc = escalate(
+      severity,
+      { occurrences, daysOpen, reopened, recorrenteNaApolice },
+      rules,
+    );
     const norm = normalizeFinding(f);
-    const manualUrgency = overrides[key] ?? null;
+    const legacyKey = `${f.apolice}||${f.tipo_erro}`;
+    const manualUrgency = overrides[key] ?? overrides[legacyKey] ?? null;
     return {
       f,
       severity,
@@ -74,6 +84,8 @@ export function buildAlertItems(
       escalationReasons: esc.reasons,
       occurrences,
       totalOccurrences,
+      recorrenteNaApolice,
+      policyHistory: r?.policyHistory ?? [],
       streak: r?.streak ?? 1,
       firstSeenAt,
       firstSeenEverAt: r?.firstSeenEverAt ?? firstSeenAt,

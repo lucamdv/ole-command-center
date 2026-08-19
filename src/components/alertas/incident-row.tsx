@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { CheckCircle2, ChevronRight, EyeOff, History, RotateCcw } from "lucide-react";
+import { CheckCircle2, ChevronRight, EyeOff, History, Repeat, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { relativeTime } from "@/lib/format";
 import { URGENCY_LABEL, type Urgency } from "@/lib/audit/escalation";
@@ -59,11 +59,21 @@ export const IncidentRow = memo(function IncidentRow({
             {item.occurrences > 1 ? (
               <span className="inline-flex items-center gap-1 rounded bg-warning/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-warning">
                 <History className="h-3 w-3" />
-                {item.occurrences}ª auditoria
+                {item.occurrences}ª auditoria seguida
               </span>
             ) : (
               <span className="rounded bg-info/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-info">
                 novo
+              </span>
+            )}
+            {item.recorrenteNaApolice && (
+              <span
+                title={`Mesmo erro já ocorreu em endosso anterior desta apólice: ${item.policyHistory
+                  .map((h) => h.endosso)
+                  .join(", ")}`}
+                className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-primary"
+              >
+                <Repeat className="h-3 w-3" /> reincidente na apólice
               </span>
             )}
             {item.reopened && (
