@@ -35,6 +35,17 @@ export const getNotifications = createServerFn({ method: "GET" }).middleware([re
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const out: ServerNotification[] = [];
 
+    // Exceções da auditoria (audit_ignores) — nunca devem gerar notificação.
+    const { buildIgnoreSets, filterFindings, adjustRunCounts } = await import(
+      "@/lib/audit/ignore-filter"
+    );
+    const { data: ignoreRows } = await supabaseAdmin
+      .from("audit_ignores")
+      .select("apolice, tipo_erro");
+    const ignoreSets = buildIgnoreSets(
+      (ignoreRows ?? []) as Array<{ apolice: string; tipo_erro: string | null }>,
+    );
+
     // 1) audit runs (last 7d)
     const { data: runs } = await supabaseAdmin
       .from("audit_runs")
@@ -43,6 +54,36 @@ export const getNotifications = createServerFn({ method: "GET" }).middleware([re
       .in("status", ["success", "error"])
       .order("created_at", { ascending: false })
       .limit(30);
+
+    const successRunIds = ((runs ?? []) as Array<{ id: string; status: string }>)
+      .filter((r) => r.status === "success")
+      .map((r) => r.id);
+
+    type FindingRow = {
+      id: string;
+      apolice: string;
+      tipo_erro: string;
+      endosso: string | null;
+      created_at: string;
+      run_id: string;
+    };
+
+    let allFindings: FindingRow[] = [];
+    if (successRunIds.length > 0) {
+      const { data: fr } = await supabaseAdmin
+        .from("audit_findings")
+        .select("id, apolice, tipo_erro, endosso, created_at, run_id")
+        .in("run_id", successRunIds);
+      allFindings = (fr ?? []) as FindingRow[];
+    }
+
+    const byRun = new Map<string, FindingRow[]>();
+    for (const f of allFindings) {
+      const list = byRun.get(f.run_id) ?? [];
+      list.push(f);
+      byRun.set(f.run_id, list);
+    }
+
 
     for (const r of (runs ?? []) as Array<{
       id: string;
