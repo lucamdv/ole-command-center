@@ -175,7 +175,11 @@ function PageHeader({
               </Button>
             </>
           )}
-          <RunAuditButton />
+          <div className="flex flex-col items-start sm:items-end gap-1.5">
+            <NextRunCountdown job="audit" />
+            <RunAuditButton />
+          </div>
+
         </div>
       </div>
     </div>
