@@ -86,9 +86,15 @@ export function escalate(
   return { urgency: URGENCY_ORDER[idx], base, bumps: idx - baseIdx, reasons };
 }
 
+/**
+ * Dias em aberto contados por dia de calendário (não por blocos de 24h),
+ * para que dois problemas detectados no mesmo dia tenham sempre o mesmo valor,
+ * independente da hora da auditoria.
+ */
 export function daysBetween(from: string | null | undefined, to = Date.now()): number {
   if (!from) return 0;
-  const t = +new Date(from);
-  if (!Number.isFinite(t)) return 0;
-  return Math.max(0, Math.floor((to - t) / 86_400_000));
+  const d = new Date(from);
+  if (!Number.isFinite(+d)) return 0;
+  const startOfDay = (x: Date) => Date.UTC(x.getFullYear(), x.getMonth(), x.getDate());
+  return Math.max(0, Math.round((startOfDay(new Date(to)) - startOfDay(d)) / 86_400_000));
 }
