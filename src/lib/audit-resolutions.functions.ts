@@ -14,6 +14,7 @@ export interface AuditResolutionRow {
   resolved_by: string | null;
   motivo: string | null;
   reopened_at: string | null;
+  origem: string | null;
   created_at: string;
 }
 

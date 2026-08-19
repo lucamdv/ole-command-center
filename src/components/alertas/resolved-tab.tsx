@@ -85,7 +85,7 @@ export function ResolvedTab() {
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex flex-wrap items-center gap-2">
                     <span className="rounded bg-success/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase text-success">
-                      resolvido
+                      {r.origem === "auto" ? "resolvido automaticamente" : "resolvido"}
                     </span>
                     <span className="text-[13px] font-semibold">{r.tipo_erro}</span>
                     {r.reopened_at && (
