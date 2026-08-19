@@ -25,7 +25,9 @@ const TABS = [
   { id: "notificacoes", label: "Notificações", icon: Bell, Component: NotificacoesTab, adminOnly: false },
   { id: "excecoes", label: "Exceções", icon: EyeOff, Component: ExcecoesTab, adminOnly: false },
   { id: "integracoes", label: "Integrações", icon: Plug, Component: IntegracoesTab, adminOnly: true },
+  { id: "automacao", label: "Automação", icon: Clock, Component: AutomacaoTab, adminOnly: true },
   { id: "dados", label: "Dados & Retenção", icon: Database, Component: DadosTab, adminOnly: true },
+
 ] as const;
 
 
