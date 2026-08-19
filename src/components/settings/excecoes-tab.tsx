@@ -23,7 +23,8 @@ import {
   useUpdateAuditIgnore,
 } from "@/hooks/use-audit-ignores";
 import { useExceptionTags } from "@/hooks/use-exception-tags";
-import { ReasonDisplay } from "@/components/exceptions/reason-chip";
+import { ReasonDisplay, ReasonTagChip } from "@/components/exceptions/reason-chip";
+
 import { IgnoreReasonDialog } from "@/components/exceptions/ignore-reason-dialog";
 import { ReasonTagsManager } from "@/components/settings/reason-tags-manager";
 import { formatDateTime } from "@/lib/format";
