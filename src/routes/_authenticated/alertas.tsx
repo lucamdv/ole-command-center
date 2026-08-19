@@ -13,6 +13,7 @@ import {
 import { useLatestAudit } from "@/hooks/use-audit";
 import { useFindingRecurrence } from "@/hooks/use-audit-recurrence";
 import { useEscalationRules } from "@/hooks/use-escalation-rules";
+import { useUrgencyOverrides } from "@/hooks/use-urgency-overrides";
 import { useResolveFinding } from "@/hooks/use-audit-resolutions";
 import { useAddAuditIgnore, useAuditIgnores } from "@/hooks/use-audit-ignores";
 import { useAuditResolutions } from "@/hooks/use-audit-resolutions";
@@ -67,6 +68,7 @@ function AlertasPage() {
   const { data: latest, isLoading, error } = useLatestAudit();
   const { data: recurrence } = useFindingRecurrence();
   const { rules } = useEscalationRules();
+  const { overrides, setOverride, clearOverride } = useUrgencyOverrides();
   const { data: resolutions = [] } = useAuditResolutions();
   const { data: ignores = [] } = useAuditIgnores();
   const resolve = useResolveFinding();
@@ -88,8 +90,8 @@ function AlertasPage() {
   const run = latest?.run ?? null;
 
   const items = useMemo(
-    () => buildAlertItems(latest?.findings ?? [], recurrence?.items ?? [], rules),
-    [latest, recurrence, rules],
+    () => buildAlertItems(latest?.findings ?? [], recurrence?.items ?? [], rules, overrides),
+    [latest, recurrence, rules, overrides],
   );
 
   const tipos = useMemo(() => Array.from(new Set(items.map((i) => i.f.tipo_erro))).sort(), [items]);
@@ -176,6 +178,14 @@ function AlertasPage() {
   };
 
   const [bulkIgnoreOpen, setBulkIgnoreOpen] = useState(false);
+
+  const setUrgency = (i: AlertItem, u: Urgency) => setOverride(i.key, u);
+  const clearUrgency = (i: AlertItem) => clearOverride(i.key);
+
+  const bulkSetUrgency = (u: Urgency) => {
+    for (const i of selectedItems) setOverride(i.key, u);
+    setSelected(new Set());
+  };
 
   const detailKey = detail ? keyOf(detail.f.apolice, detail.f.tipo_erro) : null;
   const detailRuns = (recurrence?.items ?? []).find((r) => r.key === detailKey)?.runs ?? [];
@@ -420,6 +430,20 @@ function AlertasPage() {
               >
                 <EyeOff className="h-3.5 w-3.5" /> Ignorar em lote
               </button>
+              <select
+                defaultValue=""
+                onChange={(e) => {
+                  if (e.target.value) bulkSetUrgency(e.target.value as Urgency);
+                }}
+                className="h-8 rounded-md border border-border bg-surface px-2 text-[12px] outline-none"
+              >
+                <option value="">Definir nível…</option>
+                {[...URGENCY_ORDER].reverse().map((u) => (
+                  <option key={u} value={u}>
+                    {URGENCY_LABEL[u]}
+                  </option>
+                ))}
+              </select>
               <button
                 onClick={() => setSelected(new Set())}
                 className="h-8 rounded-md px-2 text-[12px] text-muted-foreground hover:text-foreground"
@@ -470,6 +494,8 @@ function AlertasPage() {
                         onOpen={setDetail}
                         onResolve={doResolve}
                         onIgnore={setIgnoreTarget}
+                        onSetUrgency={setUrgency}
+                        onClearUrgency={clearUrgency}
                       />
                     ))}
                   </div>
@@ -491,6 +517,8 @@ function AlertasPage() {
                     onOpen={setDetail}
                     onResolve={doResolve}
                     onIgnore={setIgnoreTarget}
+                    onSetUrgency={setUrgency}
+                    onClearUrgency={clearUrgency}
                   />
                 )}
               </VirtualList>
@@ -521,6 +549,14 @@ function AlertasPage() {
         onIgnore={(i) => {
           setDetail(null);
           setIgnoreTarget(i);
+        }}
+        onSetUrgency={(i, u) => {
+          setUrgency(i, u);
+          setDetail({ ...i, urgency: u, manualUrgency: u });
+        }}
+        onClearUrgency={(i) => {
+          clearUrgency(i);
+          setDetail({ ...i, urgency: i.autoUrgency, manualUrgency: null });
         }}
       />
 
