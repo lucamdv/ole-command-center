@@ -107,6 +107,7 @@ export type Database = {
           first_seen_at: string | null
           id: string
           motivo: string | null
+          origem: string
           reopened_at: string | null
           resolved_at: string
           resolved_by: string | null
@@ -121,6 +122,7 @@ export type Database = {
           first_seen_at?: string | null
           id?: string
           motivo?: string | null
+          origem?: string
           reopened_at?: string | null
           resolved_at?: string
           resolved_by?: string | null
@@ -135,6 +137,7 @@ export type Database = {
           first_seen_at?: string | null
           id?: string
           motivo?: string | null
+          origem?: string
           reopened_at?: string | null
           resolved_at?: string
           resolved_by?: string | null
