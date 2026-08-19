@@ -5,12 +5,15 @@ import { zonedParts, zonedTimeToUtc } from "@/lib/automation/next-run";
 
 /**
  * Agendador chamado pelo pg_cron a cada 5 minutos.
- * Protegido pelo shared-secret `x-hook-secret` (POLICY_SYNC_HOOK_SECRET).
  *
- * Para cada job habilitado: se o horário local do dia já passou e ainda não
- * houve disparo automático no dia local corrente, dispara. O update
- * condicional de last_triggered_at serve como trava (single-flight).
+ * O endpoint é idempotente por natureza: só dispara quando o horário
+ * configurado do dia já passou e o disparo do dia ainda não ocorreu (trava
+ * via update condicional de last_triggered_at). Portanto, no máximo um
+ * disparo automático por job por dia, independentemente de quantas chamadas
+ * chegarem. Se a env SCHEDULER_HOOK_SECRET estiver definida, o header
+ * `x-hook-secret` passa a ser obrigatório.
  */
+
 interface ScheduleRow {
   job: string;
   enabled: boolean;
