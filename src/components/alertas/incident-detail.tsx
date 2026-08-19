@@ -9,7 +9,8 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { formatDateTime, relativeTime } from "@/lib/format";
-import { URGENCY_LABEL } from "@/lib/audit/escalation";
+import { URGENCY_LABEL, type Urgency } from "@/lib/audit/escalation";
+import { UrgencyPicker } from "./urgency-picker";
 import type { AlertItem } from "@/lib/audit/alert-view";
 import type { AuditResolutionRow } from "@/lib/audit-resolutions.functions";
 import type { AuditIgnoreRow } from "@/lib/audit-ignores.functions";
