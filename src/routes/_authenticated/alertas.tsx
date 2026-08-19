@@ -180,7 +180,11 @@ function AlertasPage() {
   const [bulkIgnoreOpen, setBulkIgnoreOpen] = useState(false);
 
   const setUrgency = (i: AlertItem, u: Urgency) => setOverride(i.key, u);
-  const clearUrgency = (i: AlertItem) => clearOverride(i.key);
+  const clearUrgency = (i: AlertItem) => {
+    clearOverride(i.key);
+    // chave antiga (sem endosso), para overrides definidos antes desta versão
+    clearOverride(`${i.f.apolice}||${i.f.tipo_erro}`);
+  };
 
   const bulkSetUrgency = (u: Urgency) => {
     for (const i of selectedItems) setOverride(i.key, u);
