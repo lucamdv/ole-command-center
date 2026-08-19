@@ -197,6 +197,48 @@ export type Database = {
         }
         Relationships: []
       }
+      automation_schedules: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          job: string
+          last_error: string | null
+          last_status: string | null
+          last_triggered_at: string | null
+          run_at_time: string
+          timezone: string
+          updated_at: string
+          weekdays: number[]
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          job: string
+          last_error?: string | null
+          last_status?: string | null
+          last_triggered_at?: string | null
+          run_at_time?: string
+          timezone?: string
+          updated_at?: string
+          weekdays?: number[]
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          job?: string
+          last_error?: string | null
+          last_status?: string | null
+          last_triggered_at?: string | null
+          run_at_time?: string
+          timezone?: string
+          updated_at?: string
+          weekdays?: number[]
+        }
+        Relationships: []
+      }
       endorsement_exceptions: {
         Row: {
           created_at: string
