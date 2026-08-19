@@ -28,7 +28,8 @@ export const Route = createFileRoute("/api/public/hooks/scheduler")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env.SCHEDULER_HOOK_SECRET;
+        const expected =
+          process.env.SCHEDULER_HOOK_SECRET || process.env.POLICY_SYNC_HOOK_SECRET;
         const json = (body: unknown, status = 200) =>
           new Response(JSON.stringify(body), {
             status,
