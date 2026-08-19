@@ -18,6 +18,8 @@ import { toast } from "sonner";
 import { KpiCard } from "@/components/kpi/kpi-card";
 import { formatDuracaoHoras } from "@/lib/audit/resolution-filter";
 import { RunAuditButton } from "@/components/audit/run-audit-button";
+import { NextRunCountdown } from "@/components/automation/next-run-countdown";
+
 import { AuditEmptyState } from "@/components/audit/empty-state";
 import { FindingsListDialog } from "@/components/audit/findings-list-dialog";
 import { Button } from "@/components/ui/button";
@@ -175,7 +177,11 @@ function PageHeader({
               </Button>
             </>
           )}
-          <RunAuditButton />
+          <div className="flex flex-col items-start sm:items-end gap-1.5">
+            <NextRunCountdown job="audit" />
+            <RunAuditButton />
+          </div>
+
         </div>
       </div>
     </div>

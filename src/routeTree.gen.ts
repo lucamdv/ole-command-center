@@ -28,6 +28,7 @@ import { Route as ApiPublicEndorsementExtractionCallbackRouteImport } from './ro
 import { Route as ApiPublicPolicySyncCallbackRouteImport } from './routes/api/public/policy-sync-callback'
 import { Route as AuthenticatedApolicesIdIndexRouteImport } from './routes/_authenticated/apolices.$id.index'
 import { Route as ApiPublicHooksPolicySyncRouteImport } from './routes/api/public/hooks/policy-sync'
+import { Route as ApiPublicHooksSchedulerRouteImport } from './routes/api/public/hooks/scheduler'
 import { Route as AuthenticatedApolicesIdEndossosNumRouteImport } from './routes/_authenticated/apolices.$id.endossos.$num'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -134,6 +135,11 @@ const ApiPublicHooksPolicySyncRoute =
     path: '/api/public/hooks/policy-sync',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSchedulerRoute = ApiPublicHooksSchedulerRouteImport.update({
+  id: '/api/public/hooks/scheduler',
+  path: '/api/public/hooks/scheduler',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedApolicesIdEndossosNumRoute =
   AuthenticatedApolicesIdEndossosNumRouteImport.update({
     id: '/apolices/$id/endossos/$num',
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/apolices/': typeof AuthenticatedApolicesIndexRoute
   '/ferramentas/': typeof AuthenticatedFerramentasIndexRoute
   '/api/public/hooks/policy-sync': typeof ApiPublicHooksPolicySyncRoute
+  '/api/public/hooks/scheduler': typeof ApiPublicHooksSchedulerRoute
   '/apolices/$id/': typeof AuthenticatedApolicesIdIndexRoute
   '/apolices/$id/endossos/$num': typeof AuthenticatedApolicesIdEndossosNumRoute
 }
@@ -179,6 +186,7 @@ export interface FileRoutesByTo {
   '/apolices': typeof AuthenticatedApolicesIndexRoute
   '/ferramentas': typeof AuthenticatedFerramentasIndexRoute
   '/api/public/hooks/policy-sync': typeof ApiPublicHooksPolicySyncRoute
+  '/api/public/hooks/scheduler': typeof ApiPublicHooksSchedulerRoute
   '/apolices/$id': typeof AuthenticatedApolicesIdIndexRoute
   '/apolices/$id/endossos/$num': typeof AuthenticatedApolicesIdEndossosNumRoute
 }
@@ -202,6 +210,7 @@ export interface FileRoutesById {
   '/_authenticated/apolices/': typeof AuthenticatedApolicesIndexRoute
   '/_authenticated/ferramentas/': typeof AuthenticatedFerramentasIndexRoute
   '/api/public/hooks/policy-sync': typeof ApiPublicHooksPolicySyncRoute
+  '/api/public/hooks/scheduler': typeof ApiPublicHooksSchedulerRoute
   '/_authenticated/apolices/$id/': typeof AuthenticatedApolicesIdIndexRoute
   '/_authenticated/apolices/$id/endossos/$num': typeof AuthenticatedApolicesIdEndossosNumRoute
 }
@@ -225,6 +234,7 @@ export interface FileRouteTypes {
     | '/apolices/'
     | '/ferramentas/'
     | '/api/public/hooks/policy-sync'
+    | '/api/public/hooks/scheduler'
     | '/apolices/$id/'
     | '/apolices/$id/endossos/$num'
   fileRoutesByTo: FileRoutesByTo
@@ -245,6 +255,7 @@ export interface FileRouteTypes {
     | '/apolices'
     | '/ferramentas'
     | '/api/public/hooks/policy-sync'
+    | '/api/public/hooks/scheduler'
     | '/apolices/$id'
     | '/apolices/$id/endossos/$num'
   id:
@@ -267,6 +278,7 @@ export interface FileRouteTypes {
     | '/_authenticated/apolices/'
     | '/_authenticated/ferramentas/'
     | '/api/public/hooks/policy-sync'
+    | '/api/public/hooks/scheduler'
     | '/_authenticated/apolices/$id/'
     | '/_authenticated/apolices/$id/endossos/$num'
   fileRoutesById: FileRoutesById
@@ -279,6 +291,7 @@ export interface RootRouteChildren {
   ApiPublicEndorsementExtractionCallbackRoute: typeof ApiPublicEndorsementExtractionCallbackRoute
   ApiPublicPolicySyncCallbackRoute: typeof ApiPublicPolicySyncCallbackRoute
   ApiPublicHooksPolicySyncRoute: typeof ApiPublicHooksPolicySyncRoute
+  ApiPublicHooksSchedulerRoute: typeof ApiPublicHooksSchedulerRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -416,6 +429,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksPolicySyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/scheduler': {
+      id: '/api/public/hooks/scheduler'
+      path: '/api/public/hooks/scheduler'
+      fullPath: '/api/public/hooks/scheduler'
+      preLoaderRoute: typeof ApiPublicHooksSchedulerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/apolices/$id/endossos/$num': {
       id: '/_authenticated/apolices/$id/endossos/$num'
       path: '/apolices/$id/endossos/$num'
@@ -484,6 +504,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicEndorsementExtractionCallbackRoute,
   ApiPublicPolicySyncCallbackRoute: ApiPublicPolicySyncCallbackRoute,
   ApiPublicHooksPolicySyncRoute: ApiPublicHooksPolicySyncRoute,
+  ApiPublicHooksSchedulerRoute: ApiPublicHooksSchedulerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
