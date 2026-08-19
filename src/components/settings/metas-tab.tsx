@@ -184,6 +184,26 @@ function EscalationSection() {
 
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3.5">
           <div className="min-w-0">
+            <div className="text-[13px] font-medium">Escalar em reincidência na apólice</div>
+            <div className="text-[11.5px] text-muted-foreground">
+              Sobe um nível quando o mesmo tipo de erro já ocorreu em endosso anterior da mesma
+              apólice.
+            </div>
+          </div>
+          <button
+            onClick={() => update({ policyRecurrenceBump: !rules.policyRecurrenceBump })}
+            className={`h-9 shrink-0 rounded-md border px-3 text-[12.5px] transition ${
+              rules.policyRecurrenceBump
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-surface-2 text-muted-foreground"
+            }`}
+          >
+            {rules.policyRecurrenceBump ? "Ativado" : "Desativado"}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3.5">
+          <div className="min-w-0">
             <div className="text-[13px] font-medium">Escalar em reabertura</div>
             <div className="text-[11.5px] text-muted-foreground">
               Sobe um nível extra quando o problema já foi resolvido e voltou a aparecer.

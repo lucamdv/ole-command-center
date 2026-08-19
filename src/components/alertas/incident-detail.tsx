@@ -1,5 +1,13 @@
 import { Link } from "@tanstack/react-router";
-import { CheckCircle2, Clock, EyeOff, ExternalLink, History, RotateCcw } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  EyeOff,
+  ExternalLink,
+  History,
+  Repeat,
+  RotateCcw,
+} from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -74,11 +82,9 @@ export function IncidentDetail({
             {f.tipo_erro}
           </SheetTitle>
           <SheetDescription className="text-[12px]">
-            Detectado {relativeTime(f.created_at)} · em aberto desde{" "}
-            {formatDateTime(item.firstSeenAt)}
-            {item.totalOccurrences > item.occurrences
-              ? ` · histórico desde ${formatDateTime(item.firstSeenEverAt)} (${item.totalOccurrences} auditorias no total)`
-              : ""}
+            Endosso {item.endosso ?? "—"} · em aberto desde {formatDateTime(item.firstSeenAt)} (
+            {item.occurrences} auditoria{item.occurrences > 1 ? "s" : ""} seguida
+            {item.occurrences > 1 ? "s" : ""}) · detectado {relativeTime(f.created_at)}
           </SheetDescription>
         </SheetHeader>
 
@@ -86,7 +92,7 @@ export function IncidentDetail({
           <div className="grid grid-cols-3 gap-3">
             <div className="rounded-lg border border-border bg-surface p-3">
               <div className="flex items-center gap-1 text-[10.5px] uppercase tracking-wider text-muted-foreground">
-                <History className="h-3 w-3" /> auditorias em aberto
+                <History className="h-3 w-3" /> auditorias seguidas
               </div>
               <div className="mt-1 text-[18px] font-semibold tabular-nums">{item.occurrences}</div>
             </div>
@@ -181,9 +187,33 @@ export function IncidentDetail({
               ))}
             </div>
             <div className="mt-1 text-[11px] text-muted-foreground">
-              {timeline.length} auditorias analisadas · sequência atual: {item.streak}
+              {timeline.length} auditorias analisadas · sequência atual: {item.streak} · total{" "}
+              {item.totalOccurrences}
             </div>
           </div>
+
+          {item.policyHistory.length > 0 && (
+            <div className="space-y-2 rounded-lg border border-primary/40 bg-primary/5 p-3">
+              <div className="flex items-center gap-1.5 text-[12px] font-semibold text-primary">
+                <Repeat className="h-3.5 w-3.5" /> Reincidente nesta apólice
+              </div>
+              <div className="text-[11.5px] text-muted-foreground">
+                O mesmo tipo de erro já ocorreu em outro(s) endosso(s) desta apólice:
+              </div>
+              <ul className="space-y-1 text-[12px]">
+                {item.policyHistory.map((h) => (
+                  <li key={h.endosso} className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono">end. {h.endosso}</span>
+                    <span className="text-muted-foreground">
+                      {formatDateTime(h.firstSeenAt)}
+                      {h.lastSeenAt !== h.firstSeenAt ? ` → ${formatDateTime(h.lastSeenAt)}` : ""} ·{" "}
+                      {h.audits} auditoria{h.audits > 1 ? "s" : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {(resolutions.length > 0 || ignores.length > 0) && (
             <div className="space-y-2">

@@ -102,8 +102,8 @@ function AlertasPage() {
     let novos = 0;
     for (const i of items) {
       c[i.urgency]++;
-      if (i.occurrences > 1) reincidentes++;
-      else novos++;
+      if (i.recorrenteNaApolice) reincidentes++;
+      if (i.occurrences <= 1 && !i.recorrenteNaApolice) novos++;
     }
     return { c, reincidentes, novos };
   }, [items]);
@@ -113,7 +113,7 @@ function AlertasPage() {
     const out = items.filter((i) => {
       if (urg !== "all" && i.urgency !== urg) return false;
       if (tipo !== "all" && i.f.tipo_erro !== tipo) return false;
-      if (onlyRecurring && i.occurrences <= 1) return false;
+      if (onlyRecurring && !i.recorrenteNaApolice) return false;
       if (onlyReopened && !i.reopened) return false;
       if (age === "novo" && i.daysOpen > 0) return false;
       if (age === "1a7" && (i.daysOpen < 1 || i.daysOpen > 7)) return false;
@@ -187,7 +187,7 @@ function AlertasPage() {
     setSelected(new Set());
   };
 
-  const detailKey = detail ? keyOf(detail.f.apolice, detail.f.tipo_erro) : null;
+  const detailKey = detail ? keyOf(detail.f.apolice, detail.f.tipo_erro, detail.f.endosso) : null;
   const detailRuns = (recurrence?.items ?? []).find((r) => r.key === detailKey)?.runs ?? [];
 
   return (
@@ -333,7 +333,7 @@ function AlertasPage() {
                 {isLoading ? <Skeleton className="h-7 w-12" /> : counts.reincidentes}
               </div>
               <div className="text-[11px] text-muted-foreground">
-                {counts.novos} novos nesta run
+                mesmo erro em endosso anterior · {counts.novos} novos
               </div>
             </button>
           </div>
