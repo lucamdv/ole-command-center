@@ -26,8 +26,10 @@ export interface AlertItem {
   bumps: number;
   escalationReasons: string[];
   occurrences: number;
+  totalOccurrences: number;
   streak: number;
   firstSeenAt: string;
+  firstSeenEverAt: string;
   daysOpen: number;
   reopened: boolean;
   resolvedTimes: number;
@@ -56,6 +58,7 @@ export function buildAlertItems(
     const firstSeenAt = r?.firstSeenAt ?? f.created_at;
     const daysOpen = daysBetween(firstSeenAt);
     const occurrences = r?.occurrences ?? 1;
+    const totalOccurrences = r?.totalOccurrences ?? occurrences;
     const reopened = r?.reopened ?? false;
     const esc = escalate(severity, { occurrences, daysOpen, reopened }, rules);
     const norm = normalizeFinding(f);
@@ -70,8 +73,10 @@ export function buildAlertItems(
       bumps: esc.bumps,
       escalationReasons: esc.reasons,
       occurrences,
+      totalOccurrences,
       streak: r?.streak ?? 1,
       firstSeenAt,
+      firstSeenEverAt: r?.firstSeenEverAt ?? firstSeenAt,
       daysOpen,
       reopened,
       resolvedTimes: r?.resolvedTimes ?? 0,
