@@ -164,40 +164,31 @@ export const getNotifications = createServerFn({ method: "GET" }).middleware([re
       }
     }
 
-    // 3) critical findings from last 3 successful audit runs
-    const recentRunIds = ((runs ?? []) as Array<{ id: string; status: string }>)
-      .filter((r) => r.status === "success")
-      .slice(0, 3)
-      .map((r) => r.id);
+    // 3) critical findings from last 3 successful audit runs (excluindo exceções)
+    const recentRunIds = new Set(successRunIds.slice(0, 3));
 
-    if (recentRunIds.length > 0) {
-      const { data: findings } = await supabaseAdmin
-        .from("audit_findings")
-        .select("id, apolice, tipo_erro, endosso, created_at")
-        .in("run_id", recentRunIds)
-        .order("created_at", { ascending: false })
-        .limit(40);
-
-      for (const f of (findings ?? []) as Array<{
-        id: string;
-        apolice: string;
-        tipo_erro: string;
-        endosso: string | null;
-        created_at: string;
-      }>) {
+    const criticalFindings = filterFindings(
+      ignoreSets,
+      allFindings.filter((f) => recentRunIds.has(f.run_id)),
+    )
+      .filter((f) => {
         const tipo = (f.tipo_erro ?? "").toLowerCase();
-        const isCritical = CRITICAL_TIPOS.some((t) => tipo.includes(t));
-        if (!isCritical) continue;
-        out.push({
-          id: `finding:${f.id}`,
-          kind: "achados_criticos",
-          severity: "high",
-          text: `Achado crítico em ${f.apolice}${f.endosso ? ` (end. ${f.endosso})` : ""} — ${f.tipo_erro}`,
-          createdAt: f.created_at,
-          link: `/apolices/${encodeURIComponent(f.apolice)}`,
-        });
-      }
+        return CRITICAL_TIPOS.some((t) => tipo.includes(t));
+      })
+      .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+      .slice(0, 40);
+
+    for (const f of criticalFindings) {
+      out.push({
+        id: `finding:${f.id}`,
+        kind: "achados_criticos",
+        severity: "high",
+        text: `Achado crítico em ${f.apolice}${f.endosso ? ` (end. ${f.endosso})` : ""} — ${f.tipo_erro}`,
+        createdAt: f.created_at,
+        link: `/apolices/${encodeURIComponent(f.apolice)}`,
+      });
     }
+
 
     // 4) apólices atualizadas desde lastSeenAt
     if (data.lastSeenAt) {
