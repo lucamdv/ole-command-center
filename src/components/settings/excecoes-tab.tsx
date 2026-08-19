@@ -1,7 +1,14 @@
 import { useMemo, useState } from "react";
-import { EyeOff, Pencil, Search, Trash2 } from "lucide-react";
+import { EyeOff, Pencil, Search, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -28,15 +35,30 @@ export function ExcecoesTab() {
   const remove = useRemoveAuditIgnore();
   const update = useUpdateAuditIgnore();
   const [q, setQ] = useState("");
+  const [errorFilter, setErrorFilter] = useState<string>("__all__");
   const [editing, setEditing] = useState<AuditIgnoreRow | null>(null);
 
+  const errorOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const i of ignores) {
+      if (i.tipo_erro) set.add(i.tipo_erro);
+    }
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [ignores]);
+
   const filtered = useMemo(() => {
+    let result = ignores;
     const term = q.trim().toLowerCase();
-    if (!term) return ignores;
-    return ignores.filter((i) =>
-      `${i.apolice} ${i.tipo_erro ?? ""} ${i.motivo ?? ""}`.toLowerCase().includes(term),
-    );
-  }, [ignores, q]);
+    if (term) {
+      result = result.filter((i) =>
+        `${i.apolice} ${i.tipo_erro ?? ""} ${i.motivo ?? ""}`.toLowerCase().includes(term),
+      );
+    }
+    if (errorFilter !== "__all__") {
+      result = result.filter((i) => i.tipo_erro === errorFilter || (!i.tipo_erro && errorFilter === "__none__"));
+    }
+    return result;
+  }, [ignores, q, errorFilter]);
 
   return (
     <div className="space-y-6">
@@ -50,14 +72,43 @@ export function ExcecoesTab() {
             uma exceção faz o erro voltar a aparecer na próxima visualização do relatório.
           </p>
         </div>
-        <div className="relative w-full sm:w-[260px]">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar apólice, tipo ou motivo…"
-            className="pl-8 h-9 text-[12.5px]"
-          />
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Select value={errorFilter} onValueChange={setErrorFilter}>
+            <SelectTrigger className="w-full sm:w-[220px] h-9 text-[12.5px]">
+              <SelectValue placeholder="Filtrar por erro" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todos os tipos de erro</SelectItem>
+              {errorOptions.length === 0 && (
+                <SelectItem value="__all__" disabled>
+                  Nenhum erro disponível
+                </SelectItem>
+              )}
+              {errorOptions.map((tipo) => (
+                <SelectItem key={tipo} value={tipo}>
+                  {tipo}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="relative w-full sm:w-[260px]">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Buscar apólice, tipo ou motivo…"
+              className="pl-8 h-9 text-[12.5px]"
+            />
+            {q && (
+              <button
+                type="button"
+                onClick={() => setQ("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
