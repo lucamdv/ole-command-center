@@ -74,8 +74,11 @@ export function IncidentDetail({
             {f.tipo_erro}
           </SheetTitle>
           <SheetDescription className="text-[12px]">
-            Detectado {relativeTime(f.created_at)} · primeira detecção{" "}
+            Detectado {relativeTime(f.created_at)} · em aberto desde{" "}
             {formatDateTime(item.firstSeenAt)}
+            {item.totalOccurrences > item.occurrences
+              ? ` · histórico desde ${formatDateTime(item.firstSeenEverAt)} (${item.totalOccurrences} auditorias no total)`
+              : ""}
           </SheetDescription>
         </SheetHeader>
 
@@ -83,7 +86,7 @@ export function IncidentDetail({
           <div className="grid grid-cols-3 gap-3">
             <div className="rounded-lg border border-border bg-surface p-3">
               <div className="flex items-center gap-1 text-[10.5px] uppercase tracking-wider text-muted-foreground">
-                <History className="h-3 w-3" /> auditorias
+                <History className="h-3 w-3" /> auditorias em aberto
               </div>
               <div className="mt-1 text-[18px] font-semibold tabular-nums">{item.occurrences}</div>
             </div>

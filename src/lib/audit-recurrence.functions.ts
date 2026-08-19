@@ -13,10 +13,16 @@ export interface RecurrenceItem {
   tipo_erro: string;
   /** Auditorias (mais recente primeiro) em que o problema apareceu. */
   runs: string[];
+  /** Auditorias consecutivas em aberto (episódio atual). */
   occurrences: number;
+  /** Total de auditorias em que já apareceu, somando episódios anteriores. */
+  totalOccurrences: number;
   /** Auditorias consecutivas contando da mais recente. */
   streak: number;
+  /** Início do episódio atual (primeira auditoria da sequência em aberto). */
   firstSeenAt: string;
+  /** Primeira vez que o problema apareceu em qualquer auditoria. */
+  firstSeenEverAt: string;
   lastSeenAt: string;
   /** Já foi marcado como resolvido e voltou a aparecer. */
   reopened: boolean;
@@ -113,16 +119,21 @@ export const getFindingRecurrence = createServerFn({ method: "GET" })
       const resolvedTimes = resolvedCount.get(key) ?? 0;
       // Datas ancoradas na auditoria (não no instante de inserção de cada linha),
       // para que achados da mesma execução compartilhem exatamente a mesma data.
-      const firstSeenAt = runs[idxs[idxs.length - 1]].created_at;
+      // O "em aberto" considera apenas a sequência atual: se o problema
+      // desapareceu em auditorias intermediárias, o episódio recomeça.
+      const firstSeenAt = runs[idxs[Math.max(0, streak - 1)]].created_at;
+      const firstSeenEverAt = runs[idxs[idxs.length - 1]].created_at;
       const lastSeenAt = runs[idxs[0]].created_at;
       items.push({
         key,
         apolice: v.apolice,
         tipo_erro: v.tipo_erro,
         runs: idxs.map((i) => runs[i].id),
-        occurrences: idxs.length,
+        occurrences: Math.max(1, streak),
+        totalOccurrences: idxs.length,
         streak,
         firstSeenAt,
+        firstSeenEverAt,
         lastSeenAt,
         reopened: resolvedTimes > 0,
         resolvedTimes,
