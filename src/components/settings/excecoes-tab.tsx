@@ -23,7 +23,8 @@ import {
   useUpdateAuditIgnore,
 } from "@/hooks/use-audit-ignores";
 import { useExceptionTags } from "@/hooks/use-exception-tags";
-import { ReasonDisplay } from "@/components/exceptions/reason-chip";
+import { ReasonDisplay, ReasonTagChip } from "@/components/exceptions/reason-chip";
+
 import { IgnoreReasonDialog } from "@/components/exceptions/ignore-reason-dialog";
 import { ReasonTagsManager } from "@/components/settings/reason-tags-manager";
 import { formatDateTime } from "@/lib/format";
@@ -36,6 +37,7 @@ export function ExcecoesTab() {
   const update = useUpdateAuditIgnore();
   const [q, setQ] = useState("");
   const [errorFilter, setErrorFilter] = useState<string>("__all__");
+  const [tagFilter, setTagFilter] = useState<string>("__all__");
   const [editing, setEditing] = useState<AuditIgnoreRow | null>(null);
 
   const errorOptions = useMemo(() => {
@@ -57,8 +59,14 @@ export function ExcecoesTab() {
     if (errorFilter !== "__all__") {
       result = result.filter((i) => i.tipo_erro === errorFilter || (!i.tipo_erro && errorFilter === "__none__"));
     }
+    if (tagFilter !== "__all__") {
+      result = result.filter((i) =>
+        tagFilter === "__none__" ? !i.reason_tag_id : i.reason_tag_id === tagFilter,
+      );
+    }
     return result;
-  }, [ignores, q, errorFilter]);
+  }, [ignores, q, errorFilter, tagFilter]);
+
 
   return (
     <div className="space-y-6">
@@ -91,6 +99,28 @@ export function ExcecoesTab() {
               ))}
             </SelectContent>
           </Select>
+          <Select value={tagFilter} onValueChange={setTagFilter}>
+            <SelectTrigger className="w-full sm:w-[220px] h-9 text-[12.5px]">
+              <SelectValue placeholder="Filtrar por tag" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todas as tags</SelectItem>
+              <SelectItem value="__none__">Sem tag</SelectItem>
+              {tags.length === 0 && (
+                <SelectItem value="__all__" disabled>
+                  Nenhuma tag disponível
+                </SelectItem>
+              )}
+              {tags.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  <span className="inline-flex items-center gap-1.5">
+                    <ReasonTagChip tag={t} /> {t.name}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <div className="relative w-full sm:w-[260px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
