@@ -103,8 +103,17 @@ export const getNotifications = createServerFn({ method: "GET" }).middleware([re
           createdAt: r.created_at,
         });
       } else {
-        const reprov = r.reprovados ?? 0;
-        const total = r.total_processado ?? 0;
+        const adjusted = adjustRunCounts(
+          {
+            total_processado: r.total_processado ?? 0,
+            aprovados: r.aprovados ?? 0,
+            reprovados: r.reprovados ?? 0,
+          },
+          ignoreSets,
+          byRun.get(r.id) ?? [],
+        );
+        const reprov = adjusted.reprovados;
+        const total = adjusted.total_processado;
         out.push({
           id: `audit:${r.id}`,
           kind: "auditoria_concluida",
@@ -116,6 +125,7 @@ export const getNotifications = createServerFn({ method: "GET" }).middleware([re
           createdAt: r.created_at,
         });
       }
+
     }
 
     // 2) policy sync runs
