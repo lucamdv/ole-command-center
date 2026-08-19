@@ -35,15 +35,30 @@ export function ExcecoesTab() {
   const remove = useRemoveAuditIgnore();
   const update = useUpdateAuditIgnore();
   const [q, setQ] = useState("");
+  const [errorFilter, setErrorFilter] = useState<string>("__all__");
   const [editing, setEditing] = useState<AuditIgnoreRow | null>(null);
 
+  const errorOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const i of ignores) {
+      if (i.tipo_erro) set.add(i.tipo_erro);
+    }
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [ignores]);
+
   const filtered = useMemo(() => {
+    let result = ignores;
     const term = q.trim().toLowerCase();
-    if (!term) return ignores;
-    return ignores.filter((i) =>
-      `${i.apolice} ${i.tipo_erro ?? ""} ${i.motivo ?? ""}`.toLowerCase().includes(term),
-    );
-  }, [ignores, q]);
+    if (term) {
+      result = result.filter((i) =>
+        `${i.apolice} ${i.tipo_erro ?? ""} ${i.motivo ?? ""}`.toLowerCase().includes(term),
+      );
+    }
+    if (errorFilter !== "__all__") {
+      result = result.filter((i) => i.tipo_erro === errorFilter || (!i.tipo_erro && errorFilter === "__none__"));
+    }
+    return result;
+  }, [ignores, q, errorFilter]);
 
   return (
     <div className="space-y-6">
