@@ -110,7 +110,7 @@ export function deriveResolutionTimes(rows: ResolutionRow[]): ResolutionTimeSumm
     .sort((a, b) => b.resolvidas - a.resolvidas || b.mediaHoras - a.mediaHoras);
 
   return {
-    totalResolvidas: rows.length,
+    totalResolvidas: validas.length,
     mediaHoras: media(all),
     medianaHoras: mediana(all),
     byTipo,
