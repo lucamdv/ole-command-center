@@ -225,8 +225,11 @@ export function IncidentDetail({
                   key={r.id}
                   className="rounded-lg border border-border bg-surface p-2.5 text-[12px]"
                 >
-                  <span className="font-semibold text-success">Resolvido</span>{" "}
+                  <span className="font-semibold text-success">
+                    {r.origem === "auto" ? "Resolvido automaticamente" : "Resolvido"}
+                  </span>{" "}
                   {formatDateTime(r.resolved_at)}
+
                   {r.reopened_at && (
                     <span className="text-destructive">
                       {" "}

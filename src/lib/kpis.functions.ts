@@ -23,11 +23,14 @@ export interface OperationKpis {
   yearPrev: YearlyPoint;
   /** Corte do acumulado do ano, em DD/MM. */
   ytdLabel: string;
-  /** Tempo de resolução (primeira detecção → resolução manual), geral e por tipo. */
+  /** Tempo de resolução (primeira detecção → resolução), geral e por tipo. */
   resolutionTime: ResolutionTimeSummary;
   /** Resoluções manuais registradas desde a run anterior. */
   resolvidasManuais: number;
+  /** Resoluções automáticas (erro deixou de aparecer) desde a run anterior. */
+  resolvidasAuto: number;
 }
+
 
 export const getOperationKpis = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -65,11 +68,11 @@ export const getOperationKpis = createServerFn({ method: "GET" })
         context.supabase.from("audit_ignores").select("apolice, tipo_erro"),
         context.supabase
           .from("audit_resolutions")
-          .select("apolice, tipo_erro")
+          .select("apolice, tipo_erro, endosso")
           .is("reopened_at", null),
         supabaseAdmin
           .from("audit_findings")
-          .select("run_id, apolice, tipo_erro, detalhes")
+          .select("run_id, apolice, tipo_erro, endosso, detalhes")
           .in(
             "run_id",
             runsAsc.map((r) => r.id),
@@ -78,13 +81,18 @@ export const getOperationKpis = createServerFn({ method: "GET" })
       const sets = buildIgnoreSets([
         ...((ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>),
         ...resolutionsAsIgnoreEntries(
-          (resolvidosAtivos ?? []) as Array<{ apolice: string; tipo_erro: string }>,
+          (resolvidosAtivos ?? []) as Array<{
+            apolice: string;
+            tipo_erro: string;
+            endosso: string | null;
+          }>,
         ),
       ]);
       const all = (findings ?? []) as Array<{
         run_id: string;
         apolice: string;
         tipo_erro: string;
+        endosso: string | null;
         detalhes: Record<string, unknown> | null;
       }>;
       for (const f of filterFindings(sets, all)) {
@@ -101,10 +109,11 @@ export const getOperationKpis = createServerFn({ method: "GET" })
       }
     }
 
-    // === Resoluções manuais (tempo de resolução por tipo) ===
+    // === Resoluções (manuais + automáticas) ===
+    // Fonte única de verdade: linhas de audit_resolutions não reabertas.
     const { data: resolucoes } = await context.supabase
       .from("audit_resolutions")
-      .select("apolice, tipo_erro, first_seen_at, resolved_at")
+      .select("apolice, tipo_erro, first_seen_at, resolved_at, reopened_at, origem")
       .order("resolved_at", { ascending: false })
       .limit(2000);
     const resolucoesRows = (resolucoes ?? []) as Array<{
@@ -112,17 +121,22 @@ export const getOperationKpis = createServerFn({ method: "GET" })
       tipo_erro: string;
       first_seen_at: string | null;
       resolved_at: string;
+      reopened_at: string | null;
+      origem: string | null;
     }>;
     const resolutionTime = deriveResolutionTimes(resolucoesRows);
 
     const daily = deriveDaily(runsAsc, byRun);
-    // Resoluções manuais desde a run anterior (ou últimas 24h quando só há uma run).
+    // Ciclo atual: resoluções registradas desde a run anterior
+    // (ou últimas 24h quando só existe uma run).
     const prevRunAt = runsAsc.length > 1 ? runsAsc[runsAsc.length - 2].at : null;
     const desde = prevRunAt ? +new Date(prevRunAt) : Date.now() - 86_400_000;
-    const resolvidasManuais = resolucoesRows.filter(
-      (r) => +new Date(r.resolved_at) >= desde,
-    ).length;
-    daily.resolvidas += resolvidasManuais;
+    const doCiclo = resolucoesRows.filter(
+      (r) => !r.reopened_at && +new Date(r.resolved_at) >= desde,
+    );
+    const resolvidasAuto = doCiclo.filter((r) => r.origem === "auto").length;
+    const resolvidasManuais = doCiclo.length - resolvidasAuto;
+    daily.resolvidas = resolvidasManuais + resolvidasAuto;
     const weekly = deriveWeekly(runsAsc, byRun, 7);
     const monthlyReincidencia = deriveMonthlyReincidencia(runsAsc, byRun);
 
@@ -234,6 +248,7 @@ export const getOperationKpis = createServerFn({ method: "GET" })
       ytdLabel: cutoff.split("-").reverse().join("/"),
       resolutionTime,
       resolvidasManuais,
+      resolvidasAuto,
     };
   });
 

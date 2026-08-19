@@ -1,17 +1,31 @@
-// Filtro de RESOLUÇÕES MANUAIS (tabela audit_resolutions).
-// Um achado marcado como resolvido deixa de contar como aberto até que a
-// auditoria o detecte novamente (reabertura automática no callback).
+// Filtro de RESOLUÇÕES (tabela audit_resolutions).
+// Uma inconsistência é resolvida em duas situações:
+//   1) marcada manualmente como resolvida (origem = 'manual');
+//   2) estava na auditoria anterior e não aparece mais na atual (origem = 'auto').
+// Achados com EXCEÇÃO cadastrada (audit_ignores) nunca geram resolução.
+// Um achado resolvido deixa de contar como aberto até que a auditoria o
+// detecte novamente (reabertura automática no callback).
 
 import type { IgnoreEntry } from "./ignore-filter";
+
+export type ResolutionOrigem = "manual" | "auto";
 
 export interface ActiveResolution {
   apolice: string;
   tipo_erro: string;
+  endosso?: string | null;
 }
 
-/** Converte resoluções ativas em entradas compatíveis com o filtro de exceções. */
+/**
+ * Converte resoluções ativas em entradas compatíveis com o filtro de exceções.
+ * A chave inclui o endosso: resolver o endosso 3 não silencia o endosso 4.
+ */
 export function resolutionsAsIgnoreEntries(rows: ActiveResolution[]): IgnoreEntry[] {
-  return rows.map((r) => ({ apolice: r.apolice, tipo_erro: r.tipo_erro }));
+  return rows.map((r) => ({
+    apolice: r.apolice,
+    tipo_erro: r.tipo_erro,
+    endosso: r.endosso ?? null,
+  }));
 }
 
 export interface ResolutionRow {
@@ -19,6 +33,8 @@ export interface ResolutionRow {
   tipo_erro: string;
   first_seen_at: string | null;
   resolved_at: string;
+  reopened_at?: string | null;
+  origem?: string | null;
 }
 
 export interface ResolutionTimeStat {
@@ -37,6 +53,7 @@ function horas(r: ResolutionRow): number | null {
   if (!Number.isFinite(delta) || delta < 0) return null;
   return delta / HOUR;
 }
+
 
 function media(vals: number[]): number {
   if (vals.length === 0) return 0;
@@ -58,13 +75,18 @@ export interface ResolutionTimeSummary {
   byTipo: ResolutionTimeStat[];
 }
 
-/** Agrega tempo de resolução (primeira detecção → resolução) geral e por tipo. */
+/**
+ * Agrega tempo de resolução (primeira detecção → resolução) geral e por tipo.
+ * Considera resoluções manuais e automáticas; resoluções reabertas (o problema
+ * voltou a aparecer) não contam como resolvidas.
+ */
 export function deriveResolutionTimes(rows: ResolutionRow[]): ResolutionTimeSummary {
   const all: number[] = [];
   const perTipo = new Map<string, number[]>();
   const countPerTipo = new Map<string, number>();
+  const validas = rows.filter((r) => !r.reopened_at);
 
-  for (const r of rows) {
+  for (const r of validas) {
     countPerTipo.set(r.tipo_erro, (countPerTipo.get(r.tipo_erro) ?? 0) + 1);
     const h = horas(r);
     if (h == null) continue;
@@ -73,6 +95,7 @@ export function deriveResolutionTimes(rows: ResolutionRow[]): ResolutionTimeSumm
     list.push(h);
     perTipo.set(r.tipo_erro, list);
   }
+
 
   const byTipo: ResolutionTimeStat[] = Array.from(countPerTipo.entries())
     .map(([tipo_erro, resolvidas]) => {
@@ -87,7 +110,7 @@ export function deriveResolutionTimes(rows: ResolutionRow[]): ResolutionTimeSumm
     .sort((a, b) => b.resolvidas - a.resolvidas || b.mediaHoras - a.mediaHoras);
 
   return {
-    totalResolvidas: rows.length,
+    totalResolvidas: validas.length,
     mediaHoras: media(all),
     medianaHoras: mediana(all),
     byTipo,

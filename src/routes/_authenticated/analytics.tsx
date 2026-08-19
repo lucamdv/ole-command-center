@@ -410,13 +410,13 @@ function AnalyticsPage() {
           {/* === Tempo de resolução por tipo de problema === */}
           <SectionTitle
             title="Tempo de resolução por tipo de problema"
-            subtitle="Da primeira detecção até a marcação de resolvido na auditoria"
+            subtitle="Da primeira detecção até a resolução (manual ou quando o erro deixa de aparecer)"
           />
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <Kpi
               label="Inconsistências resolvidas"
               value={formatInt(ops?.resolutionTime.totalResolvidas ?? 0)}
-              hint="Marcadas manualmente como resolvidas"
+              hint="Manuais + automáticas (exceções não contam)"
               tone="success"
             />
             <Kpi
@@ -434,8 +434,9 @@ function AnalyticsPage() {
           <div className="rounded-xl border border-border bg-surface/60 overflow-x-auto">
             {(ops?.resolutionTime.byTipo.length ?? 0) === 0 ? (
               <div className="px-4 py-6 text-[12.5px] text-muted-foreground">
-                Nenhuma inconsistência foi marcada como resolvida ainda. Use o botão
-                “Resolvido” na lista de achados da auditoria para alimentar este indicador.
+                Nenhuma inconsistência foi resolvida ainda. Marque um achado como
+                “Resolvido” na auditoria — ou deixe que ele saia da próxima execução — para
+                alimentar este indicador.
               </div>
             ) : (
               <table className="w-full text-[12.5px]">

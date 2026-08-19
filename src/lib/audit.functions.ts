@@ -42,20 +42,20 @@ export const getAuditRunStatus = createServerFn({ method: "GET" }).middleware([r
       context.supabase.from("audit_ignores").select("apolice, tipo_erro"),
       context.supabase
         .from("audit_resolutions")
-        .select("apolice, tipo_erro")
+        .select("apolice, tipo_erro, endosso")
         .is("reopened_at", null),
-      supabaseAdmin.from("audit_findings").select("apolice, tipo_erro").eq("run_id", r.id),
+      supabaseAdmin.from("audit_findings").select("apolice, tipo_erro, endosso").eq("run_id", r.id),
     ]);
     const sets = buildIgnoreSets([
       ...((ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>),
       ...resolutionsAsIgnoreEntries(
-        (resolvidos ?? []) as Array<{ apolice: string; tipo_erro: string }>,
+        (resolvidos ?? []) as Array<{ apolice: string; tipo_erro: string; endosso: string | null }>,
       ),
     ]);
     const adj = adjustRunCounts(
       r,
       sets,
-      (findings ?? []) as Array<{ apolice: string; tipo_erro: string }>,
+      (findings ?? []) as Array<{ apolice: string; tipo_erro: string; endosso: string | null }>,
     );
 
     return { ...r, ...adj };
@@ -95,16 +95,20 @@ export const getLatestAudit = createServerFn({ method: "GET" }).middleware([requ
     .select("apolice, tipo_erro");
   const { data: resolvidos } = await context.supabase
     .from("audit_resolutions")
-    .select("apolice, tipo_erro")
+    .select("apolice, tipo_erro, endosso")
     .is("reopened_at", null);
   const sets = buildIgnoreSets([
     ...((ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>),
     ...resolutionsAsIgnoreEntries(
-      (resolvidos ?? []) as Array<{ apolice: string; tipo_erro: string }>,
+      (resolvidos ?? []) as Array<{ apolice: string; tipo_erro: string; endosso: string | null }>,
     ),
   ]);
 
-  const all = (findings ?? []) as Array<{ apolice: string; tipo_erro: string }>;
+  const all = (findings ?? []) as Array<{
+    apolice: string;
+    tipo_erro: string;
+    endosso: string | null;
+  }>;
   const filtered = filterFindings(sets, all);
   const adj = adjustRunCounts(run, sets, all);
 
@@ -135,25 +139,33 @@ export const getAuditHistory = createServerFn({ method: "GET" }).middleware([req
     .select("apolice, tipo_erro");
   const { data: resolvidos } = await context.supabase
     .from("audit_resolutions")
-    .select("apolice, tipo_erro")
+    .select("apolice, tipo_erro, endosso")
     .is("reopened_at", null);
   const sets = buildIgnoreSets([
     ...((ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>),
     ...resolutionsAsIgnoreEntries(
-      (resolvidos ?? []) as Array<{ apolice: string; tipo_erro: string }>,
+      (resolvidos ?? []) as Array<{ apolice: string; tipo_erro: string; endosso: string | null }>,
     ),
   ]);
   if (sets.isEmpty) return runs;
 
   const { data: findings } = await supabaseAdmin
     .from("audit_findings")
-    .select("run_id, apolice, tipo_erro")
+    .select("run_id, apolice, tipo_erro, endosso")
     .in("run_id", runs.map((r) => r.id));
 
-  const byRun = new Map<string, Array<{ apolice: string; tipo_erro: string }>>();
-  for (const f of (findings ?? []) as Array<{ run_id: string; apolice: string; tipo_erro: string }>) {
+  const byRun = new Map<
+    string,
+    Array<{ apolice: string; tipo_erro: string; endosso: string | null }>
+  >();
+  for (const f of (findings ?? []) as Array<{
+    run_id: string;
+    apolice: string;
+    tipo_erro: string;
+    endosso: string | null;
+  }>) {
     const list = byRun.get(f.run_id) ?? [];
-    list.push({ apolice: f.apolice, tipo_erro: f.tipo_erro });
+    list.push({ apolice: f.apolice, tipo_erro: f.tipo_erro, endosso: f.endosso });
     byRun.set(f.run_id, list);
   }
 
@@ -242,14 +254,14 @@ export const getSystemStatus = createServerFn({ method: "GET" }).middleware([req
       context.supabase.from("audit_ignores").select("apolice, tipo_erro"),
       context.supabase
         .from("audit_resolutions")
-        .select("apolice, tipo_erro")
+        .select("apolice, tipo_erro, endosso")
         .is("reopened_at", null),
-      supabaseAdmin.from("audit_findings").select("apolice, tipo_erro").eq("run_id", run.id),
+      supabaseAdmin.from("audit_findings").select("apolice, tipo_erro, endosso").eq("run_id", run.id),
     ]);
     const sets = buildIgnoreSets([
       ...((ignores ?? []) as Array<{ apolice: string; tipo_erro: string | null }>),
       ...resolutionsAsIgnoreEntries(
-        (resolvidos ?? []) as Array<{ apolice: string; tipo_erro: string }>,
+        (resolvidos ?? []) as Array<{ apolice: string; tipo_erro: string; endosso: string | null }>,
       ),
     ]);
     const adj = adjustRunCounts(
@@ -259,7 +271,7 @@ export const getSystemStatus = createServerFn({ method: "GET" }).middleware([req
         reprovados: run.reprovados ?? 0,
       },
       sets,
-      (findings ?? []) as Array<{ apolice: string; tipo_erro: string }>,
+      (findings ?? []) as Array<{ apolice: string; tipo_erro: string; endosso: string | null }>,
     );
     aprovadosAjustado = adj.aprovados;
   }

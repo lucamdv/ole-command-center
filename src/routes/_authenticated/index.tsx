@@ -276,7 +276,7 @@ function Dashboard({
           value={daily.resolvidas}
           format={formatInt}
           tone="success"
-          hint={`Resolvidas manualmente: ${formatInt(ops?.resolvidasManuais ?? 0)}`}
+          hint={`${formatInt(ops?.resolvidasManuais ?? 0)} manuais · ${formatInt(ops?.resolvidasAuto ?? 0)} automáticas`}
         />
         <KpiCard
           label="Tempo médio de resolução"
