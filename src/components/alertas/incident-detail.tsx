@@ -103,11 +103,31 @@ export function IncidentDetail({
             </div>
           </div>
 
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-surface p-3">
+            <div>
+              <div className="text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Nível de alerta
+              </div>
+              <div className="mt-0.5 text-[11.5px] text-muted-foreground">
+                {item.manualUrgency
+                  ? `Definido manualmente · automático seria ${URGENCY_LABEL[item.autoUrgency]}`
+                  : "Calculado automaticamente pelas regras de escalonamento"}
+              </div>
+            </div>
+            <UrgencyPicker
+              size="md"
+              value={item.urgency}
+              manual={item.manualUrgency}
+              onSet={(u) => onSetUrgency(item, u)}
+              onClear={() => onClearUrgency(item)}
+            />
+          </div>
+
           {item.escalationReasons.length > 0 && (
             <div className="rounded-lg border border-warning/40 bg-warning/5 p-3 text-[12px]">
               <div className="mb-1 font-semibold text-warning">
                 Urgência escalada de {URGENCY_LABEL[item.baseUrgency]} para{" "}
-                {URGENCY_LABEL[item.urgency]}
+                {URGENCY_LABEL[item.autoUrgency]}
               </div>
               <ul className="list-inside list-disc text-muted-foreground">
                 {item.escalationReasons.map((r) => (
@@ -116,6 +136,7 @@ export function IncidentDetail({
               </ul>
             </div>
           )}
+
 
           <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-surface p-3">
             <Field label="Apólice">
