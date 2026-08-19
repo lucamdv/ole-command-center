@@ -5,6 +5,8 @@ import { PerfilTab } from "@/components/settings/perfil-tab";
 import { NotificacoesTab } from "@/components/settings/notificacoes-tab";
 import { IntegracoesTab } from "@/components/settings/integracoes-tab";
 import { DadosTab } from "@/components/settings/dados-tab";
+import { AutomacaoTab } from "@/components/settings/automacao-tab";
+
 import { ExcecoesTab } from "@/components/settings/excecoes-tab";
 import { MetasTab } from "@/components/settings/metas-tab";
 import { useCurrentRole } from "@/hooks/use-current-role";
