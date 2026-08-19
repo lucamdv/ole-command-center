@@ -61,14 +61,18 @@ function ApolicesPage() {
             </span>
           </p>
         </div>
-        <button
-          onClick={() => runSync()}
-          disabled={isRunning}
-          className="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-primary text-primary-foreground text-[12.5px] font-semibold shadow-lg shadow-primary/10 hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          <RefreshCw className={cn("h-3.5 w-3.5", isRunning && "animate-spin")} />
-          {isRunning ? "Sincronizando…" : "Sincronizar carteira"}
-        </button>
+        <div className="flex flex-col items-start sm:items-end gap-1.5">
+          <NextRunCountdown job="policy_sync" />
+          <button
+            onClick={() => runSync()}
+            disabled={isRunning}
+            className="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-primary text-primary-foreground text-[12.5px] font-semibold shadow-lg shadow-primary/10 hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <RefreshCw className={cn("h-3.5 w-3.5", isRunning && "animate-spin")} />
+            {isRunning ? "Sincronizando…" : "Sincronizar carteira"}
+          </button>
+        </div>
+
       </div>
 
       {/* Search */}
