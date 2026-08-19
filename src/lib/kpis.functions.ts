@@ -23,11 +23,14 @@ export interface OperationKpis {
   yearPrev: YearlyPoint;
   /** Corte do acumulado do ano, em DD/MM. */
   ytdLabel: string;
-  /** Tempo de resolução (primeira detecção → resolução manual), geral e por tipo. */
+  /** Tempo de resolução (primeira detecção → resolução), geral e por tipo. */
   resolutionTime: ResolutionTimeSummary;
   /** Resoluções manuais registradas desde a run anterior. */
   resolvidasManuais: number;
+  /** Resoluções automáticas (erro deixou de aparecer) desde a run anterior. */
+  resolvidasAuto: number;
 }
+
 
 export const getOperationKpis = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
