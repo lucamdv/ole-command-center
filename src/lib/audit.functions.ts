@@ -3,113 +3,15 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import type { AuditHistoryItem, LatestAudit } from "./audit/types";
 
-// URL do webhook do fluxo n8n de auditoria. DEVE ser configurada via secret
-// N8N_AUDIT_WEBHOOK_URL (use a URL de produção /webhook/..., não /webhook-test/...).
-const EMPTY_SUMMARY = {
-  aprovados: 0,
-  reprovados: 0,
-  total_processado: 0,
-};
-
-// URL pública estável do Lovable (preview). O n8n na nuvem consegue acessar.
-// Pode ser sobrescrita via secret PUBLIC_APP_URL (ex.: domínio final em produção).
-const LOVABLE_PROJECT_ID = "5db7fa90-1492-4717-b26e-8b99a107e006";
-const PREVIEW_PUBLIC_URL = `https://project--${LOVABLE_PROJECT_ID}-dev.lovable.app`;
-const PRODUCTION_PUBLIC_URL = `https://project--${LOVABLE_PROJECT_ID}.lovable.app`;
-
 /**
- * Dispara a auditoria de forma ASSÍNCRONA.
- *
- * Fluxo:
- *  1. Cria uma linha em audit_runs com status='running'.
- *  2. Faz POST para o n8n enviando { run_id, callback_url } no body.
- *     O webhook do n8n deve estar configurado para "Respond Immediately".
- *     O fluxo n8n, ao terminar, deve POSTar o resultado em callback_url
- *     com o header x-callback-secret = AUDIT_CALLBACK_SECRET.
- *  3. Retorna o run_id imediatamente. O frontend faz polling.
+ * Dispara a auditoria de forma ASSÍNCRONA (implementação em audit-run.server.ts).
+ * O n8n responde imediatamente e, ao terminar, POSTa em callback_url.
  */
 export const runAudit = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async () => {
-  const url = process.env.N8N_AUDIT_WEBHOOK_URL;
-  if (!url) {
-    throw new Error(
-      "Secret N8N_AUDIT_WEBHOOK_URL não configurada. Cole a URL de produção do webhook n8n (/webhook/...) nos secrets do projeto.",
-    );
-  }
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-  // 1. Cria o run em status 'running'
-  const { data: runRow, error: insertErr } = await supabaseAdmin
-    .from("audit_runs")
-    .insert({
-      status: "running",
-      status_geral: "PROCESSANDO",
-      total_processado: 0,
-      aprovados: 0,
-      reprovados: 0,
-      raw: {},
-    } as never)
-    .select("id")
-    .single();
-
-  if (insertErr || !runRow) {
-    throw new Error("Falha ao criar run: " + (insertErr?.message ?? "sem id"));
-  }
-
-  const runId = (runRow as { id: string }).id;
-
-  // Monta callback URL pública. SEMPRE usa o domínio estável do Lovable
-  // (project--{id}[-dev].lovable.app) — NUNCA o host do request, porque a
-  // preview da sandbox (id-preview--...) tem auth no meio e responde 302
-  // para POSTs externos, fazendo o callback do n8n se perder.
-  const base =
-    process.env.PUBLIC_APP_URL ||
-    (process.env.NODE_ENV === "production" ? PRODUCTION_PUBLIC_URL : PREVIEW_PUBLIC_URL);
-  const callbackUrl = `${base.replace(/\/$/, "")}/api/public/audit-callback?run_id=${runId}`;
-
-  // 2. Dispara o webhook do n8n (espera resposta imediata)
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        run_id: runId,
-        callback_url: callbackUrl,
-        trigger: "ole-copilot",
-        mode: "async_callback",
-        status_geral: "PROCESSANDO",
-        mensagem_geral: "Auditoria em processamento.",
-        resumo: EMPTY_SUMMARY,
-        apolices_com_erro: [],
-        at: new Date().toISOString(),
-      }),
-      signal: AbortSignal.timeout(30_000),
-    });
-
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      const errMsg =
-        res.status === 404 && url.includes("/webhook-test/")
-          ? 'Webhook n8n (modo teste) não está escutando. Clique em "Listen for test event" no n8n.'
-          : `Motor de auditoria retornou ${res.status}: ${body.slice(0, 200)}`;
-
-      await supabaseAdmin
-        .from("audit_runs")
-        .update({ status: "error", error_message: errMsg } as never)
-        .eq("id", runId);
-
-      throw new Error(errMsg);
-    }
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "Falha de rede";
-    await supabaseAdmin
-      .from("audit_runs")
-      .update({ status: "error", error_message: msg } as never)
-      .eq("id", runId);
-    throw new Error(`Não foi possível disparar a auditoria: ${msg}`);
-  }
-
-  return { runId, status: "running" as const };
+  const { runAuditImpl } = await import("./audit-run.server");
+  return runAuditImpl("ole-copilot");
 });
+
 
 export const getAuditRunStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator((d: { runId: string }) => d)
