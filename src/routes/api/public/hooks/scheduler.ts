@@ -10,8 +10,9 @@ import { zonedParts, zonedTimeToUtc } from "@/lib/automation/next-run";
  * configurado do dia já passou e o disparo do dia ainda não ocorreu (trava
  * via update condicional de last_triggered_at). Portanto, no máximo um
  * disparo automático por job por dia, independentemente de quantas chamadas
- * chegarem. Se a env SCHEDULER_HOOK_SECRET estiver definida, o header
- * `x-hook-secret` passa a ser obrigatório.
+ * chegarem. O header `x-hook-secret` é sempre obrigatório: sem o segredo
+ * configurado (SCHEDULER_HOOK_SECRET ou POLICY_SYNC_HOOK_SECRET) o endpoint
+ * falha fechado e não executa nada.
  */
 
 interface ScheduleRow {
@@ -27,14 +28,22 @@ export const Route = createFileRoute("/api/public/hooks/scheduler")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env.SCHEDULER_HOOK_SECRET;
+        const expected =
+          process.env.SCHEDULER_HOOK_SECRET || process.env.POLICY_SYNC_HOOK_SECRET;
         const json = (body: unknown, status = 200) =>
           new Response(JSON.stringify(body), {
             status,
             headers: { "Content-Type": "application/json" },
           });
 
-        if (expected && request.headers.get("x-hook-secret") !== expected) {
+        if (!expected) {
+          return json(
+            { ok: false, error: "segredo do agendador não configurado" },
+            500,
+          );
+        }
+        const provided = request.headers.get("x-hook-secret");
+        if (!provided || provided !== expected) {
           return json({ ok: false, error: "unauthorized" }, 401);
         }
 
