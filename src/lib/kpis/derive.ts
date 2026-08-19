@@ -61,7 +61,10 @@ export interface DailyKpis {
   novas: number;
   /** Achados de nível ERRO na run mais recente. */
   criticasAbertas: number;
-  /** Achados que existiam na run anterior e desapareceram. */
+  /**
+   * Inconsistências resolvidas no ciclo. Preenchido a partir de audit_resolutions
+   * (manuais + automáticas) em kpis.functions.ts, não pelo diff entre runs.
+   */
   resolvidas: number;
   /** Média móvel de achados nas runs anteriores (até 5). */
   mediaMovel: number;
@@ -150,12 +153,7 @@ export function deriveDaily(runsAsc: RunLite[], byRun: Map<string, FindingLite[]
     return { runAt: null, novas: 0, criticasAbertas: 0, resolvidas: 0, mediaMovel: 0, desvioPct: 0 };
   }
   const current = runsAsc[runsAsc.length - 1];
-  const prev = runsAsc.length > 1 ? runsAsc[runsAsc.length - 2] : null;
   const cur = byRun.get(current.id) ?? [];
-  const prevList = prev ? (byRun.get(prev.id) ?? []) : [];
-
-  const curKeys = new Set(cur.map(findingKey));
-  const resolvidas = prevList.filter((f) => !curKeys.has(findingKey(f))).length;
 
   const anteriores = runsAsc.slice(0, -1).slice(-5);
   const mediaMovel =
@@ -168,7 +166,7 @@ export function deriveDaily(runsAsc: RunLite[], byRun: Map<string, FindingLite[]
     runAt: current.at,
     novas: cur.length,
     criticasAbertas: cur.filter(isCritical).length,
-    resolvidas,
+    resolvidas: 0,
     mediaMovel: Math.round(mediaMovel * 10) / 10,
     desvioPct: Math.round(desvioPct * 10) / 10,
   };
