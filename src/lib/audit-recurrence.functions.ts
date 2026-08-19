@@ -82,8 +82,6 @@ export const getFindingRecurrence = createServerFn({ method: "GET" })
         apolice: string;
         tipo_erro: string;
         runIdx: Set<number>;
-        first: string;
-        last: string;
       }
     >();
 
@@ -98,17 +96,9 @@ export const getFindingRecurrence = createServerFn({ method: "GET" })
       const k = `${f.apolice}||${f.tipo_erro}`;
       const cur = map.get(k);
       if (!cur) {
-        map.set(k, {
-          apolice: f.apolice,
-          tipo_erro: f.tipo_erro,
-          runIdx: new Set([idx]),
-          first: f.created_at,
-          last: f.created_at,
-        });
+        map.set(k, { apolice: f.apolice, tipo_erro: f.tipo_erro, runIdx: new Set([idx]) });
       } else {
         cur.runIdx.add(idx);
-        if (f.created_at < cur.first) cur.first = f.created_at;
-        if (f.created_at > cur.last) cur.last = f.created_at;
       }
     }
 
@@ -121,6 +111,10 @@ export const getFindingRecurrence = createServerFn({ method: "GET" })
         else break;
       }
       const resolvedTimes = resolvedCount.get(key) ?? 0;
+      // Datas ancoradas na auditoria (não no instante de inserção de cada linha),
+      // para que achados da mesma execução compartilhem exatamente a mesma data.
+      const firstSeenAt = runs[idxs[idxs.length - 1]].created_at;
+      const lastSeenAt = runs[idxs[0]].created_at;
       items.push({
         key,
         apolice: v.apolice,
@@ -128,8 +122,8 @@ export const getFindingRecurrence = createServerFn({ method: "GET" })
         runs: idxs.map((i) => runs[i].id),
         occurrences: idxs.length,
         streak,
-        firstSeenAt: v.first,
-        lastSeenAt: v.last,
+        firstSeenAt,
+        lastSeenAt,
         reopened: resolvedTimes > 0,
         resolvedTimes,
       });
