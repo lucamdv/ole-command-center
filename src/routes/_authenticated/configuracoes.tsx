@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Bell, Database, EyeOff, Plug, Target, User } from "lucide-react";
+import { Bell, Clock, Database, EyeOff, Plug, Target, User } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PerfilTab } from "@/components/settings/perfil-tab";
 import { NotificacoesTab } from "@/components/settings/notificacoes-tab";
