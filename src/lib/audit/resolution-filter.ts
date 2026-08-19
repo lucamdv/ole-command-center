@@ -75,13 +75,18 @@ export interface ResolutionTimeSummary {
   byTipo: ResolutionTimeStat[];
 }
 
-/** Agrega tempo de resolução (primeira detecção → resolução) geral e por tipo. */
+/**
+ * Agrega tempo de resolução (primeira detecção → resolução) geral e por tipo.
+ * Considera resoluções manuais e automáticas; resoluções reabertas (o problema
+ * voltou a aparecer) não contam como resolvidas.
+ */
 export function deriveResolutionTimes(rows: ResolutionRow[]): ResolutionTimeSummary {
   const all: number[] = [];
   const perTipo = new Map<string, number[]>();
   const countPerTipo = new Map<string, number>();
+  const validas = rows.filter((r) => !r.reopened_at);
 
-  for (const r of rows) {
+  for (const r of validas) {
     countPerTipo.set(r.tipo_erro, (countPerTipo.get(r.tipo_erro) ?? 0) + 1);
     const h = horas(r);
     if (h == null) continue;
@@ -90,6 +95,7 @@ export function deriveResolutionTimes(rows: ResolutionRow[]): ResolutionTimeSumm
     list.push(h);
     perTipo.set(r.tipo_erro, list);
   }
+
 
   const byTipo: ResolutionTimeStat[] = Array.from(countPerTipo.entries())
     .map(([tipo_erro, resolvidas]) => {
