@@ -72,14 +72,43 @@ export function ExcecoesTab() {
             uma exceção faz o erro voltar a aparecer na próxima visualização do relatório.
           </p>
         </div>
-        <div className="relative w-full sm:w-[260px]">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar apólice, tipo ou motivo…"
-            className="pl-8 h-9 text-[12.5px]"
-          />
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Select value={errorFilter} onValueChange={setErrorFilter}>
+            <SelectTrigger className="w-full sm:w-[220px] h-9 text-[12.5px]">
+              <SelectValue placeholder="Filtrar por erro" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todos os tipos de erro</SelectItem>
+              {errorOptions.length === 0 && (
+                <SelectItem value="__all__" disabled>
+                  Nenhum erro disponível
+                </SelectItem>
+              )}
+              {errorOptions.map((tipo) => (
+                <SelectItem key={tipo} value={tipo}>
+                  {tipo}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="relative w-full sm:w-[260px]">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Buscar apólice, tipo ou motivo…"
+              className="pl-8 h-9 text-[12.5px]"
+            />
+            {q && (
+              <button
+                type="button"
+                onClick={() => setQ("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
