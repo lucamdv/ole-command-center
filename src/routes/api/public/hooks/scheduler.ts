@@ -38,7 +38,7 @@ export const Route = createFileRoute("/api/public/hooks/scheduler")({
 
         if (!expected) {
           return json(
-            { ok: false, error: "SCHEDULER_HOOK_SECRET não configurado" },
+            { ok: false, error: "segredo do agendador não configurado" },
             500,
           );
         }
