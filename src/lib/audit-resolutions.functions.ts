@@ -42,14 +42,17 @@ export const resolveFinding = createServerFn({ method: "POST" })
   .inputValidator((d: z.infer<typeof ResolveSchema>) => ResolveSchema.parse(d))
   .handler(async ({ data, context }) => {
     // Já resolvido e ainda não reaberto?
-    const { data: existing, error: selErr } = await context.supabase
+    let existingQuery = context.supabase
       .from("audit_resolutions")
       .select("id")
       .eq("apolice", data.apolice)
       .eq("tipo_erro", data.tipo_erro)
-      .is("reopened_at", null)
-      .is("endosso", data.endosso ?? null)
-      .maybeSingle();
+      .is("reopened_at", null);
+    existingQuery = data.endosso
+      ? existingQuery.eq("endosso", data.endosso)
+      : existingQuery.is("endosso", null);
+    const { data: existing, error: selErr } = await existingQuery.maybeSingle();
+
     if (selErr) throw new Error(selErr.message);
     if (existing) return { id: (existing as { id: string }).id, alreadyExists: true };
 
