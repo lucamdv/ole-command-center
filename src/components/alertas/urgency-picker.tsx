@@ -19,7 +19,11 @@ export function UrgencyPicker({
 }) {
   return (
     <div className="flex items-center gap-1">
-      {manual && <Lock className="h-3 w-3 shrink-0 text-primary" title="Nível definido manualmente" />}
+      {manual && (
+        <span title="Nível definido manualmente" className="flex">
+          <Lock className="h-3 w-3 shrink-0 text-primary" />
+        </span>
+      )}
       <select
         value={value}
         onChange={(e) => onSet(e.target.value as Urgency)}
