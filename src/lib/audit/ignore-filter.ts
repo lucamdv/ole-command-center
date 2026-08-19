@@ -67,7 +67,7 @@ export function filterFindings<
 export function adjustRunCounts(
   run: { total_processado: number; aprovados: number; reprovados: number },
   sets: IgnoreSets,
-  runFindings: Array<{ apolice: string; tipo_erro: string }>,
+  runFindings: Array<{ apolice: string; tipo_erro: string; endosso?: string | null }>,
 ): { total_processado: number; aprovados: number; reprovados: number } {
   const antes = new Set(runFindings.map((f) => f.apolice));
   const depois = new Set(filterFindings(sets, runFindings).map((f) => f.apolice));
