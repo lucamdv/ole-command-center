@@ -99,6 +99,28 @@ export function ExcecoesTab() {
               ))}
             </SelectContent>
           </Select>
+          <Select value={tagFilter} onValueChange={setTagFilter}>
+            <SelectTrigger className="w-full sm:w-[220px] h-9 text-[12.5px]">
+              <SelectValue placeholder="Filtrar por tag" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todas as tags</SelectItem>
+              <SelectItem value="__none__">Sem tag</SelectItem>
+              {tags.length === 0 && (
+                <SelectItem value="__all__" disabled>
+                  Nenhuma tag disponível
+                </SelectItem>
+              )}
+              {tags.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  <span className="inline-flex items-center gap-1.5">
+                    <ReasonTagChip tag={t} /> {t.name}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <div className="relative w-full sm:w-[260px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
