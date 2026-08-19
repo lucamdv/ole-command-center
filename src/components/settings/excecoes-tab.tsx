@@ -36,6 +36,7 @@ export function ExcecoesTab() {
   const update = useUpdateAuditIgnore();
   const [q, setQ] = useState("");
   const [errorFilter, setErrorFilter] = useState<string>("__all__");
+  const [tagFilter, setTagFilter] = useState<string>("__all__");
   const [editing, setEditing] = useState<AuditIgnoreRow | null>(null);
 
   const errorOptions = useMemo(() => {
@@ -57,8 +58,14 @@ export function ExcecoesTab() {
     if (errorFilter !== "__all__") {
       result = result.filter((i) => i.tipo_erro === errorFilter || (!i.tipo_erro && errorFilter === "__none__"));
     }
+    if (tagFilter !== "__all__") {
+      result = result.filter((i) =>
+        tagFilter === "__none__" ? !i.reason_tag_id : i.reason_tag_id === tagFilter,
+      );
+    }
     return result;
-  }, [ignores, q, errorFilter]);
+  }, [ignores, q, errorFilter, tagFilter]);
+
 
   return (
     <div className="space-y-6">
