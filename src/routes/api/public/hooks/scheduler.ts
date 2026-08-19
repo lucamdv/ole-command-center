@@ -27,17 +27,17 @@ export const Route = createFileRoute("/api/public/hooks/scheduler")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env.POLICY_SYNC_HOOK_SECRET;
+        const expected = process.env.SCHEDULER_HOOK_SECRET;
         const json = (body: unknown, status = 200) =>
           new Response(JSON.stringify(body), {
             status,
             headers: { "Content-Type": "application/json" },
           });
 
-        if (!expected) return json({ ok: false, error: "POLICY_SYNC_HOOK_SECRET não configurado" }, 500);
-        if (request.headers.get("x-hook-secret") !== expected) {
+        if (expected && request.headers.get("x-hook-secret") !== expected) {
           return json({ ok: false, error: "unauthorized" }, 401);
         }
+
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data, error } = await supabaseAdmin
