@@ -16,7 +16,12 @@ import type { RecurrenceItem } from "@/lib/audit-recurrence.functions";
 export interface AlertItem {
   f: AuditFindingRow;
   severity: Severity;
+  /** Urgência efetiva (manual quando definida, senão a automática). */
   urgency: Urgency;
+  /** Urgência calculada pelas regras, ignorando o override manual. */
+  autoUrgency: Urgency;
+  /** Nível definido manualmente pelo operador, quando houver. */
+  manualUrgency: Urgency | null;
   baseUrgency: Urgency;
   bumps: number;
   escalationReasons: string[];
@@ -29,6 +34,8 @@ export interface AlertItem {
   motivo: string;
   detalhe: string;
   endosso: string | null;
+  /** Chave estável do incidente (apólice + tipo). */
+  key: string;
 }
 
 export function keyOf(apolice: string, tipo: string) {
@@ -39,10 +46,12 @@ export function buildAlertItems(
   findings: AuditFindingRow[],
   recurrence: RecurrenceItem[],
   rules: EscalationRules = DEFAULT_ESCALATION_RULES,
+  overrides: Record<string, Urgency> = {},
 ): AlertItem[] {
   const rec = new Map(recurrence.map((r) => [r.key, r] as const));
   return findings.map((f) => {
-    const r = rec.get(keyOf(f.apolice, f.tipo_erro));
+    const key = keyOf(f.apolice, f.tipo_erro);
+    const r = rec.get(key);
     const severity = severityOf(f);
     const firstSeenAt = r?.firstSeenAt ?? f.created_at;
     const daysOpen = daysBetween(firstSeenAt);
@@ -50,10 +59,13 @@ export function buildAlertItems(
     const reopened = r?.reopened ?? false;
     const esc = escalate(severity, { occurrences, daysOpen, reopened }, rules);
     const norm = normalizeFinding(f);
+    const manualUrgency = overrides[key] ?? null;
     return {
       f,
       severity,
-      urgency: esc.urgency,
+      urgency: manualUrgency ?? esc.urgency,
+      autoUrgency: esc.urgency,
+      manualUrgency,
       baseUrgency: esc.base,
       bumps: esc.bumps,
       escalationReasons: esc.reasons,
@@ -66,6 +78,7 @@ export function buildAlertItems(
       motivo: norm.motivo,
       detalhe: norm.detalhe,
       endosso: norm.endosso,
+      key,
     };
   });
 }
