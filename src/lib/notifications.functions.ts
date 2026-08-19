@@ -35,6 +35,17 @@ export const getNotifications = createServerFn({ method: "GET" }).middleware([re
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const out: ServerNotification[] = [];
 
+    // Exceções da auditoria (audit_ignores) — nunca devem gerar notificação.
+    const { buildIgnoreSets, filterFindings, adjustRunCounts } = await import(
+      "@/lib/audit/ignore-filter"
+    );
+    const { data: ignoreRows } = await supabaseAdmin
+      .from("audit_ignores")
+      .select("apolice, tipo_erro");
+    const ignoreSets = buildIgnoreSets(
+      (ignoreRows ?? []) as Array<{ apolice: string; tipo_erro: string | null }>,
+    );
+
     // 1) audit runs (last 7d)
     const { data: runs } = await supabaseAdmin
       .from("audit_runs")
@@ -43,6 +54,36 @@ export const getNotifications = createServerFn({ method: "GET" }).middleware([re
       .in("status", ["success", "error"])
       .order("created_at", { ascending: false })
       .limit(30);
+
+    const successRunIds = ((runs ?? []) as Array<{ id: string; status: string }>)
+      .filter((r) => r.status === "success")
+      .map((r) => r.id);
+
+    type FindingRow = {
+      id: string;
+      apolice: string;
+      tipo_erro: string;
+      endosso: string | null;
+      created_at: string;
+      run_id: string;
+    };
+
+    let allFindings: FindingRow[] = [];
+    if (successRunIds.length > 0) {
+      const { data: fr } = await supabaseAdmin
+        .from("audit_findings")
+        .select("id, apolice, tipo_erro, endosso, created_at, run_id")
+        .in("run_id", successRunIds);
+      allFindings = (fr ?? []) as FindingRow[];
+    }
+
+    const byRun = new Map<string, FindingRow[]>();
+    for (const f of allFindings) {
+      const list = byRun.get(f.run_id) ?? [];
+      list.push(f);
+      byRun.set(f.run_id, list);
+    }
+
 
     for (const r of (runs ?? []) as Array<{
       id: string;
@@ -62,8 +103,17 @@ export const getNotifications = createServerFn({ method: "GET" }).middleware([re
           createdAt: r.created_at,
         });
       } else {
-        const reprov = r.reprovados ?? 0;
-        const total = r.total_processado ?? 0;
+        const adjusted = adjustRunCounts(
+          {
+            total_processado: r.total_processado ?? 0,
+            aprovados: r.aprovados ?? 0,
+            reprovados: r.reprovados ?? 0,
+          },
+          ignoreSets,
+          byRun.get(r.id) ?? [],
+        );
+        const reprov = adjusted.reprovados;
+        const total = adjusted.total_processado;
         out.push({
           id: `audit:${r.id}`,
           kind: "auditoria_concluida",
@@ -75,6 +125,7 @@ export const getNotifications = createServerFn({ method: "GET" }).middleware([re
           createdAt: r.created_at,
         });
       }
+
     }
 
     // 2) policy sync runs
@@ -113,40 +164,31 @@ export const getNotifications = createServerFn({ method: "GET" }).middleware([re
       }
     }
 
-    // 3) critical findings from last 3 successful audit runs
-    const recentRunIds = ((runs ?? []) as Array<{ id: string; status: string }>)
-      .filter((r) => r.status === "success")
-      .slice(0, 3)
-      .map((r) => r.id);
+    // 3) critical findings from last 3 successful audit runs (excluindo exceções)
+    const recentRunIds = new Set(successRunIds.slice(0, 3));
 
-    if (recentRunIds.length > 0) {
-      const { data: findings } = await supabaseAdmin
-        .from("audit_findings")
-        .select("id, apolice, tipo_erro, endosso, created_at")
-        .in("run_id", recentRunIds)
-        .order("created_at", { ascending: false })
-        .limit(40);
-
-      for (const f of (findings ?? []) as Array<{
-        id: string;
-        apolice: string;
-        tipo_erro: string;
-        endosso: string | null;
-        created_at: string;
-      }>) {
+    const criticalFindings = filterFindings(
+      ignoreSets,
+      allFindings.filter((f) => recentRunIds.has(f.run_id)),
+    )
+      .filter((f) => {
         const tipo = (f.tipo_erro ?? "").toLowerCase();
-        const isCritical = CRITICAL_TIPOS.some((t) => tipo.includes(t));
-        if (!isCritical) continue;
-        out.push({
-          id: `finding:${f.id}`,
-          kind: "achados_criticos",
-          severity: "high",
-          text: `Achado crítico em ${f.apolice}${f.endosso ? ` (end. ${f.endosso})` : ""} — ${f.tipo_erro}`,
-          createdAt: f.created_at,
-          link: `/apolices/${encodeURIComponent(f.apolice)}`,
-        });
-      }
+        return CRITICAL_TIPOS.some((t) => tipo.includes(t));
+      })
+      .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+      .slice(0, 40);
+
+    for (const f of criticalFindings) {
+      out.push({
+        id: `finding:${f.id}`,
+        kind: "achados_criticos",
+        severity: "high",
+        text: `Achado crítico em ${f.apolice}${f.endosso ? ` (end. ${f.endosso})` : ""} — ${f.tipo_erro}`,
+        createdAt: f.created_at,
+        link: `/apolices/${encodeURIComponent(f.apolice)}`,
+      });
     }
+
 
     // 4) apólices atualizadas desde lastSeenAt
     if (data.lastSeenAt) {
