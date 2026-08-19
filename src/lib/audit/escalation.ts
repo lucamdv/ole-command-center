@@ -21,6 +21,8 @@ export interface EscalationRules {
   daysToEscalate: number;
   /** Sobe um nível extra quando o problema foi resolvido e voltou. */
   reopenedBump: boolean;
+  /** Sobe um nível quando o mesmo erro já ocorreu em endosso anterior da apólice. */
+  policyRecurrenceBump: boolean;
   /** Teto do escalonamento automático. */
   maxUrgency: Urgency;
 }
@@ -29,6 +31,7 @@ export const DEFAULT_ESCALATION_RULES: EscalationRules = {
   auditsToEscalate: 3,
   daysToEscalate: 7,
   reopenedBump: true,
+  policyRecurrenceBump: true,
   maxUrgency: "critica",
 };
 
@@ -45,6 +48,8 @@ export interface EscalationContext {
   daysOpen: number;
   /** Já foi marcado como resolvido e voltou. */
   reopened: boolean;
+  /** Mesmo tipo de erro já ocorreu em outro endosso da mesma apólice. */
+  recorrenteNaApolice?: boolean;
 }
 
 export interface EscalationResult {
@@ -65,11 +70,15 @@ export function escalate(
 
   if (rules.auditsToEscalate > 0 && ctx.occurrences >= rules.auditsToEscalate) {
     bumps++;
-    reasons.push(`${ctx.occurrences} auditorias em aberto`);
+    reasons.push(`${ctx.occurrences} auditorias consecutivas em aberto`);
   }
   if (rules.daysToEscalate > 0 && ctx.daysOpen >= rules.daysToEscalate) {
     bumps++;
     reasons.push(`${ctx.daysOpen} dias sem resolução`);
+  }
+  if (rules.policyRecurrenceBump && ctx.recorrenteNaApolice) {
+    bumps++;
+    reasons.push("já ocorreu em endosso anterior da apólice");
   }
   if (rules.reopenedBump && ctx.reopened) {
     bumps++;
