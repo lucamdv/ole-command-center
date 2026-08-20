@@ -174,49 +174,97 @@ export const purgeOldAudits = createServerFn({ method: "POST" }).middleware([req
 export const exportPoliciesCSV = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   await assertAdmin(context);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { findSeguradoNome, computePremioLiquido } = await import("@/lib/excelsior/translate");
-  const { data, error } = await supabaseAdmin
-    .from("policies")
-    .select("numero_apolice, numero_endosso_atual, premio_liquido, proposta, updated_at")
-    .order("updated_at", { ascending: false });
-  if (error) throw new Error(error.message);
-  const rows = (data ?? []) as Array<{
+  const { translateProposta, computePremioTotal } = await import("@/lib/excelsior/translate");
+  const { csvDocument, csvNumber, csvDate, csvDateTime } = await import("@/lib/csv");
+
+  const PAGE = 1000;
+
+  type PolicyRow = {
     numero_apolice: string;
     numero_endosso_atual: string | null;
-    premio_liquido: number | string | null;
     proposta: Record<string, unknown> | null;
     updated_at: string;
-  }>;
+  };
+
+  // Leitura paginada — a API limita o retorno por requisição.
+  const rows: PolicyRow[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabaseAdmin
+      .from("policies")
+      .select("numero_apolice, numero_endosso_atual, proposta, updated_at")
+      .order("numero_apolice", { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error) throw new Error(error.message);
+    const batch = (data ?? []) as PolicyRow[];
+    rows.push(...batch);
+    if (batch.length < PAGE) break;
+  }
+
+  // Quantidade de endossos por apólice (também paginado).
+  const endorsementCount = new Map<string, number>();
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabaseAdmin
+      .from("endorsements")
+      .select("numero_apolice")
+      .range(from, from + PAGE - 1);
+    if (error) throw new Error(error.message);
+    const batch = (data ?? []) as Array<{ numero_apolice: string }>;
+    for (const e of batch) {
+      endorsementCount.set(e.numero_apolice, (endorsementCount.get(e.numero_apolice) ?? 0) + 1);
+    }
+    if (batch.length < PAGE) break;
+  }
+
   const header = [
     "numero_apolice",
-    "numero_endosso_atual",
+    "endosso_atual",
+    "qtd_endossos",
     "segurado",
-    "premio_liquido",
+    "documento_segurado",
+    "corretor",
+    "grupo_susep",
+    "ramo_susep",
+    "tipo_apolice",
+    "inicio_vigencia",
+    "fim_vigencia",
+    "data_assinatura",
+    "premio_total",
     "moeda",
-    "updated_at",
+    "limite_maximo_apolice",
+    "moeda_limite",
+    "atualizado_em",
   ];
-  const esc = (v: unknown) => {
-    const s = v == null ? "" : String(v);
-    return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  };
-  const lines = [header.join(",")];
+
+  const out: unknown[][] = [header];
   for (const r of rows) {
-    const { valor, moeda } = computePremioLiquido(r.proposta ?? {});
-    lines.push(
-      [
-        r.numero_apolice,
-        r.numero_endosso_atual ?? "",
-        findSeguradoNome(r.proposta ?? {}) ?? "",
-        valor,
-        moeda,
-        r.updated_at,
-      ]
-        .map(esc)
-        .join(","),
-    );
+    const t = translateProposta(r.proposta ?? {});
+    const segurado = t.partes.find((p) => p.papel === "SEGURADO");
+    const corretor = t.partes.find((p) => p.papel === "CORRETOR");
+    const { valor, moeda } = computePremioTotal(r.proposta ?? {});
+    out.push([
+      r.numero_apolice,
+      r.numero_endosso_atual ?? "",
+      endorsementCount.get(r.numero_apolice) ?? 0,
+      segurado?.nome ?? "",
+      segurado?.documentos?.[0]?.valor ?? "",
+      corretor?.nome ?? "",
+      t.dadosGerais.grupoSusep ?? "",
+      t.dadosGerais.ramoSusep ?? "",
+      t.dadosGerais.tipoApolice ?? "",
+      csvDate(t.datas.inicioVigencia),
+      csvDate(t.datas.fimVigencia),
+      csvDate(t.datas.assinatura),
+      csvNumber(valor),
+      moeda,
+      csvNumber(t.limiteApolice?.valor ?? null),
+      t.limiteApolice?.moeda ?? "",
+      csvDateTime(r.updated_at),
+    ]);
   }
-  return { csv: lines.join("\n"), count: rows.length };
+
+  return { csv: csvDocument(out), count: rows.length };
 });
+
 
 export const exportLatestAuditJSON = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   await assertAdmin(context);
