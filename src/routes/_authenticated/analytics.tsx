@@ -276,7 +276,7 @@ function AnalyticsPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-[20px] sm:text-[24px] font-semibold tracking-tight">Analytics</h1>
+            <h1 className="page-title">Analytics</h1>
             <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/30">
               BI · LIVE
             </span>

@@ -129,7 +129,7 @@ function OperacaoPage() {
             NOC · {statusGeral || "AGUARDANDO"}
           </span>
         </div>
-        <h1 className="text-[20px] sm:text-[24px] font-semibold tracking-tight">Operação</h1>
+        <h1 className="page-title">Operação</h1>
         <p className="text-[13px] text-muted-foreground mt-1">
           {run?.mensagem_geral ??
             "Painel operacional · dados da última execução do motor de auditoria."}

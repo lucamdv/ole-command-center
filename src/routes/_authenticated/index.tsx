@@ -144,7 +144,7 @@ function PageHeader({
               </span>
             )}
           </div>
-          <h1 className="text-[22px] sm:text-[28px] font-semibold tracking-tight text-foreground">
+          <h1 className="page-title">
             {greeting}, {firstName}. <span className="text-muted-foreground">Aqui está sua operação.</span>
           </h1>
           <p className="text-[13.5px] text-muted-foreground mt-1 max-w-2xl">

@@ -24,7 +24,7 @@ function FerramentasPage() {
           <span className="h-1 w-1 rounded-full bg-muted-foreground/40" />
           <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Ferramentas</span>
         </div>
-        <h1 className="text-[20px] sm:text-[24px] font-semibold tracking-tight">Ferramentas Operacionais</h1>
+        <h1 className="page-title">Ferramentas Operacionais</h1>
         <p className="text-[13px] text-muted-foreground mt-1 max-w-2xl">
           Um conjunto de ferramentas de produtividade, automação e análise — desenhadas para acelerar a operação
           OLÉ.

@@ -204,7 +204,7 @@ function AlertasPage() {
               SOC · INCIDENT VIEW
             </span>
           </div>
-          <h1 className="text-[20px] font-semibold tracking-tight sm:text-[24px]">Alertas</h1>
+          <h1 className="page-title">Alertas</h1>
           <p className="mt-1 text-[13px] text-muted-foreground">
             {isLoading
               ? "Carregando incidentes…"
