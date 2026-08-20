@@ -842,6 +842,14 @@ export function BillingBadge({
   );
 }
 
+/** Data pura (yyyy-mm-dd) sem deslocamento de fuso. */
+function fmtDateOnly(v: string | null | undefined): string {
+  if (!v) return "—";
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  return fmtDate(v);
+}
+
 function statusPagamentoLabel(v: string | null | undefined): string {
   const s = (v ?? "").trim().toLowerCase();
   if (s.startsWith("total")) return "Total (quitado)";
@@ -880,7 +888,7 @@ export function CobrancaCard({
         <Field label="Status do pagamento" value={statusPagamentoLabel(record.status_pagamento)} />
         <Field label="Situação da emissão" value={record.situacao_emissao || "—"} />
         <Field label="Nº da proposta" value={record.numero_proposta ?? "—"} mono />
-        <Field label="Vencimento" value={fmtDate(record.data_vencimento)} mono />
+        <Field label="Vencimento" value={fmtDateOnly(record.data_vencimento)} mono />
         <Field label="Quitação" value={fmtDate(record.data_quitacao)} mono />
         <Field label="Endosso" value={record.numero_endosso} mono />
       </div>
@@ -923,7 +931,7 @@ export function CobrancasList({ rows }: { rows: BillingRecord[] }) {
             />
           </div>
           <div className="col-span-2 text-right font-mono text-[11.5px]">
-            {fmtDate(r.data_vencimento)}
+            {fmtDateOnly(r.data_vencimento)}
           </div>
           <div className="col-span-3 text-right font-mono text-[11.5px]">
             {fmtDate(r.data_quitacao)}
