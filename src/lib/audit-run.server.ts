@@ -29,6 +29,7 @@ export async function runAuditImpl(trigger = "ole-copilot") {
       total_processado: 0,
       aprovados: 0,
       reprovados: 0,
+      origem: trigger === "scheduler" ? "auto" : "manual",
       raw: {},
     } as never)
     .select("id")
