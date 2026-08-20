@@ -460,6 +460,45 @@ export type Database = {
           },
         ]
       }
+      policy_billing: {
+        Row: {
+          created_at: string
+          data_quitacao: string | null
+          data_vencimento: string | null
+          id: string
+          numero_apolice: string
+          numero_endosso: string
+          numero_proposta: string | null
+          situacao_emissao: string
+          status_pagamento: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_quitacao?: string | null
+          data_vencimento?: string | null
+          id?: string
+          numero_apolice: string
+          numero_endosso: string
+          numero_proposta?: string | null
+          situacao_emissao: string
+          status_pagamento: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_quitacao?: string | null
+          data_vencimento?: string | null
+          id?: string
+          numero_apolice?: string
+          numero_endosso?: string
+          numero_proposta?: string | null
+          situacao_emissao?: string
+          status_pagamento?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       policy_sync_runs: {
         Row: {
           created_at: string
