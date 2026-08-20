@@ -899,9 +899,18 @@ export function CobrancaCard({
   );
 }
 
-/** Histórico de cobranças por endosso da apólice. */
-export function CobrancasList({ rows }: { rows: BillingRecord[] }) {
-  if (rows.length === 0) {
+/** Histórico de cobranças por endosso da apólice, com filtros por tag e situação. */
+export function CobrancasList({ rows: allRows }: { rows: BillingRecord[] }) {
+  const [tags, setTags] = useState<BillingTag[]>([]);
+  const [situacao, setSituacao] = useState<SituacaoFilter>("todas");
+
+  const rows = allRows.filter((r) => {
+    const tag = billingTagInfo(r.status_pagamento, r.situacao_emissao).tag;
+    if (tags.length > 0 && !tags.includes(tag)) return false;
+    return matchSituacao(r.situacao_emissao, situacao);
+  });
+
+  if (allRows.length === 0) {
     return (
       <div className="panel p-5 text-[12.5px] text-muted-foreground">
         Nenhuma cobrança registrada para esta apólice.
@@ -910,6 +919,17 @@ export function CobrancasList({ rows }: { rows: BillingRecord[] }) {
   }
   return (
     <div className="panel overflow-hidden">
+      <div className="px-4 py-3 border-b border-border bg-surface-2/40">
+        <BillingFilters
+          tags={tags}
+          onToggleTag={(t) =>
+            setTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]))
+          }
+          onClearTags={() => setTags([])}
+          situacao={situacao}
+          onSituacao={setSituacao}
+        />
+      </div>
       <div className="grid grid-cols-12 px-4 py-2.5 text-[10.5px] uppercase tracking-wider text-muted-foreground bg-surface-2/60 border-b border-border">
         <div className="col-span-2">Endosso</div>
         <div className="col-span-3">Proposta</div>
@@ -917,6 +937,12 @@ export function CobrancasList({ rows }: { rows: BillingRecord[] }) {
         <div className="col-span-2 text-right">Vencimento</div>
         <div className="col-span-3 text-right">Quitação</div>
       </div>
+      {rows.length === 0 && (
+        <div className="px-4 py-8 text-center text-[12px] text-muted-foreground">
+          Nenhuma cobrança corresponde aos filtros.
+        </div>
+      )}
+
       {rows.map((r) => (
         <div
           key={`${r.numero_apolice}-${r.numero_endosso}`}
