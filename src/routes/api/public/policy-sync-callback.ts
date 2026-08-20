@@ -266,7 +266,13 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
           .eq("id", runId);
         if (updErr) return json({ error: updErr.message }, 500);
 
-        return json({ ok: true, run_id: runId, processed, duration_ms: durationMs });
+        return json({
+          ok: true,
+          run_id: runId,
+          processed,
+          endorsements: insertedEndos,
+          duration_ms: durationMs,
+        });
       },
     },
   },
