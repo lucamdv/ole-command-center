@@ -233,7 +233,90 @@ export function DocumentoHeader({
   );
 }
 
+// ============ Motivo do endosso (A/B/C) ============
+const MOTIVO_ENDOSSO_LABEL: Record<string, string> = {
+  ERRO_EMISSAO: "Erro de emissão",
+  AJUSTE: "Ajuste",
+  CANCELAMENTO: "Cancelamento",
+  ALTERACAO: "Alteração",
+  INCLUSAO: "Inclusão",
+  EXCLUSAO: "Exclusão",
+  RENOVACAO: "Renovação",
+  COBRANCA: "Cobrança",
+  SUBSTITUICAO: "Substituição",
+  REATIVACAO: "Reativação",
+};
+
+/** Cores por natureza do motivo — destaca alterações vs. correções. */
+function motivoTone(codigo: string | null): string {
+  switch (codigo) {
+    case "ERRO_EMISSAO":
+      return "bg-destructive/10 text-destructive border-destructive/30";
+    case "CANCELAMENTO":
+    case "EXCLUSAO":
+      return "bg-warning/10 text-warning border-warning/30";
+    case "AJUSTE":
+    case "ALTERACAO":
+    case "SUBSTITUICAO":
+      return "bg-primary/10 text-primary border-primary/30";
+    default:
+      return "bg-surface-2 text-foreground border-border";
+  }
+}
+
+export function MotivoEndossoCard({ motivo }: { motivo: MotivoEndossoInfo }) {
+  const label = motivo.codigo
+    ? (MOTIVO_ENDOSSO_LABEL[motivo.codigo] ?? motivo.codigo.replace(/_/g, " "))
+    : "Não informado";
+  return (
+    <div className="panel overflow-hidden">
+      <div className="px-5 py-3 border-b border-border bg-surface-2/50 text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+        Motivo da emissão
+      </div>
+      <div className="p-5 space-y-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            className={cn(
+              "inline-flex items-center rounded-md border px-2.5 py-1 text-[12px] font-semibold",
+              motivoTone(motivo.codigo),
+            )}
+          >
+            {label}
+          </span>
+          {motivo.codigo && (
+            <code className="rounded bg-surface-2 border border-border px-2 py-0.5 text-[11px] font-mono text-muted-foreground">
+              {motivo.codigo}
+            </code>
+          )}
+          {motivo.tipoCancelamento && (
+            <span className="inline-flex items-center rounded-md border border-border bg-surface-2 px-2 py-0.5 text-[11px] font-mono text-muted-foreground">
+              {motivo.tipoCancelamento}
+            </span>
+          )}
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Endosso afetado" value={motivo.numeroEndossoCancelado} mono />
+          <Field label="Pagamento" value={motivo.pagamento} />
+        </div>
+
+        {motivo.descricao && (
+          <div>
+            <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground mb-1.5">
+              Descrição do motivo
+            </div>
+            <p className="text-[13px] leading-relaxed text-foreground whitespace-pre-wrap border-l-2 border-primary/40 pl-3">
+              {motivo.descricao}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ============ Cancelamento / alteração (endosso B/C) ============
+
 export function CancelamentoCard({
   cancelamento,
   tipoEndosso,
