@@ -247,7 +247,7 @@ export const exportPoliciesCSV = createServerFn({ method: "GET" }).middleware([r
     const { valor, moeda } = computePremioTotal(r.proposta ?? {});
     out.push([
       r.numero_apolice,
-      r.numero_endosso_atual ?? "",
+      lastEndorsement.get(r.numero_apolice) ?? r.numero_endosso_atual ?? "",
       endorsementCount.get(r.numero_apolice) ?? 0,
       segurado?.nome ?? "",
       segurado?.documentos?.[0]?.valor ?? "",
