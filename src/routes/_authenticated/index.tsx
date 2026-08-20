@@ -843,6 +843,8 @@ function RunHistoryTable({ history }: { history: ReturnType<typeof useAuditHisto
             <tr>
               <th className="text-left px-4 py-2.5 font-medium">Data</th>
               <th className="text-left px-3 py-2.5 font-medium">Status</th>
+              <th className="text-left px-3 py-2.5 font-medium">Origem</th>
+
               <th className="text-right px-3 py-2.5 font-medium">Total</th>
               <th className="text-right px-3 py-2.5 font-medium">OK</th>
               <th className="text-right px-3 py-2.5 font-medium">Intervenções</th>
@@ -873,6 +875,19 @@ function RunHistoryTable({ history }: { history: ReturnType<typeof useAuditHisto
                       )}
                     >
                       {h.status_geral}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded border",
+                        h.origem === "auto"
+                          ? "bg-primary/10 text-primary border-primary/30"
+                          : "bg-surface-2 text-muted-foreground border-border",
+                      )}
+                      title={h.origem === "auto" ? "Disparada pelo agendamento" : "Disparada manualmente"}
+                    >
+                      {h.origem === "auto" ? "Automática" : "Manual"}
                     </span>
                   </td>
                   <td className="px-3 py-2.5 text-right font-mono tabular-nums">{formatInt(h.total_processado)}</td>

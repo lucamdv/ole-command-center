@@ -164,6 +164,7 @@ export type Database = {
           error_message: string | null
           id: string
           mensagem_geral: string | null
+          origem: string
           raw: Json | null
           reprovados: number
           status: string
@@ -178,6 +179,7 @@ export type Database = {
           error_message?: string | null
           id?: string
           mensagem_geral?: string | null
+          origem?: string
           raw?: Json | null
           reprovados?: number
           status: string
@@ -192,6 +194,7 @@ export type Database = {
           error_message?: string | null
           id?: string
           mensagem_geral?: string | null
+          origem?: string
           raw?: Json | null
           reprovados?: number
           status?: string
