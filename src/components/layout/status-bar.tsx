@@ -27,7 +27,7 @@ export function StatusBar() {
   ];
 
   return (
-    <div className="rounded-xl border border-border bg-surface/60 backdrop-blur grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-y md:divide-y-0 lg:divide-x divide-border overflow-hidden">
+    <div className="panel bg-surface/60 backdrop-blur grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-y md:divide-y-0 lg:divide-x divide-border overflow-hidden">
       {items.map((it) => {
         const Icon = it.icon;
         return (

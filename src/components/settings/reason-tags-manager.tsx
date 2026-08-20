@@ -86,7 +86,7 @@ export function ReasonTagsManager() {
         </div>
       )}
 
-      <div className="rounded-xl border border-border bg-surface p-3">
+      <div className="panel p-3">
         {isLoading && <p className="text-[12px] text-muted-foreground">Carregando…</p>}
         {!isLoading && tags.length === 0 && (
           <p className="text-[12.5px] text-muted-foreground">Nenhuma tag cadastrada.</p>

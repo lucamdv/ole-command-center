@@ -51,7 +51,7 @@ export function PulsoOperacional() {
   }, []);
 
   return (
-    <div className="rounded-2xl border border-border bg-surface/80 backdrop-blur overflow-hidden shadow-elevated">
+    <div className="panel overflow-hidden">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3.5 sm:py-4 border-b border-border bg-linear-to-r from-surface to-surface-2">
         <div className="flex items-center gap-3">

@@ -50,16 +50,16 @@ export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
   }, [openNotif, unread, markAllRead]);
 
   return (
-    <header className="shrink-0 min-h-14 h-[calc(3.5rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] border-b border-border bg-background/70 backdrop-blur-xl flex items-center px-3 sm:px-5 gap-2 sm:gap-4 sticky top-0 z-30">
+    <header className="shrink-0 min-h-14 h-[calc(3.5rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] border-b border-border bg-background/80 backdrop-blur-xl flex items-center px-3 sm:px-5 gap-2 sm:gap-3 sticky top-0 z-30">
       <MobileNav />
 
       <button
         onClick={onOpenPalette}
-        className="hidden sm:flex group items-center gap-2.5 flex-1 max-w-xl h-9 px-3 rounded-lg bg-surface border border-border hover:border-primary/40 hover:bg-surface-2 transition text-left min-w-0"
+        className="hidden sm:flex group items-center gap-2.5 flex-1 max-w-md h-9 px-3 rounded-lg bg-surface-2/70 border border-border hover:border-primary/40 hover:bg-surface transition text-left min-w-0"
       >
         <Search className="h-4 w-4 shrink-0 text-muted-foreground/70" />
-        <span className="text-[13px] text-muted-foreground/80 truncate">
-          Pesquisar apólice, endosso, corretor, cobertura ou erro
+        <span className="text-[12.5px] text-muted-foreground/80 truncate">
+          Pesquisar apólice, endosso, corretor ou erro
         </span>
         <kbd className="ml-auto hidden md:flex items-center gap-1 text-[10.5px] text-muted-foreground/70 font-mono px-1.5 py-0.5 rounded border border-border bg-background shrink-0">
           <Command className="h-3 w-3" />K
@@ -74,15 +74,16 @@ export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
         <Search className="h-4.5 w-4.5" />
       </button>
 
-      <div className="flex-1 sm:hidden" />
+      <div className="flex-1" />
 
-      <div className="hidden lg:flex items-center gap-2 px-2.5 h-8 rounded-md border border-border bg-surface/60 shrink-0">
-        <RefreshCw className={cn("h-3.5 w-3.5 text-info", syncing && "animate-spin")} />
-        <span className="text-[11px] text-muted-foreground">Sync</span>
-        <span className="text-[11px] font-mono text-foreground">{relativeTime(lastSync)}</span>
+      <div className="hidden lg:flex items-center gap-2 pr-3 mr-1 border-r border-border shrink-0">
+        <RefreshCw className={cn("h-3.5 w-3.5 text-primary/70", syncing && "animate-spin")} />
+        <span className="caption">Sync</span>
+        <span className="text-[11px] font-mono tabular-nums text-foreground">{relativeTime(lastSync)}</span>
       </div>
 
       <ThemeToggle />
+
 
       <div className="relative">
         <button
@@ -192,21 +193,27 @@ export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
         )}
       </div>
 
-      <div className="hidden lg:flex flex-col items-end leading-tight min-w-0">
-        <span className="text-[12px] font-medium text-foreground">{profile.nome}</span>
-        <span className="text-[10px] text-muted-foreground">Operações · Admin</span>
+      <div className="ml-1 flex items-center gap-2 border-l border-border pl-3">
+        <div className="hidden lg:flex flex-col items-end leading-tight min-w-0">
+          <span className="text-[12px] font-medium text-foreground">{profile.nome}</span>
+          <span className="text-[10px] text-muted-foreground">Operações · Admin</span>
+        </div>
+        <div
+          className="h-8 w-8 rounded-full bg-gradient-primary grid place-items-center text-[11px] font-semibold text-primary-foreground"
+          title={profile.nome}
+        >
+          {getInitials(profile.nome) || "OL"}
+        </div>
+        <button
+          onClick={handleSignOut}
+          className="h-9 w-9 grid place-items-center rounded-md border border-border bg-surface/60 hover:bg-destructive/10 hover:border-destructive/40 hover:text-destructive text-muted-foreground transition"
+          title="Sair"
+          aria-label="Sair"
+        >
+          <LogOut className="h-4 w-4" />
+        </button>
       </div>
-      <div className="h-8 w-8 rounded-full bg-linear-to-br from-primary to-info grid place-items-center text-[11px] font-semibold text-primary-foreground ring-2 ring-background" title={profile.nome}>
-        {getInitials(profile.nome) || "OL"}
-      </div>
-      <button
-        onClick={handleSignOut}
-        className="h-9 w-9 grid place-items-center rounded-md border border-border bg-surface/60 hover:bg-destructive/10 hover:border-destructive/40 hover:text-destructive text-muted-foreground transition"
-        title="Sair"
-        aria-label="Sair"
-      >
-        <LogOut className="h-4 w-4" />
-      </button>
+
     </header>
   );
 }

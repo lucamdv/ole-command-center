@@ -88,7 +88,7 @@ function IntegrationCard({
         : { Icon: AlertCircle, color: "text-warning", label: item.lastStatus ?? "Aguardando primeiro evento" };
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
+    <div className="panel p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">

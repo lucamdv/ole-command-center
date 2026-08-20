@@ -63,73 +63,75 @@
 
   /* Brand */
   --brand-azul: oklch(0.31 0.16 277);          /* #2C2B7C */
-  --brand-azul-soft: oklch(0.55 0.20 270);
+  --brand-azul-soft: oklch(0.46 0.19 275);     /* #4B49B8 */
   --brand-azul-strong: oklch(0.24 0.14 277);
-  --brand-verde: oklch(0.66 0.20 152);         /* vívido */
-  --brand-verde-soft: oklch(0.78 0.15 152);
-  --brand-verde-strong: oklch(0.52 0.19 152);
+  --brand-verde: oklch(0.66 0.14 165);         /* #1BA97A — apenas status */
+  --brand-verde-soft: oklch(0.78 0.12 165);
+  --brand-verde-strong: oklch(0.52 0.14 165);
 
-  /* Surfaces */
-  --background: oklch(0.985 0.003 250);
+  /* Surfaces — 3 níveis */
+  --background: oklch(0.968 0.005 270);        /* #F5F6FA */
   --surface: oklch(1 0 0);
-  --surface-2: oklch(0.97 0.004 250);
-  --elevated: oklch(0.955 0.005 250);
+  --surface-2: oklch(0.978 0.005 270);
+  --elevated: oklch(0.955 0.007 270);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.02 270);
+  --card-foreground: oklch(0.20 0.03 275);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.02 270);
+  --popover-foreground: oklch(0.20 0.03 275);
 
   /* Text */
-  --foreground: oklch(0.18 0.02 270);
-  --muted: oklch(0.94 0.005 250);
-  --muted-foreground: oklch(0.42 0.03 260);
+  --foreground: oklch(0.20 0.03 275);
+  --muted: oklch(0.945 0.006 270);
+  --muted-foreground: oklch(0.475 0.03 272);
 
   /* Primary (Azul Excelsior) */
   --primary: var(--brand-azul);
   --primary-foreground: oklch(0.99 0 0);
   --primary-glow: var(--brand-azul-soft);
 
-  --secondary: oklch(0.93 0.04 270);
+  --secondary: oklch(0.945 0.025 275);
   --secondary-foreground: var(--brand-azul-strong);
-  --accent: oklch(0.92 0.09 152);
-  --accent-foreground: oklch(0.30 0.15 152);
+  --accent: oklch(0.945 0.03 275);
+  --accent-foreground: var(--brand-azul-strong);
 
   /* Status */
-  --success: oklch(0.60 0.19 152);
-  --warning: oklch(0.72 0.19 70);
-  --destructive: oklch(0.58 0.24 25);
+  --success: var(--brand-verde-strong);
+  --warning: oklch(0.66 0.16 62);
+  --destructive: oklch(0.55 0.22 26);
   --destructive-foreground: oklch(0.99 0 0);
-  --info: oklch(0.55 0.20 270);
+  --info: var(--brand-azul-soft);
 
-  /* Borders */
-  --border: oklch(0.20 0.04 270 / 0.16);
-  --input: oklch(0.20 0.04 270 / 0.22);
-  --ring: oklch(0.31 0.16 277 / 0.6);
+  /* Borders — hairline discreta */
+  --border: oklch(0.20 0.04 275 / 0.11);
+  --input: oklch(0.20 0.04 275 / 0.18);
+  --ring: oklch(0.46 0.19 275 / 0.5);
 
-  /* Charts — séries distintas e vibrantes */
-  --chart-1: oklch(0.45 0.22 270);
-  --chart-2: oklch(0.66 0.20 152);
-  --chart-3: oklch(0.70 0.18 220);
-  --chart-4: oklch(0.62 0.22 30);
-  --chart-5: oklch(0.55 0.20 310);
+  /* Charts — contraste entre séries vizinhas */
+  --chart-1: oklch(0.42 0.20 275);
+  --chart-2: oklch(0.60 0.14 165);
+  --chart-3: oklch(0.68 0.16 62);
+  --chart-4: oklch(0.58 0.14 232);
+  --chart-5: oklch(0.52 0.19 320);
 
   /* Sidebar */
   --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.18 0.02 270);
+  --sidebar-foreground: oklch(0.20 0.03 275);
   --sidebar-primary: var(--brand-azul);
   --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.93 0.04 270);
+  --sidebar-accent: oklch(0.955 0.02 275);
   --sidebar-accent-foreground: var(--brand-azul-strong);
-  --sidebar-border: oklch(0.18 0.02 270 / 0.12);
-  --sidebar-ring: oklch(0.31 0.16 277 / 0.5);
+  --sidebar-border: oklch(0.20 0.03 275 / 0.10);
+  --sidebar-ring: oklch(0.46 0.19 275 / 0.45);
 
   /* Gradients & effects */
-  --gradient-primary: linear-gradient(135deg, oklch(0.40 0.22 275), oklch(0.66 0.20 152));
-  --gradient-surface: linear-gradient(180deg, oklch(1 0 0), oklch(0.97 0.004 250));
-  --gradient-glow: radial-gradient(circle at 50% 0%, oklch(0.45 0.22 270 / 0.18), transparent 60%);
-  --shadow-elevated: 0 12px 32px -16px oklch(0.18 0.02 270 / 0.22), 0 1px 0 0 oklch(1 0 0 / 0.5) inset;
-  --shadow-glow: 0 0 32px -8px oklch(0.45 0.22 270 / 0.4);
+  --gradient-primary: linear-gradient(135deg, oklch(0.31 0.16 277), oklch(0.46 0.19 275));
+  --gradient-surface: linear-gradient(180deg, oklch(1 0 0), oklch(0.978 0.005 270));
+  --gradient-glow: radial-gradient(circle at 50% 0%, oklch(0.46 0.19 275 / 0.12), transparent 62%);
+  --shadow-soft: 0 1px 2px 0 oklch(0.22 0.04 275 / 0.06), 0 1px 1px -1px oklch(0.22 0.04 275 / 0.05);
+  --shadow-elevated: 0 8px 24px -12px oklch(0.22 0.04 275 / 0.18), 0 1px 2px 0 oklch(0.22 0.04 275 / 0.05);
+  --shadow-glow: 0 0 24px -10px oklch(0.46 0.19 275 / 0.32);
 }
+
 
 
 /* ===== DARK THEME ===== */
@@ -166,11 +168,11 @@
   --input: oklch(1 0 0 / 0.12);
   --ring: oklch(0.7 0.16 270 / 0.5);
 
-  --chart-1: oklch(0.7 0.16 270);
-  --chart-2: oklch(0.75 0.16 152);
-  --chart-3: oklch(0.82 0.12 200);
-  --chart-4: oklch(0.6 0.16 152);
-  --chart-5: oklch(0.72 0.04 260);
+  --chart-1: oklch(0.68 0.15 272);
+  --chart-2: oklch(0.74 0.14 165);
+  --chart-3: oklch(0.80 0.14 70);
+  --chart-4: oklch(0.74 0.12 232);
+  --chart-5: oklch(0.72 0.15 320);
 
   --sidebar: oklch(0.18 0.04 277);
   --sidebar-foreground: oklch(0.985 0 0);
@@ -181,11 +183,12 @@
   --sidebar-border: oklch(1 0 0 / 0.06);
   --sidebar-ring: oklch(0.7 0.16 270 / 0.5);
 
-  --gradient-primary: linear-gradient(135deg, oklch(0.55 0.18 277), oklch(0.7 0.16 152));
+  --gradient-primary: linear-gradient(135deg, oklch(0.55 0.18 277), oklch(0.7 0.16 272));
   --gradient-surface: linear-gradient(180deg, oklch(0.24 0.05 277), oklch(0.2 0.045 277));
-  --gradient-glow: radial-gradient(circle at 50% 0%, oklch(0.7 0.16 270 / 0.2), transparent 60%);
-  --shadow-elevated: 0 20px 50px -20px oklch(0 0 0 / 0.6), 0 1px 0 0 oklch(1 0 0 / 0.04) inset;
-  --shadow-glow: 0 0 40px -8px oklch(0.7 0.16 270 / 0.45);
+  --gradient-glow: radial-gradient(circle at 50% 0%, oklch(0.7 0.16 270 / 0.16), transparent 62%);
+  --shadow-soft: 0 1px 2px 0 oklch(0 0 0 / 0.3);
+  --shadow-elevated: 0 14px 36px -18px oklch(0 0 0 / 0.55), 0 1px 0 0 oklch(1 0 0 / 0.04) inset;
+  --shadow-glow: 0 0 32px -10px oklch(0.7 0.16 270 / 0.4);
 }
 
 @layer base {
@@ -202,16 +205,18 @@
   }
   body {
     background-image:
-      radial-gradient(circle at 0% 0%, oklch(0.45 0.22 270 / 0.10), transparent 50%),
-      radial-gradient(circle at 100% 100%, oklch(0.66 0.20 152 / 0.08), transparent 50%);
+      radial-gradient(circle at 0% 0%, oklch(0.46 0.19 275 / 0.05), transparent 55%),
+      radial-gradient(circle at 100% 100%, oklch(0.46 0.19 275 / 0.04), transparent 55%);
     background-attachment: fixed;
   }
 
+
   .dark body {
     background-image:
-      radial-gradient(circle at 0% 0%, oklch(0.55 0.18 277 / 0.08), transparent 50%),
-      radial-gradient(circle at 100% 100%, oklch(0.7 0.16 152 / 0.05), transparent 50%);
+      radial-gradient(circle at 0% 0%, oklch(0.55 0.18 277 / 0.07), transparent 55%),
+      radial-gradient(circle at 100% 100%, oklch(0.7 0.16 272 / 0.04), transparent 55%);
   }
+
   ::selection {
     background-color: oklch(0.31 0.16 277 / 0.25);
   }
@@ -300,5 +305,164 @@
     background: linear-gradient(90deg, transparent, oklch(0.18 0.02 270 / 0.05), transparent);
     background-size: 200% 100%;
     animation: shimmer 2.5s linear infinite;
+  }
+}
+
+/* ===== Sistema visual corporativo — escala tipográfica e blocos ===== */
+
+@utility page-title {
+  font-size: 1.375rem;
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-foreground);
+}
+@media (min-width: 640px) {
+  .page-title {
+    font-size: 1.625rem;
+  }
+}
+
+@utility page-subtitle {
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--color-muted-foreground);
+}
+
+@utility section-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--color-foreground);
+}
+
+@utility eyebrow {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--color-muted-foreground) 78%, transparent);
+}
+
+@utility metric-label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--color-muted-foreground) 90%, transparent);
+}
+
+@utility metric-value {
+  font-size: 1.375rem;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-foreground);
+}
+@media (min-width: 640px) {
+  .metric-value {
+    font-size: 1.625rem;
+  }
+}
+
+@utility caption {
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: var(--color-muted-foreground);
+}
+
+/* Blocos (bento) */
+@utility panel {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+@utility panel-elevated {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-elevated);
+}
+
+@utility panel-quiet {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background-color: color-mix(in oklab, var(--color-surface-2) 80%, transparent);
+}
+
+@utility bento {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 640px) {
+  .bento {
+    gap: 1rem;
+  }
+}
+@media (min-width: 1024px) {
+  .bento {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Tabelas — estilo único */
+@utility table-shell {
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+@utility num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Segmento de abas */
+@utility segmented {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background-color: color-mix(in oklab, var(--color-surface-2) 85%, transparent);
+}
+
+@utility data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+
+  & thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: color-mix(in oklab, var(--color-surface-2) 92%, var(--color-surface));
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+    white-space: nowrap;
+  }
+
+  & tbody tr {
+    border-top: 1px solid color-mix(in oklab, var(--color-border) 70%, transparent);
+    transition: background-color 0.15s ease;
+  }
+
+  & tbody tr:hover {
+    background-color: color-mix(in oklab, var(--color-surface-2) 70%, transparent);
+  }
+
+  & tbody td {
+    font-variant-numeric: tabular-nums;
   }
 }

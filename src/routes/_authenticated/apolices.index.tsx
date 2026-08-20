@@ -42,7 +42,7 @@ function ApolicesPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <h1 className="text-[21px] sm:text-[26px] font-semibold tracking-tight text-foreground">Apólices</h1>
+          <h1 className="page-title">Apólices</h1>
           <p className="mt-1.5 flex items-center gap-2 text-[12.5px] text-muted-foreground">
             <span
               className={cn(

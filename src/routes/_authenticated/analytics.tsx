@@ -276,12 +276,12 @@ function AnalyticsPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-[20px] sm:text-[24px] font-semibold tracking-tight">Analytics</h1>
+            <h1 className="page-title">Analytics</h1>
             <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/30">
               BI · LIVE
             </span>
           </div>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="page-subtitle">
             Inteligência estratégica sobre carteira, runs de auditoria, severidade e eficiência operacional.
             {history.length > 0 && (
               <>
@@ -328,7 +328,7 @@ function AnalyticsPage() {
       ) : (
         <>
           {/* KPI grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bento">
             <Kpi label="Apólices na carteira" value={formatInt(policies.length)} />
             <Kpi
               label="Auditadas (última run)"
@@ -377,7 +377,7 @@ function AnalyticsPage() {
             title="KPIs semanais"
             subtitle="Reincidência de inconsistências e volume de repasse nos últimos 7 dias de execução"
           />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bento">
             <Kpi
               label="Reincidência semanal"
               value={formatPct(ops?.weekly.reincidenciaPct ?? 0, 1)}
@@ -431,7 +431,7 @@ function AnalyticsPage() {
               hint="Metade das resoluções abaixo deste tempo"
             />
           </div>
-          <div className="rounded-xl border border-border bg-surface/60 overflow-x-auto">
+          <div className="panel bg-surface/60 overflow-x-auto">
             {(ops?.resolutionTime.byTipo.length ?? 0) === 0 ? (
               <div className="px-4 py-6 text-[12.5px] text-muted-foreground">
                 Nenhuma inconsistência foi resolvida ainda. Marque um achado como
@@ -439,7 +439,7 @@ function AnalyticsPage() {
                 alimentar este indicador.
               </div>
             ) : (
-              <table className="w-full text-[12.5px]">
+              <table className="data-table text-[12.5px]">
                 <thead className="bg-surface-2/60 text-[11px] uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="text-left px-4 py-2 font-medium">Tipo de problema</th>
@@ -471,7 +471,7 @@ function AnalyticsPage() {
             title="KPIs mensais"
             subtitle="Reincidência consolidada e capacidade operacional da carteira"
           />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bento">
             <Kpi
               label="Reincidência consolidada"
               value={formatPct(reincMensalAtual?.reincidenciaPct ?? 0, 1)}
@@ -519,7 +519,7 @@ function AnalyticsPage() {
                 : "Crescimento da carteira, redução de incidentes e prêmio consolidado"
             }
           />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bento">
             <Kpi
               label="Crescimento da carteira"
               value={crescimentoCarteira === null ? "—" : formatPct(crescimentoCarteira, 1)}
@@ -1104,7 +1104,7 @@ function Kpi({
   const showDelta = delta !== undefined && Number.isFinite(delta) && Math.abs(delta) >= 0.05;
   const positive = invertDelta ? (delta ?? 0) < 0 : (delta ?? 0) > 0;
   return (
-    <div className="rounded-2xl border border-border bg-surface p-4 shadow-elevated">
+    <div className="panel p-4">
       <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-medium">
         {label}
       </div>
@@ -1158,7 +1158,7 @@ function ChartCard({
     <div
       data-export="chart"
       data-title={title}
-      className={`rounded-2xl border border-border bg-surface p-5 shadow-elevated ${className ?? ""}`}
+      className={`panel p-5 ${className ?? ""}`}
     >
       <div className="mb-4">
         <div className="text-[13px] font-semibold">{title}</div>
@@ -1201,7 +1201,7 @@ function Heatmap({
   const max = Math.max(1, ...rows.flatMap((r) => r.cells));
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-[10.5px]">
+      <table className="data-table text-[10.5px]">
         <thead>
           <tr>
             <th className="text-left font-normal text-muted-foreground pb-2 pr-3 sticky left-0 bg-surface">
@@ -1292,14 +1292,14 @@ function RepasseTooltip({ active, payload }: { active?: boolean; payload?: Array
 function LoadingState() {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="bento">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-24 rounded-2xl border border-border bg-surface animate-pulse" />
+          <div key={i} className="h-24 panel animate-pulse" />
         ))}
       </div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        <div className="lg:col-span-2 h-[250px] sm:h-[320px] rounded-2xl border border-border bg-surface animate-pulse" />
-        <div className="h-[250px] sm:h-[320px] rounded-2xl border border-border bg-surface animate-pulse" />
+        <div className="lg:col-span-2 h-[250px] sm:h-[320px] panel animate-pulse" />
+        <div className="h-[250px] sm:h-[320px] panel animate-pulse" />
       </div>
     </div>
   );
@@ -1307,7 +1307,7 @@ function LoadingState() {
 
 function EmptyState() {
   return (
-    <div className="rounded-2xl border border-border bg-surface p-12 text-center">
+    <div className="panel p-12 text-center">
       <BarChart3 className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
       <div className="text-[14px] font-semibold mb-1">Sem auditorias ainda</div>
       <p className="text-[12.5px] text-muted-foreground mb-4">

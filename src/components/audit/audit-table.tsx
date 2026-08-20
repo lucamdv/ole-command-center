@@ -26,7 +26,7 @@ export function AuditTable({ findings }: { findings: AuditFinding[] }) {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-surface overflow-hidden">
+    <div className="panel overflow-hidden">
       <div className="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2">
         <div className="text-[13px] font-semibold">Resultados da Auditoria</div>
         <div className="text-[11px] font-mono text-muted-foreground">

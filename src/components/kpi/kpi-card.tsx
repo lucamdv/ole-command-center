@@ -38,13 +38,7 @@ const STATUS_LABEL: Record<KpiStatusTone, string> = {
 };
 
 
-const TONE_RING: Record<NonNullable<KpiProps["tone"]>, string> = {
-  default: "from-primary/30 to-transparent",
-  success: "from-success/30 to-transparent",
-  warning: "from-warning/30 to-transparent",
-  destructive: "from-destructive/30 to-transparent",
-  info: "from-info/30 to-transparent",
-};
+
 
 const TONE_STROKE: Record<NonNullable<KpiProps["tone"]>, string> = {
   default: "var(--primary)",
@@ -71,27 +65,28 @@ export const KpiCard = memo(function KpiCard({
   const stroke = TONE_STROKE[tone];
 
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-border bg-surface hover:border-primary/30 transition-all duration-300">
-      <div
+    <div className="group relative flex flex-col overflow-hidden panel transition-colors hover:border-primary/30">
+      {/* faixa de status na lateral */}
+      <span
         className={cn(
-          "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-linear-to-br pointer-events-none",
-          TONE_RING[tone],
+          "absolute left-0 top-0 bottom-0 w-[3px]",
+          status === "ok" && "bg-success",
+          status === "warn" && "bg-warning",
+          status === "bad" && "bg-destructive",
+          !status && "bg-border",
         )}
       />
-      <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-white/15 to-transparent" />
 
-      <div className="relative p-4">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">
-            {label}
-          </span>
+      <div className="relative p-4 pl-[1.125rem]">
+        <div className="mb-2.5 flex items-start justify-between gap-2">
+          <span className="metric-label">{label}</span>
           {delta !== undefined && (
             <span
               className={cn(
-                "flex items-center gap-0.5 text-[10.5px] font-mono font-semibold px-1.5 py-0.5 rounded",
+                "flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10.5px] font-mono font-semibold tabular-nums",
                 delta > 0 && "text-success bg-success/10",
                 delta < 0 && "text-destructive bg-destructive/10",
-                delta === 0 && "text-muted-foreground bg-muted/40",
+                delta === 0 && "text-muted-foreground bg-muted/50",
               )}
             >
               {delta > 0 ? <ArrowUp className="h-2.5 w-2.5" /> : delta < 0 ? <ArrowDown className="h-2.5 w-2.5" /> : <Minus className="h-2.5 w-2.5" />}
@@ -100,14 +95,13 @@ export const KpiCard = memo(function KpiCard({
           )}
         </div>
 
-        <div className="flex items-baseline gap-1.5 mb-2">
-          <span className="text-[21px] sm:text-[26px] font-semibold tracking-tight text-foreground tabular-nums leading-none">
-            {format(animated)}
-          </span>
+        <div className="mb-2 flex items-baseline gap-1.5">
+          <span className="metric-value">{format(animated)}</span>
           {suffix && <span className="text-[12px] text-muted-foreground font-mono">{suffix}</span>}
         </div>
 
-        {hint && <div className="text-[10.5px] text-muted-foreground mb-2">{hint}</div>}
+        {hint && <div className="caption mb-2">{hint}</div>}
+
 
         {(target || status) && (
           <div className="mb-2 flex flex-wrap items-center gap-1.5">

@@ -66,7 +66,7 @@ export function MetasTab() {
 
   return (
     <div className="space-y-4 max-w-2xl">
-      <div className="flex items-start gap-2 rounded-xl border border-border bg-surface/60 p-3">
+      <div className="flex items-start gap-2 panel bg-surface/60 p-3">
         <Target className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
         <p className="text-[12px] text-muted-foreground">
           As metas definem o selo de status exibido nos cartões de KPI da auditoria e do analytics.
@@ -74,7 +74,7 @@ export function MetasTab() {
         </p>
       </div>
 
-      <div className="rounded-xl border border-border bg-surface divide-y divide-border">
+      <div className="panel divide-y divide-border">
         {FIELDS.map((f) => (
           <div key={f.key} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3.5">
             <div className="min-w-0">
@@ -124,7 +124,7 @@ function EscalationSection() {
 
   return (
     <div className="space-y-4 pt-4">
-      <div className="flex items-start gap-2 rounded-xl border border-border bg-surface/60 p-3">
+      <div className="flex items-start gap-2 panel bg-surface/60 p-3">
         <TrendingUp className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
         <div>
           <div className="text-[13px] font-medium">Escalonamento de alertas</div>
@@ -135,7 +135,7 @@ function EscalationSection() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-surface divide-y divide-border">
+      <div className="panel divide-y divide-border">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3.5">
           <div className="min-w-0">
             <div className="text-[13px] font-medium">Auditorias para escalar</div>

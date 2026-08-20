@@ -165,7 +165,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <div>
       <div className="text-[11px] font-medium text-muted-foreground mb-2 uppercase tracking-wider">{title}</div>
-      <div className="rounded-xl border border-border bg-surface divide-y divide-border">{children}</div>
+      <div className="panel divide-y divide-border">{children}</div>
     </div>
   );
 }

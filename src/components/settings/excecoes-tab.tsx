@@ -142,7 +142,7 @@ export function ExcecoesTab() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-surface overflow-hidden">
+      <div className="panel overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>

@@ -47,7 +47,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
     <div className="fixed inset-0 z-[100] grid place-items-start justify-center pt-[14vh] px-4 bg-background/60 backdrop-blur-md animate-in fade-in" onClick={() => onOpenChange(false)}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[620px] rounded-2xl border border-border bg-surface shadow-elevated overflow-hidden animate-in zoom-in-95 slide-in-from-top-4"
+        className="w-full max-w-[620px] panel overflow-hidden animate-in zoom-in-95 slide-in-from-top-4"
       >
         <Command label="Command Palette" className="bg-transparent">
           <div className="border-b border-border px-4">

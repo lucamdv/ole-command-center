@@ -10,6 +10,8 @@ import { AutomacaoTab } from "@/components/settings/automacao-tab";
 import { ExcecoesTab } from "@/components/settings/excecoes-tab";
 import { MetasTab } from "@/components/settings/metas-tab";
 import { useCurrentRole } from "@/hooks/use-current-role";
+import { PageHeader } from "@/components/layout/page-header";
+
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({
@@ -41,36 +43,38 @@ function ConfigPage() {
   const Active = (tabs.find((t) => t.id === active) ?? tabs[0]).Component;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-[20px] sm:text-[24px] font-semibold tracking-tight">Configurações</h1>
-        <p className="text-[13px] text-muted-foreground mt-1">
-          Preferências do operador, integrações com motores e gestão de dados.
-        </p>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow="Plataforma"
+        title="Configurações"
+        description="Preferências do operador, integrações com motores e gestão de dados."
+      />
 
-      <div className="flex flex-wrap gap-1 border-b border-border">
-        {tabs.map((t) => {
-          const Icon = t.icon;
-          const isActive = active === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => setActive(t.id)}
-              className={`inline-flex items-center gap-1.5 px-4 h-10 text-[13px] font-medium border-b-2 -mb-px transition ${
-                isActive
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {t.label}
-            </button>
-          );
-        })}
+      <div className="-mx-1 overflow-x-auto px-1 pb-1">
+        <div className="segmented w-max">
+          {tabs.map((t) => {
+            const Icon = t.icon;
+            const isActive = active === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setActive(t.id)}
+                className={`inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-md px-3 text-[12.5px] font-medium transition-colors ${
+                  isActive
+                    ? "bg-surface text-foreground shadow-soft border border-border"
+                    : "text-muted-foreground hover:text-foreground hover:bg-surface/60"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
-
-      <Active />
+      <div className="panel p-4 sm:p-5">
+        <Active />
+      </div>
     </div>
   );
 }
