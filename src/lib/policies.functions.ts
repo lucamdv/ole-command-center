@@ -79,6 +79,31 @@ export async function runPolicySyncImpl() {
     (process.env.NODE_ENV === "production" ? PRODUCTION_PUBLIC_URL : PREVIEW_PUBLIC_URL);
   const callbackUrl = `${base.replace(/\/$/, "")}/api/public/policy-sync-callback?run_id=${runId}`;
 
+  // Mapa { numero_apolice: maior_sequencial_de_endosso } para o motor devolver
+  // apenas os endossos novos (sincronização incremental).
+  const ultimosEndossos: Record<string, number> = {};
+  try {
+    const { data: pols } = await supabaseAdmin
+      .from("policies")
+      .select("numero_apolice, numero_endosso_atual, endorsements(numero_endosso)");
+    for (const p of (pols ?? []) as Array<{
+      numero_apolice: string;
+      numero_endosso_atual: string | null;
+      endorsements: Array<{ numero_endosso: string }> | null;
+    }>) {
+      const nums = (p.endorsements ?? [])
+        .map((e) => parseInt(String(e.numero_endosso).replace(/\D/g, ""), 10))
+        .filter((n) => Number.isFinite(n));
+      const fromHead = p.numero_endosso_atual
+        ? parseInt(p.numero_endosso_atual.replace(/\D/g, ""), 10)
+        : NaN;
+      if (Number.isFinite(fromHead)) nums.push(fromHead);
+      ultimosEndossos[p.numero_apolice] = nums.length > 0 ? Math.max(...nums) : 0;
+    }
+  } catch (err) {
+    console.error("[policy-sync] falha ao montar ultimos_endossos_plataforma", err);
+  }
+
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -88,6 +113,7 @@ export async function runPolicySyncImpl() {
         callback_url: callbackUrl,
         trigger: "ole-copilot-policies",
         at: new Date().toISOString(),
+        ultimos_endossos_plataforma: ultimosEndossos,
       }),
       signal: AbortSignal.timeout(30_000),
     });

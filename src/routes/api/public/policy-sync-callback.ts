@@ -173,19 +173,54 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
             : baseProposta;
           const premio = currentEndo?.premio_liquido ?? apolice.premio_liquido ?? 0;
 
-          const { data: up, error: upErr } = await supabaseAdmin
+          // Estado atual no banco: nunca deixamos uma resposta incremental
+          // rebaixar o endosso atual nem apagar proposta/prêmio já existentes.
+          const { data: existingPolicy } = await supabaseAdmin
             .from("policies")
-            .upsert(
-              {
-                numero_apolice: numero,
-                numero_endosso_atual: endossoAtual,
-                premio_liquido: premio,
-                proposta,
+            .select("id, numero_endosso_atual")
+            .eq("numero_apolice", numero)
+            .maybeSingle();
+          const existingRow = existingPolicy as
+            | { id: string; numero_endosso_atual: string | null }
+            | null;
+
+          const endossoAtualFinal =
+            [endossoAtual, existingRow?.numero_endosso_atual ?? null]
+              .filter((n): n is string => !!n)
+              .map((n) => normalizeEndossoNum(n))
+              .sort()
+              .pop() ?? null;
+
+          const hasNovidade = historico.length > 0;
+
+          // Sem endossos novos: só marca que a apólice foi verificada neste run.
+          if (!hasNovidade && existingRow) {
+            await supabaseAdmin
+              .from("policies")
+              .update({
+                numero_endosso_atual: endossoAtualFinal,
                 last_sync_run_id: runId,
                 updated_at: new Date().toISOString(),
-              } as never,
-              { onConflict: "numero_apolice" },
-            )
+              } as never)
+              .eq("id", existingRow.id);
+            continue;
+          }
+
+          const patch: Record<string, unknown> = {
+            numero_apolice: numero,
+            numero_endosso_atual: endossoAtualFinal,
+            last_sync_run_id: runId,
+            updated_at: new Date().toISOString(),
+          };
+          // Só sobrescreve dados de conteúdo quando o payload realmente traz algo.
+          if (hasNovidade || !existingRow) {
+            patch.premio_liquido = premio;
+            patch.proposta = proposta;
+          }
+
+          const { data: up, error: upErr } = await supabaseAdmin
+            .from("policies")
+            .upsert(patch as never, { onConflict: "numero_apolice" })
             .select("id")
             .single();
           if (upErr || !up) {
@@ -194,23 +229,26 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
           }
           const policyId = (up as { id: string }).id;
 
-          await supabaseAdmin.from("endorsements").delete().eq("policy_id", policyId);
+          // Upsert (não delete+insert): endossos já existentes permanecem.
           const endos = historico.map((e, idx) => {
             const endRaw = pickEnd(e);
+            const num = endRaw ? normalizeEndossoNum(endRaw) : String(idx).padStart(6, "0");
+            const seq = parseInt(num, 10);
             return {
               policy_id: policyId,
               numero_apolice: pickNum(e) ?? numero,
-              numero_endosso: endRaw ? normalizeEndossoNum(endRaw) : String(idx).padStart(6, "0"),
+              numero_endosso: num,
               premio_liquido: e.premio_liquido ?? 0,
               proposta: e.proposta ?? {},
-              ordem: idx,
+              // Ordem derivada do próprio sequencial (payload pode ser parcial).
+              ordem: Number.isFinite(seq) ? seq : idx,
             };
           });
           if (endos.length > 0) {
             const { error: endErr } = await supabaseAdmin
               .from("endorsements")
-              .insert(endos as never);
-            if (endErr) console.error("[policy-sync-callback] insert endorsements", endErr);
+              .upsert(endos as never, { onConflict: "policy_id,numero_endosso" });
+            if (endErr) console.error("[policy-sync-callback] upsert endorsements", endErr);
           }
           processed++;
         }
