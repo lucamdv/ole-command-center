@@ -22,6 +22,17 @@ export interface CancelamentoInfo {
   pagamento: string | null;
 }
 
+/** Motivo da emissão do endosso (presente em endossos A/B/C). */
+export interface MotivoEndossoInfo {
+  /** Código bruto, ex.: ERRO_EMISSAO, AJUSTE. */
+  codigo: string | null;
+  descricao: string | null;
+  tipoCancelamento: string | null;
+  numeroEndossoCancelado: string | null;
+  pagamento: string | null;
+}
+
+
 export interface DadosGerais {
   numeroPropostaSeguradora: string | null;
   idPropostaOrigem: string | null;
