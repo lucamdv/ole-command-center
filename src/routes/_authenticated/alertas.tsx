@@ -205,7 +205,7 @@ function AlertasPage() {
             </span>
           </div>
           <h1 className="page-title">Alertas</h1>
-          <p className="mt-1 text-[13px] text-muted-foreground">
+          <p className="page-subtitle mt-1.5">
             {isLoading
               ? "Carregando incidentes…"
               : run

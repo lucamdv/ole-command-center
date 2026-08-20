@@ -130,7 +130,7 @@ function OperacaoPage() {
           </span>
         </div>
         <h1 className="page-title">Operação</h1>
-        <p className="text-[13px] text-muted-foreground mt-1">
+        <p className="page-subtitle mt-1.5">
           {run?.mensagem_geral ??
             "Painel operacional · dados da última execução do motor de auditoria."}
         </p>

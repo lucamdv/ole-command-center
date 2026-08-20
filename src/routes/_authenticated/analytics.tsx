@@ -281,7 +281,7 @@ function AnalyticsPage() {
               BI · LIVE
             </span>
           </div>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="page-subtitle">
             Inteligência estratégica sobre carteira, runs de auditoria, severidade e eficiência operacional.
             {history.length > 0 && (
               <>

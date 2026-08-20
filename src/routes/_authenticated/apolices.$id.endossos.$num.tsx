@@ -36,7 +36,7 @@ function EndossoDetail() {
   const { data: endo, isLoading } = useEndorsementDetail(id, num);
 
   if (isLoading) {
-    return <div className="text-[13px] text-muted-foreground">Carregando endosso…</div>;
+    return <div className="page-subtitle">Carregando endosso…</div>;
   }
 
   if (!endo) {
@@ -49,7 +49,7 @@ function EndossoDetail() {
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Voltar à apólice
         </Link>
-        <div className="rounded-xl border border-border bg-surface p-12 text-center text-[13px] text-muted-foreground">
+        <div className="rounded-xl border border-border bg-surface p-12 text-center page-subtitle">
           Endosso não encontrado.
         </div>
       </div>

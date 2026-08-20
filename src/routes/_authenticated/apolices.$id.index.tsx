@@ -38,7 +38,7 @@ export default function ApoliceDetail() {
   const { data: policy, isLoading } = usePolicy(id);
 
   if (isLoading) {
-    return <div className="text-[13px] text-muted-foreground">Carregando apólice…</div>;
+    return <div className="page-subtitle">Carregando apólice…</div>;
   }
 
   if (!policy) {
