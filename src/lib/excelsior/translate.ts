@@ -22,6 +22,17 @@ export interface CancelamentoInfo {
   pagamento: string | null;
 }
 
+/** Motivo da emissão do endosso (presente em endossos A/B/C). */
+export interface MotivoEndossoInfo {
+  /** Código bruto, ex.: ERRO_EMISSAO, AJUSTE. */
+  codigo: string | null;
+  descricao: string | null;
+  tipoCancelamento: string | null;
+  numeroEndossoCancelado: string | null;
+  pagamento: string | null;
+}
+
+
 export interface DadosGerais {
   numeroPropostaSeguradora: string | null;
   idPropostaOrigem: string | null;
@@ -166,6 +177,8 @@ export interface PropostaTraduzida {
   cotacoes: CotacaoInfo[];
   limiteApolice: LimiteApoliceInfo | null;
   cancelamento: CancelamentoInfo | null;
+  /** Motivo da emissão do endosso (código + descrição). */
+  motivoEndosso: MotivoEndossoInfo | null;
   tipoEndosso: TipoEndosso | null;
   /** Número completo do documento (ex.: `…0001` para um endosso). Vem do envelope. */
   numeroDocumento: string | null;
@@ -482,11 +495,43 @@ function parseCancelamento(proposta: Obj, tipoEndosso: TipoEndosso | null): Canc
   };
 }
 
+/**
+ * Motivo da emissão do endosso. Procura primeiro na proposta desembrulhada e,
+ * como fallback, no wrapper `proposta_endosso_X` do envelope (caso do endosso A,
+ * onde o motivo fica um nível acima da `proposta`).
+ */
+function parseMotivoEndosso(proposta: Obj, envelope: Obj | null): MotivoEndossoInfo | null {
+  const fontes: Obj[] = [proposta];
+  if (envelope) {
+    for (const k of Object.keys(envelope)) {
+      if (!k.startsWith("proposta_endosso_")) continue;
+      const wrap = envelope[k];
+      if (isObj(wrap)) fontes.push(wrap as Obj);
+    }
+  }
+  const pick = (campo: string): string | null => {
+    for (const f of fontes) {
+      const v = asStr(f[campo]);
+      if (v) return v;
+    }
+    return null;
+  };
+  const codigo = pick("motivo_endosso");
+  const descricao = pick("descricao_motivo_endosso");
+  const tipoCancelamento = pick("tipo_cancelamento");
+  const numeroEndossoCancelado = pick("numero_endosso_cancelado");
+  const pagamento = pick("pagamento");
+  if (!codigo && !descricao && !tipoCancelamento) return null;
+  return { codigo, descricao, tipoCancelamento, numeroEndossoCancelado, pagamento };
+}
+
 export function translateProposta(input: unknown): PropostaTraduzida {
   const { proposta, envelope, isWrapperVazio, tipoEndosso, numeroDocumento } =
     unwrapProposta(input);
   return {
+    motivoEndosso: parseMotivoEndosso(proposta, envelope),
     dadosGerais: parseDados(proposta, envelope),
+
     datas: parseDatas(proposta, envelope),
     partes: parsePartes(proposta),
     itens: parseItens(proposta),

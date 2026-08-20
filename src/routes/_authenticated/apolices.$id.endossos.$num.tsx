@@ -11,6 +11,7 @@ import {
   EndossoSemDadosAviso,
   ItensCoberturas,
   LimiteApoliceCard,
+  MotivoEndossoCard,
   PagamentoCard,
   PartesList,
   Section,
@@ -88,6 +89,16 @@ function EndossoDetail() {
         premioMoeda={endo.premio_moeda}
         seguradoNome={seguradoNome}
       />
+
+      {/* Motivo da emissão — vale para todos os tipos de endosso */}
+      {t.motivoEndosso && (
+        <Section
+          title="Motivo do endosso"
+          subtitle="Justificativa registrada pela seguradora para a emissão deste documento"
+        >
+          <MotivoEndossoCard motivo={t.motivoEndosso} />
+        </Section>
+      )}
 
       {/* Endossos B/C: visualização de cancelamento/alteração */}
       {isCancelamento ? (
