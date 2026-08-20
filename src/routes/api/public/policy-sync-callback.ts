@@ -180,20 +180,26 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
           });
         }
 
-        // Agrupa por apólice para resolver o vínculo relacional uma vez só.
-        const byPolicy = new Map<string, FlatEndo[]>();
+        // Agrupa por apólice e deduplica por (apólice + endosso): um mesmo
+        // endosso repetido no payload quebraria o ON CONFLICT DO UPDATE do
+        // Postgres ("cannot affect row a second time"). Último item vence.
+        const byPolicy = new Map<string, Map<string, FlatEndo>>();
         for (const e of flat) {
-          const list = byPolicy.get(e.apolice);
-          if (list) list.push(e);
-          else byPolicy.set(e.apolice, [e]);
+          let m = byPolicy.get(e.apolice);
+          if (!m) {
+            m = new Map<string, FlatEndo>();
+            byPolicy.set(e.apolice, m);
+          }
+          m.set(e.num, e);
         }
 
         let processed = 0;
         let insertedEndos = 0;
 
-        for (const [numero, endos] of byPolicy) {
+        for (const [numero, endoMap] of byPolicy) {
+          const endos = [...endoMap.values()].sort((a, b) => a.seq - b.seq);
           // Endosso de maior sequencial dita os dados "atuais" da apólice.
-          const top = endos.reduce((a, b) => (b.seq >= a.seq ? b : a));
+          const top = endos[endos.length - 1]!;
 
           const { data: existingPolicy } = await supabaseAdmin
             .from("policies")
@@ -207,8 +213,11 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
           const existingSeq = existingRow?.numero_endosso_atual
             ? parseInt(existingRow.numero_endosso_atual.replace(/\D/g, ""), 10) || 0
             : -1;
+          const isNewer = top.seq >= existingSeq;
           // Nunca rebaixa o endosso atual da apólice.
-          const endossoAtualFinal = top.seq >= existingSeq ? top.num : existingRow!.numero_endosso_atual;
+          const endossoAtualFinal = isNewer
+            ? top.num
+            : (existingRow?.numero_endosso_atual ?? top.num);
 
           const patch: Record<string, unknown> = {
             numero_apolice: numero,
@@ -217,7 +226,7 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
             updated_at: new Date().toISOString(),
           };
           // Só atualiza conteúdo quando o endosso recebido é o mais novo.
-          if (top.seq >= existingSeq) {
+          if (isNewer) {
             patch.premio_liquido = top.premio;
             patch.proposta = top.proposta ?? {};
           }
@@ -241,16 +250,46 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
             proposta: e.proposta ?? {},
             ordem: e.seq,
           }));
+          // Idempotente: a unique (policy_id, numero_endosso) garante que
+          // reenvios atualizem a mesma linha em vez de duplicar.
           const { error: endErr } = await supabaseAdmin
             .from("endorsements")
-            .upsert(rows as never, { onConflict: "policy_id,numero_endosso" });
+            .upsert(rows as never, {
+              onConflict: "policy_id,numero_endosso",
+              ignoreDuplicates: false,
+            });
           if (endErr) {
             console.error("[policy-sync-callback] upsert endorsements", endErr);
             continue;
           }
+
+          // Fonte da verdade do "endosso atual": o maior sequencial realmente
+          // gravado no histórico. Corrige qualquer estado anterior inconsistente.
+          const { data: allEndos } = await supabaseAdmin
+            .from("endorsements")
+            .select("numero_endosso")
+            .eq("policy_id", policyId);
+          const maxSeq = ((allEndos ?? []) as Array<{ numero_endosso: string }>).reduce(
+            (max, r) => {
+              const n = parseInt(String(r.numero_endosso).replace(/\D/g, ""), 10);
+              return Number.isFinite(n) && n > max ? n : max;
+            },
+            -1,
+          );
+          if (maxSeq >= 0) {
+            const canonical = String(maxSeq).padStart(6, "0");
+            if (canonical !== endossoAtualFinal) {
+              await supabaseAdmin
+                .from("policies")
+                .update({ numero_endosso_atual: canonical } as never)
+                .eq("id", policyId);
+            }
+          }
+
           insertedEndos += rows.length;
           processed++;
         }
+
 
 
 
