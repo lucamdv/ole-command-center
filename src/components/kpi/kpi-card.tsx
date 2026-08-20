@@ -38,13 +38,7 @@ const STATUS_LABEL: Record<KpiStatusTone, string> = {
 };
 
 
-const TONE_RING: Record<NonNullable<KpiProps["tone"]>, string> = {
-  default: "from-primary/30 to-transparent",
-  success: "from-success/30 to-transparent",
-  warning: "from-warning/30 to-transparent",
-  destructive: "from-destructive/30 to-transparent",
-  info: "from-info/30 to-transparent",
-};
+
 
 const TONE_STROKE: Record<NonNullable<KpiProps["tone"]>, string> = {
   default: "var(--primary)",
