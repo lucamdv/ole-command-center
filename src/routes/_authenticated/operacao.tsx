@@ -154,7 +154,7 @@ function OperacaoPage() {
       )}
 
       {/* Top metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="bento">
         {isLoading ? (
           <>
             <Skeleton className="h-[88px] rounded-xl" />

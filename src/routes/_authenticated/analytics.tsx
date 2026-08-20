@@ -328,7 +328,7 @@ function AnalyticsPage() {
       ) : (
         <>
           {/* KPI grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bento">
             <Kpi label="Apólices na carteira" value={formatInt(policies.length)} />
             <Kpi
               label="Auditadas (última run)"
@@ -377,7 +377,7 @@ function AnalyticsPage() {
             title="KPIs semanais"
             subtitle="Reincidência de inconsistências e volume de repasse nos últimos 7 dias de execução"
           />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bento">
             <Kpi
               label="Reincidência semanal"
               value={formatPct(ops?.weekly.reincidenciaPct ?? 0, 1)}
@@ -471,7 +471,7 @@ function AnalyticsPage() {
             title="KPIs mensais"
             subtitle="Reincidência consolidada e capacidade operacional da carteira"
           />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bento">
             <Kpi
               label="Reincidência consolidada"
               value={formatPct(reincMensalAtual?.reincidenciaPct ?? 0, 1)}
@@ -519,7 +519,7 @@ function AnalyticsPage() {
                 : "Crescimento da carteira, redução de incidentes e prêmio consolidado"
             }
           />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bento">
             <Kpi
               label="Crescimento da carteira"
               value={crescimentoCarteira === null ? "—" : formatPct(crescimentoCarteira, 1)}
@@ -1292,7 +1292,7 @@ function RepasseTooltip({ active, payload }: { active?: boolean; payload?: Array
 function LoadingState() {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="bento">
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="h-24 panel animate-pulse" />
         ))}
