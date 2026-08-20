@@ -843,6 +843,8 @@ function RunHistoryTable({ history }: { history: ReturnType<typeof useAuditHisto
             <tr>
               <th className="text-left px-4 py-2.5 font-medium">Data</th>
               <th className="text-left px-3 py-2.5 font-medium">Status</th>
+              <th className="text-left px-3 py-2.5 font-medium">Origem</th>
+
               <th className="text-right px-3 py-2.5 font-medium">Total</th>
               <th className="text-right px-3 py-2.5 font-medium">OK</th>
               <th className="text-right px-3 py-2.5 font-medium">Intervenções</th>
