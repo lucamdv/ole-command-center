@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { resolveWebhookUrl, type WebhookMode } from "@/lib/webhook-mode";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
@@ -54,8 +55,9 @@ export interface PolicySyncStatus {
 
 // Implementação interna (sem auth). Usada tanto pela serverFn protegida quanto
 // pelo hook público /api/public/hooks/policy-sync (que já valida shared-secret).
-export async function runPolicySyncImpl() {
-  const url = process.env.N8N_MOTOR_POLICIES_URL;
+export async function runPolicySyncImpl(webhookMode?: WebhookMode | null) {
+  const rawUrl = process.env.N8N_MOTOR_POLICIES_URL;
+  const url = rawUrl ? resolveWebhookUrl(rawUrl, webhookMode) : rawUrl;
   if (!url) {
     throw new Error(
       "Secret N8N_MOTOR_POLICIES_URL ainda não configurada. Cole a URL do webhook do MOTOR OLÉ.",
@@ -143,7 +145,8 @@ export async function runPolicySyncImpl() {
 
 export const runPolicySync = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => runPolicySyncImpl());
+  .inputValidator((d?: { mode?: WebhookMode }) => d ?? {})
+  .handler(async ({ data }) => runPolicySyncImpl(data.mode));
 
 export const getPolicySyncStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator((d: { runId: string }) => d)

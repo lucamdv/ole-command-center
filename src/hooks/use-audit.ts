@@ -1,3 +1,4 @@
+import { useWebhookMode } from "@/hooks/use-webhook-mode";
 import { useEffect, useRef, useState } from "react";
 import {
   queryOptions,
@@ -40,6 +41,7 @@ export function useAuditHistory() {
 export function useRunAudit() {
   const qc = useQueryClient();
   const fireFn = useServerFn(runAudit);
+  const { mode } = useWebhookMode();
   const statusFn = useServerFn(getAuditRunStatus);
 
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
@@ -106,7 +108,7 @@ export function useRunAudit() {
   };
 
   const mutation = useMutation({
-    mutationFn: () => fireFn(),
+    mutationFn: () => fireFn({ data: { mode } }),
     onSuccess: ({ runId }) => {
       setActiveRunId(runId);
       setIsPolling(true);

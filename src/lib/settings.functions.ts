@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAdmin } from "@/lib/assert-admin";
+import { resolveWebhookUrl, type WebhookMode } from "@/lib/webhook-mode";
 
 export interface IntegrationStatus {
   id: "motor_policies" | "n8n_audit" | "audit_callback";
@@ -118,15 +119,23 @@ async function pingWebhook(url: string | undefined, label: string) {
   }
 }
 
-export const pingMotorPolicies = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
-  await assertAdmin(context);
-  return pingWebhook(process.env.N8N_MOTOR_POLICIES_URL, "MOTOR OLÉ");
-});
+export const pingMotorPolicies = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d?: { mode?: WebhookMode }) => d ?? {})
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const raw = process.env.N8N_MOTOR_POLICIES_URL;
+    return pingWebhook(raw ? resolveWebhookUrl(raw, data.mode) : raw, "MOTOR OLÉ");
+  });
 
-export const pingAuditWebhook = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
-  await assertAdmin(context);
-  return pingWebhook(process.env.N8N_AUDIT_WEBHOOK_URL, "N8N Auditoria");
-});
+export const pingAuditWebhook = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d?: { mode?: WebhookMode }) => d ?? {})
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const raw = process.env.N8N_AUDIT_WEBHOOK_URL;
+    return pingWebhook(raw ? resolveWebhookUrl(raw, data.mode) : raw, "N8N Auditoria");
+  });
 
 export interface DataCounters {
   audit_runs: number;

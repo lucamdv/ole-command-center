@@ -1,3 +1,4 @@
+import { useWebhookMode } from "@/hooks/use-webhook-mode";
 import { useEffect, useRef, useState } from "react";
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -35,6 +36,7 @@ export function useEndorsementExceptions() {
 export function useRunEndorsementExtraction() {
   const qc = useQueryClient();
   const fireFn = useServerFn(runEndorsementExtraction);
+  const { mode } = useWebhookMode();
   const statusFn = useServerFn(getExtractionStatus);
   const [isPolling, setIsPolling] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -83,7 +85,7 @@ export function useRunEndorsementExtraction() {
   };
 
   const mutation = useMutation({
-    mutationFn: () => fireFn(),
+    mutationFn: () => fireFn({ data: { mode } }),
     onSuccess: ({ runId }) => {
       setIsPolling(true);
       toast.info("Extração iniciada", { description: "Aguardando o fluxo n8n…" });

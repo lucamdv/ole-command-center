@@ -1,3 +1,4 @@
+import { useWebhookMode } from "@/hooks/use-webhook-mode";
 import { useEffect, useRef, useState } from "react";
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -53,6 +54,7 @@ export function useEndorsementDetail(numero: string | undefined, endosso: string
 export function useRunPolicySync() {
   const qc = useQueryClient();
   const fireFn = useServerFn(runPolicySync);
+  const { mode } = useWebhookMode();
   const statusFn = useServerFn(getPolicySyncStatus);
 
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
@@ -106,7 +108,7 @@ export function useRunPolicySync() {
   };
 
   const mutation = useMutation({
-    mutationFn: () => fireFn(),
+    mutationFn: () => fireFn({ data: { mode } }),
     onSuccess: ({ runId }) => {
       setActiveRunId(runId);
       setIsPolling(true);
