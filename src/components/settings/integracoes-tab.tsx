@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, XCircle, AlertCircle, Copy, Zap, ExternalLink } from "lucide-react";
+import { CheckCircle2, XCircle, AlertCircle, Copy, Zap, ExternalLink, FlaskConical, Rocket } from "lucide-react";
 import { toast } from "sonner";
 import {
   getIntegrationsStatus,
@@ -10,6 +10,9 @@ import {
   type IntegrationStatus,
 } from "@/lib/settings.functions";
 import { relativeTime } from "@/lib/format";
+import { useCurrentRole } from "@/hooks/use-current-role";
+import { useWebhookMode } from "@/hooks/use-webhook-mode";
+
 
 export function IntegracoesTab() {
   const fetchFn = useServerFn(getIntegrationsStatus);
