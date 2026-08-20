@@ -11,6 +11,7 @@ import {
   EndossoSemDadosAviso,
   ItensCoberturas,
   LimiteApoliceCard,
+  MotivoEndossoCard,
   PagamentoCard,
   PartesList,
   Section,
