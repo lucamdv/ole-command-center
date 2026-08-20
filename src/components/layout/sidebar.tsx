@@ -59,9 +59,7 @@ export function Sidebar() {
 
         {roleInfo?.isAdmin && (
           <>
-            <div className="hidden xl:block px-2 pt-4 pb-2 text-[10px] font-medium tracking-[0.15em] uppercase text-muted-foreground/60">
-              Administração
-            </div>
+            <div className="hidden xl:block px-2 pt-4 pb-2 eyebrow">Administração</div>
             <div className="xl:hidden my-2 mx-2 border-t border-sidebar-border" />
             {ADMIN_NAV.map((item) => {
               const active = pathname.startsWith(item.to);
@@ -72,12 +70,16 @@ export function Sidebar() {
                   to={item.to}
                   title={item.label}
                   className={cn(
-                    "group flex items-center gap-2.5 rounded-md text-[13px] font-medium transition-all",
-                    "justify-center xl:justify-start px-2 xl:px-2.5 py-2 xl:py-1.5",
+                    "group relative flex items-center gap-2.5 rounded-md text-[13px] font-medium transition-colors",
+                    "justify-center xl:justify-start px-2 xl:px-2.5 py-2 xl:py-2",
                     "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60",
-                    active && "bg-sidebar-accent text-foreground shadow-sm",
+                    active && "bg-sidebar-accent text-foreground",
                   )}
                 >
+                  {active && (
+                    <span className="absolute left-0 top-1.5 bottom-1.5 w-[2.5px] rounded-full bg-primary" />
+                  )}
+
                   <Icon
                     className={cn(
                       "h-4 w-4 shrink-0 transition-colors",
