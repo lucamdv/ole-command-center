@@ -1,9 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, FileText, GitBranch } from "lucide-react";
 import { usePolicy } from "@/hooks/use-policies";
+import { usePolicyBilling } from "@/hooks/use-billing";
 import { formatDateTime, relativeTime } from "@/lib/format";
 import { JsonExplorer } from "@/components/json-explorer";
 import {
+  BillingBadge,
+  CobrancaCard,
+  CobrancasList,
   CotacaoCard,
   DadosGeraisCard,
   DatasCard,
@@ -36,6 +40,7 @@ export const Route = createFileRoute("/_authenticated/apolices/$id/")({
 export default function ApoliceDetail() {
   const { id } = Route.useParams();
   const { data: policy, isLoading } = usePolicy(id);
+  const { rows: cobrancas, vigente: cobrancaVigente } = usePolicyBilling(id);
 
   if (isLoading) {
     return <div className="page-subtitle">Carregando apólice…</div>;
@@ -80,6 +85,14 @@ export default function ApoliceDetail() {
         premioValor={policy.premio_liquido}
         premioMoeda={policy.premio_moeda}
         seguradoNome={seguradoNome}
+        badge={
+          cobrancaVigente ? (
+            <BillingBadge
+              statusPagamento={cobrancaVigente.status_pagamento}
+              situacaoEmissao={cobrancaVigente.situacao_emissao}
+            />
+          ) : null
+        }
         extra={
           <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border/60 rounded-xl overflow-hidden">
             <HeaderFact
@@ -104,6 +117,18 @@ export default function ApoliceDetail() {
           </div>
         }
       />
+
+      <Section
+        title="Cobrança"
+        subtitle={
+          cobrancaVigente
+            ? "Situação financeira vigente da apólice e histórico por endosso"
+            : "Sem dados de cobrança para esta apólice"
+        }
+      >
+        <CobrancaCard record={cobrancaVigente} titulo="Cobrança vigente" />
+        {cobrancas.length > 0 && <CobrancasList rows={cobrancas} />}
+      </Section>
 
       <Section title="Dados gerais">
         <DadosGeraisCard dados={t.dadosGerais} />

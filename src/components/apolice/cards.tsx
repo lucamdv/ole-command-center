@@ -181,12 +181,14 @@ export function DocumentoHeader({
   premioValor,
   premioMoeda,
   seguradoNome,
+  badge,
   extra,
 }: {
   documento: DocumentoInfo;
   premioValor?: number | null;
   premioMoeda?: string;
   seguradoNome?: string | null;
+  badge?: ReactNode;
   extra?: ReactNode;
 }) {
   const isApolice = documento.tipo === "APOLICE";
@@ -204,6 +206,7 @@ export function DocumentoHeader({
               tipoEndosso={documento.tipoEndosso}
               sequencial={isApolice ? undefined : documento.sequencial}
             />
+            {badge}
             {!isApolice && (
               <span className="text-[11px] text-muted-foreground">
                 da apólice <span className="font-mono">{documento.numeroApolice}</span>

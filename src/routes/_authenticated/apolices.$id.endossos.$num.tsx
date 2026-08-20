@@ -1,9 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useEndorsementDetail } from "@/hooks/use-policies";
+import { useEndorsementBilling } from "@/hooks/use-billing";
 import { JsonExplorer } from "@/components/json-explorer";
 import {
+  BillingBadge,
   CancelamentoCard,
+  CobrancaCard,
   CotacaoCard,
   DadosGeraisCard,
   DatasCard,
@@ -35,6 +38,7 @@ export const Route = createFileRoute("/_authenticated/apolices/$id/endossos/$num
 function EndossoDetail() {
   const { id, num } = Route.useParams();
   const { data: endo, isLoading } = useEndorsementDetail(id, num);
+  const { record: cobranca } = useEndorsementBilling(id, num);
 
   if (isLoading) {
     return <div className="page-subtitle">Carregando endosso…</div>;
@@ -88,7 +92,22 @@ function EndossoDetail() {
         premioValor={isCancelamento ? undefined : endo.premio_liquido}
         premioMoeda={endo.premio_moeda}
         seguradoNome={seguradoNome}
+        badge={
+          cobranca ? (
+            <BillingBadge
+              statusPagamento={cobranca.status_pagamento}
+              situacaoEmissao={cobranca.situacao_emissao}
+            />
+          ) : null
+        }
       />
+
+      <Section
+        title="Cobrança"
+        subtitle="Situação financeira registrada para este endosso"
+      >
+        <CobrancaCard record={cobranca} />
+      </Section>
 
       {/* Motivo da emissão — vale para todos os tipos de endosso */}
       {t.motivoEndosso && (
