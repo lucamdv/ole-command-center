@@ -307,3 +307,129 @@
     animation: shimmer 2.5s linear infinite;
   }
 }
+
+/* ===== Sistema visual corporativo — escala tipográfica e blocos ===== */
+
+@utility page-title {
+  font-size: 1.375rem;
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-foreground);
+}
+@media (min-width: 640px) {
+  .page-title {
+    font-size: 1.625rem;
+  }
+}
+
+@utility page-subtitle {
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--color-muted-foreground);
+}
+
+@utility section-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--color-foreground);
+}
+
+@utility eyebrow {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--color-muted-foreground) 78%, transparent);
+}
+
+@utility metric-label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--color-muted-foreground) 90%, transparent);
+}
+
+@utility metric-value {
+  font-size: 1.375rem;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-foreground);
+}
+@media (min-width: 640px) {
+  .metric-value {
+    font-size: 1.625rem;
+  }
+}
+
+@utility caption {
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: var(--color-muted-foreground);
+}
+
+/* Blocos (bento) */
+@utility panel {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+@utility panel-elevated {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-elevated);
+}
+
+@utility panel-quiet {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background-color: color-mix(in oklab, var(--color-surface-2) 80%, transparent);
+}
+
+@utility bento {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 640px) {
+  .bento {
+    gap: 1rem;
+  }
+}
+@media (min-width: 1024px) {
+  .bento {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Tabelas — estilo único */
+@utility table-shell {
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+@utility num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Segmento de abas */
+@utility segmented {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background-color: color-mix(in oklab, var(--color-surface-2) 85%, transparent);
+}
