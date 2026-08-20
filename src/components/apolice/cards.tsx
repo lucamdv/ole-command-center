@@ -255,9 +255,11 @@ const MOTIVO_ENDOSSO_LABEL: Record<string, string> = {
 function motivoTone(codigo: string | null): string {
   switch (codigo) {
     case "ERRO_EMISSAO":
+    case "INADIMPLENCIA":
       return "bg-destructive/10 text-destructive border-destructive/30";
     case "CANCELAMENTO":
     case "EXCLUSAO":
+    case "FATURA":
       return "bg-warning/10 text-warning border-warning/30";
     case "AJUSTE":
     case "ALTERACAO":
