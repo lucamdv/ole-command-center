@@ -9,6 +9,7 @@ import {
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { NATUREZA_PREMIO_LABEL, TIPO_PESSOA_LABEL } from "@/lib/excelsior/codes";
+import { billingTagInfo, type BillingRecord } from "@/lib/billing/status";
 import type {
   CancelamentoInfo,
   CoberturaInfo,
