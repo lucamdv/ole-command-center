@@ -147,6 +147,14 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
           const currentEndNum = currentEndNumRaw
             ? normalizeEndossoNum(currentEndNumRaw)
             : maxFromHistorico;
+          // "Endosso atual" da apólice = maior sequencial existente. O topo do
+          // payload costuma trazer 000000 (a apólice base), então nunca confiamos
+          // apenas nele.
+          const endossoAtual =
+            [currentEndNum, maxFromHistorico]
+              .filter((n): n is string => !!n)
+              .sort()
+              .pop() ?? null;
           let currentEndo = currentEndNum
             ? normalizedHistorico.find((x) => x.n === currentEndNum)?.e
             : undefined;
