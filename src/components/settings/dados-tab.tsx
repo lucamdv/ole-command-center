@@ -59,11 +59,17 @@ export function DadosTab() {
   const exportCSVMut = useMutation({
     mutationFn: () => exportCSVFn(),
     onSuccess: (r) => {
-      download(`carteira-${new Date().toISOString().slice(0, 10)}.csv`, r.csv, "text/csv");
+      if (!r.count) return toast.info("Nenhuma apólice na carteira para exportar");
+      download(
+        `carteira-${new Date().toISOString().slice(0, 10)}.csv`,
+        r.csv,
+        "text/csv;charset=utf-8",
+      );
       toast.success(`${r.count} apólices exportadas`);
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
   const exportAuditMut = useMutation({
     mutationFn: () => exportAuditFn(),
     onSuccess: (r) => {
