@@ -68,4 +68,5 @@ export interface AuditHistoryItem {
   aprovados: number;
   reprovados: number;
   duration_ms: number | null;
+  origem?: "manual" | "auto" | string | null;
 }

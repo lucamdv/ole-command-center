@@ -125,7 +125,7 @@ export const getAuditHistory = createServerFn({ method: "GET" }).middleware([req
 
   const { data, error } = await supabaseAdmin
     .from("audit_runs")
-    .select("id, created_at, data_auditoria, status_geral, total_processado, aprovados, reprovados, duration_ms")
+    .select("id, created_at, data_auditoria, status_geral, total_processado, aprovados, reprovados, duration_ms, origem")
     .eq("status", "success")
     .order("created_at", { ascending: false })
     .limit(30);
