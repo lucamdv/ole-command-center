@@ -193,21 +193,27 @@ export function Header({ onOpenPalette }: { onOpenPalette: () => void }) {
         )}
       </div>
 
-      <div className="hidden lg:flex flex-col items-end leading-tight min-w-0">
-        <span className="text-[12px] font-medium text-foreground">{profile.nome}</span>
-        <span className="text-[10px] text-muted-foreground">Operações · Admin</span>
+      <div className="ml-1 flex items-center gap-2 border-l border-border pl-3">
+        <div className="hidden lg:flex flex-col items-end leading-tight min-w-0">
+          <span className="text-[12px] font-medium text-foreground">{profile.nome}</span>
+          <span className="text-[10px] text-muted-foreground">Operações · Admin</span>
+        </div>
+        <div
+          className="h-8 w-8 rounded-full bg-gradient-primary grid place-items-center text-[11px] font-semibold text-primary-foreground"
+          title={profile.nome}
+        >
+          {getInitials(profile.nome) || "OL"}
+        </div>
+        <button
+          onClick={handleSignOut}
+          className="h-9 w-9 grid place-items-center rounded-md border border-border bg-surface/60 hover:bg-destructive/10 hover:border-destructive/40 hover:text-destructive text-muted-foreground transition"
+          title="Sair"
+          aria-label="Sair"
+        >
+          <LogOut className="h-4 w-4" />
+        </button>
       </div>
-      <div className="h-8 w-8 rounded-full bg-linear-to-br from-primary to-info grid place-items-center text-[11px] font-semibold text-primary-foreground ring-2 ring-background" title={profile.nome}>
-        {getInitials(profile.nome) || "OL"}
-      </div>
-      <button
-        onClick={handleSignOut}
-        className="h-9 w-9 grid place-items-center rounded-md border border-border bg-surface/60 hover:bg-destructive/10 hover:border-destructive/40 hover:text-destructive text-muted-foreground transition"
-        title="Sair"
-        aria-label="Sair"
-      >
-        <LogOut className="h-4 w-4" />
-      </button>
+
     </header>
   );
 }
