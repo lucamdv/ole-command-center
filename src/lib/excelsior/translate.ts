@@ -177,6 +177,8 @@ export interface PropostaTraduzida {
   cotacoes: CotacaoInfo[];
   limiteApolice: LimiteApoliceInfo | null;
   cancelamento: CancelamentoInfo | null;
+  /** Motivo da emissão do endosso (código + descrição). */
+  motivoEndosso: MotivoEndossoInfo | null;
   tipoEndosso: TipoEndosso | null;
   /** Número completo do documento (ex.: `…0001` para um endosso). Vem do envelope. */
   numeroDocumento: string | null;
