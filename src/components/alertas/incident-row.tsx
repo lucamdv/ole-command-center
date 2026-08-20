@@ -31,7 +31,7 @@ export const IncidentRow = memo(function IncidentRow({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-surface transition hover:bg-surface-2/60 border-l-4 pl-3 pr-3 py-3",
+        "panel transition hover:bg-surface-2/60 border-l-4 pl-3 pr-3 py-3",
         URG_BORDER[item.urgency],
         selected && "ring-1 ring-primary/60",
       )}

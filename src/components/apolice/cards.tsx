@@ -192,7 +192,7 @@ export function DocumentoHeader({
     <motion.div
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-border bg-gradient-surface p-6"
+      className="panel bg-gradient-surface p-5"
     >
       <div className="flex items-start justify-between gap-6 flex-wrap">
         <div className="min-w-0">
@@ -360,7 +360,7 @@ export function PartesList({ partes }: { partes: ParteInfo[] }) {
       </div>
     );
   return (
-    <div className="rounded-xl border border-border bg-surface">
+    <div className="panel">
       <Accordion type="multiple" className="divide-y divide-border">
         {partes.map((p) => (
           <AccordionItem

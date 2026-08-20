@@ -17,7 +17,7 @@ export function NotificacoesTab() {
 
   return (
     <div className="space-y-4 max-w-2xl">
-      <div className="rounded-xl border border-border bg-surface divide-y divide-border">
+      <div className="panel divide-y divide-border">
         {ITEMS.map((it) => (
           <Toggle
             key={it.key}

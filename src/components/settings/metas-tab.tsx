@@ -74,7 +74,7 @@ export function MetasTab() {
         </p>
       </div>
 
-      <div className="rounded-xl border border-border bg-surface divide-y divide-border">
+      <div className="panel divide-y divide-border">
         {FIELDS.map((f) => (
           <div key={f.key} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3.5">
             <div className="min-w-0">
@@ -135,7 +135,7 @@ function EscalationSection() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-surface divide-y divide-border">
+      <div className="panel divide-y divide-border">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3.5">
           <div className="min-w-0">
             <div className="text-[13px] font-medium">Auditorias para escalar</div>

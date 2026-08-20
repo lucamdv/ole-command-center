@@ -32,7 +32,7 @@ export function JsonExplorer({ data, omitKeys = [], title, defaultDepth = 1 }: J
   if (isEmpty) return null;
 
   return (
-    <div className="rounded-xl border border-border bg-surface">
+    <div className="panel">
       {title && (
         <div className="px-4 py-2.5 border-b border-border/60 flex items-center justify-between">
           <div className="text-[12px] font-semibold tracking-tight">{title}</div>

@@ -1294,12 +1294,12 @@ function LoadingState() {
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-24 rounded-2xl border border-border bg-surface animate-pulse" />
+          <div key={i} className="h-24 panel animate-pulse" />
         ))}
       </div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        <div className="lg:col-span-2 h-[250px] sm:h-[320px] rounded-2xl border border-border bg-surface animate-pulse" />
-        <div className="h-[250px] sm:h-[320px] rounded-2xl border border-border bg-surface animate-pulse" />
+        <div className="lg:col-span-2 h-[250px] sm:h-[320px] panel animate-pulse" />
+        <div className="h-[250px] sm:h-[320px] panel animate-pulse" />
       </div>
     </div>
   );
@@ -1307,7 +1307,7 @@ function LoadingState() {
 
 function EmptyState() {
   return (
-    <div className="rounded-2xl border border-border bg-surface p-12 text-center">
+    <div className="panel p-12 text-center">
       <BarChart3 className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
       <div className="text-[14px] font-semibold mb-1">Sem auditorias ainda</div>
       <p className="text-[12.5px] text-muted-foreground mb-4">

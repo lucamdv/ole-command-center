@@ -35,7 +35,7 @@ export function EndorsementTimeline({ items }: { items: Endorsement[] }) {
             </div>
 
             {/* Card */}
-            <div className="rounded-xl border border-border bg-surface hover:border-primary/30 transition-colors p-4">
+            <div className="panel hover:border-primary/30 transition-colors p-4">
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
