@@ -2,15 +2,19 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import type { AuditHistoryItem, LatestAudit } from "./audit/types";
+import type { WebhookMode } from "@/lib/webhook-mode";
 
 /**
  * Dispara a auditoria de forma ASSÍNCRONA (implementação em audit-run.server.ts).
  * O n8n responde imediatamente e, ao terminar, POSTa em callback_url.
  */
-export const runAudit = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async () => {
-  const { runAuditImpl } = await import("./audit-run.server");
-  return runAuditImpl("ole-copilot");
-});
+export const runAudit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d?: { mode?: WebhookMode }) => d ?? {})
+  .handler(async ({ data }) => {
+    const { runAuditImpl } = await import("./audit-run.server");
+    return runAuditImpl("ole-copilot", data.mode);
+  });
 
 
 export const getAuditRunStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])

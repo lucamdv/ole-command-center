@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, XCircle, AlertCircle, Copy, Zap, ExternalLink } from "lucide-react";
+import { CheckCircle2, XCircle, AlertCircle, Copy, Zap, ExternalLink, FlaskConical, Rocket } from "lucide-react";
 import { toast } from "sonner";
 import {
   getIntegrationsStatus,
@@ -10,6 +10,9 @@ import {
   type IntegrationStatus,
 } from "@/lib/settings.functions";
 import { relativeTime } from "@/lib/format";
+import { useCurrentRole } from "@/hooks/use-current-role";
+import { useWebhookMode } from "@/hooks/use-webhook-mode";
+
 
 export function IntegracoesTab() {
   const fetchFn = useServerFn(getIntegrationsStatus);
@@ -19,16 +22,20 @@ export function IntegracoesTab() {
     refetchInterval: 30_000,
   });
 
+  const { data: roleInfo } = useCurrentRole();
+  const isAdmin = !!roleInfo?.isAdmin;
+  const { mode, setMode } = useWebhookMode();
+
   const pingMotor = useServerFn(pingMotorPolicies);
   const pingAudit = useServerFn(pingAuditWebhook);
 
   const motorMut = useMutation({
-    mutationFn: () => pingMotor(),
+    mutationFn: () => pingMotor({ data: { mode } }),
     onSuccess: (r) => (r.ok ? toast.success(r.message) : toast.error(r.message)),
     onError: (e: Error) => toast.error(e.message),
   });
   const auditMut = useMutation({
-    mutationFn: () => pingAudit(),
+    mutationFn: () => pingAudit({ data: { mode } }),
     onSuccess: (r) => (r.ok ? toast.success(r.message) : toast.error(r.message)),
     onError: (e: Error) => toast.error(e.message),
   });
@@ -39,7 +46,58 @@ export function IntegracoesTab() {
 
   return (
     <div className="space-y-3 max-w-3xl">
+      {isAdmin && (
+        <div className="panel p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                {mode === "production" ? (
+                  <Rocket className="h-4 w-4 text-success" />
+                ) : (
+                  <FlaskConical className="h-4 w-4 text-warning" />
+                )}
+                <div className="text-[13.5px] font-semibold">Modo do webhook (somente para você)</div>
+              </div>
+              <p className="text-[12px] text-muted-foreground mt-1.5">
+                Com o modo de produção ativo, os disparos usam o caminho
+                <code className="mx-1 px-1 py-0.5 rounded bg-surface border border-border font-mono text-[11px]">/webhook/</code>
+                do n8n. Desativado, usam
+                <code className="mx-1 px-1 py-0.5 rounded bg-surface border border-border font-mono text-[11px]">/webhook-test/</code>
+                (exige “Listen for test event”). Essa preferência é salva apenas neste usuário/navegador e
+                não afeta os outros usuários nem os disparos automáticos.
+              </p>
+              <div className={`text-[11.5px] mt-2 ${mode === "production" ? "text-success" : "text-warning"}`}>
+                Atualmente: {mode === "production" ? "Produção" : "Teste"}
+              </div>
+            </div>
+            <button
+              role="switch"
+              aria-checked={mode === "production"}
+              aria-label="Ativar modo de produção do webhook"
+              onClick={() => {
+                const next = mode === "production" ? "test" : "production";
+                setMode(next);
+                toast.success(
+                  next === "production"
+                    ? "Modo de produção ativado para você"
+                    : "Modo de teste ativado para você",
+                );
+              }}
+              className={`shrink-0 relative h-6 w-11 rounded-full transition ${
+                mode === "production" ? "bg-primary" : "bg-surface-2 border border-border"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-background shadow transition-all ${
+                  mode === "production" ? "left-[22px]" : "left-0.5"
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+      )}
       {(data ?? []).map((it) => (
+
         <IntegrationCard
           key={it.id}
           item={it}

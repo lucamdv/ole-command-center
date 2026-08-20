@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAdmin } from "@/lib/assert-admin";
+import { resolveWebhookUrl, type WebhookMode } from "@/lib/webhook-mode";
 
 const LOVABLE_PROJECT_ID = "5db7fa90-1492-4717-b26e-8b99a107e006";
 const PREVIEW_PUBLIC_URL = `https://project--${LOVABLE_PROJECT_ID}-dev.lovable.app`;
@@ -34,8 +35,10 @@ export interface EndorsementExceptionRow {
 /** Dispara o fluxo n8n de extração dos últimos endossos (assíncrono, com callback). */
 export const runEndorsementExtraction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const url = process.env.N8N_ENDORSEMENT_WEBHOOK_URL;
+  .inputValidator((d?: { mode?: WebhookMode }) => d ?? {})
+  .handler(async ({ context, data }) => {
+    const rawUrl = process.env.N8N_ENDORSEMENT_WEBHOOK_URL;
+    const url = rawUrl ? resolveWebhookUrl(rawUrl, data.mode) : rawUrl;
     if (!url) {
       throw new Error(
         "Secret N8N_ENDORSEMENT_WEBHOOK_URL não configurada. Cole a URL de produção do webhook n8n (/webhook/...).",

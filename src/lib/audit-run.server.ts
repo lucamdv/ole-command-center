@@ -1,3 +1,5 @@
+import { resolveWebhookUrl, type WebhookMode } from "@/lib/webhook-mode";
+
 // Implementação server-only do disparo da auditoria.
 // Usada tanto pela server function protegida (botão manual) quanto pelo
 // agendador público /api/public/hooks/scheduler.
@@ -12,8 +14,12 @@ const LOVABLE_PROJECT_ID = "5db7fa90-1492-4717-b26e-8b99a107e006";
 const PREVIEW_PUBLIC_URL = `https://project--${LOVABLE_PROJECT_ID}-dev.lovable.app`;
 const PRODUCTION_PUBLIC_URL = `https://project--${LOVABLE_PROJECT_ID}.lovable.app`;
 
-export async function runAuditImpl(trigger = "ole-copilot") {
-  const url = process.env.N8N_AUDIT_WEBHOOK_URL;
+export async function runAuditImpl(
+  trigger = "ole-copilot",
+  webhookMode?: WebhookMode | null,
+) {
+  const rawUrl = process.env.N8N_AUDIT_WEBHOOK_URL;
+  const url = rawUrl ? resolveWebhookUrl(rawUrl, webhookMode) : rawUrl;
   if (!url) {
     throw new Error(
       "Secret N8N_AUDIT_WEBHOOK_URL não configurada. Cole a URL de produção do webhook n8n (/webhook/...) nos secrets do projeto.",
