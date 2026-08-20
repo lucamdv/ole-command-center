@@ -72,9 +72,9 @@ function ConfigPage() {
           })}
         </div>
       </div>
-
-
-      <Active />
+      <div className="panel p-4 sm:p-5">
+        <Active />
+      </div>
     </div>
   );
 }
