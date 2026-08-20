@@ -439,7 +439,7 @@ function AnalyticsPage() {
                 alimentar este indicador.
               </div>
             ) : (
-              <table className="w-full text-[12.5px]">
+              <table className="data-table text-[12.5px]">
                 <thead className="bg-surface-2/60 text-[11px] uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="text-left px-4 py-2 font-medium">Tipo de problema</th>
@@ -1201,7 +1201,7 @@ function Heatmap({
   const max = Math.max(1, ...rows.flatMap((r) => r.cells));
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-[10.5px]">
+      <table className="data-table text-[10.5px]">
         <thead>
           <tr>
             <th className="text-left font-normal text-muted-foreground pb-2 pr-3 sticky left-0 bg-surface">

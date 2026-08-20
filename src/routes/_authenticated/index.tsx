@@ -713,7 +713,7 @@ function BreakdownTable({ findings, totalFindings }: { findings: AuditFindingRow
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-[12px]">
+        <table className="data-table text-[12px]">
           <thead className="bg-surface-2/60 text-[10.5px] uppercase tracking-wider text-muted-foreground">
             <tr>
               <th className="text-left px-4 py-2.5 font-medium">Tipo de erro</th>
@@ -838,7 +838,7 @@ function RunHistoryTable({ history }: { history: ReturnType<typeof useAuditHisto
         <div className="text-[11px] text-muted-foreground">Últimas {rows.length} execuções</div>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-[12px]">
+        <table className="data-table text-[12px]">
           <thead className="bg-surface-2/60 text-[10.5px] uppercase tracking-wider text-muted-foreground">
             <tr>
               <th className="text-left px-4 py-2.5 font-medium">Data</th>

@@ -552,7 +552,7 @@ function CoberturaCard({ c }: { c: CoberturaInfo }) {
             Composição do prêmio
           </div>
           <div className="overflow-hidden rounded-md border border-border">
-            <table className="w-full text-[11.5px]">
+            <table className="data-table text-[11.5px]">
               <thead className="bg-muted/30 text-muted-foreground">
                 <tr>
                   <th className="text-left font-medium px-2 py-1.5">Natureza</th>
@@ -641,7 +641,7 @@ export function PagamentoCard({ pagamento }: { pagamento: PagamentoInfo }) {
   const totalMoeda = pagamento.parcelas.reduce((acc, p) => acc + (p.valor ?? 0), 0);
   return (
     <div className="panel overflow-hidden">
-      <table className="w-full text-[12px]">
+      <table className="data-table text-[12px]">
         <thead className="bg-surface-2/60 text-muted-foreground">
           <tr>
             <th className="text-left font-medium px-3 py-2">#</th>
