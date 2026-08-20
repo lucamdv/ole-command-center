@@ -10,6 +10,8 @@ import { AutomacaoTab } from "@/components/settings/automacao-tab";
 import { ExcecoesTab } from "@/components/settings/excecoes-tab";
 import { MetasTab } from "@/components/settings/metas-tab";
 import { useCurrentRole } from "@/hooks/use-current-role";
+import { PageHeader } from "@/components/layout/page-header";
+
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({
