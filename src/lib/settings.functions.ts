@@ -200,20 +200,24 @@ export const exportPoliciesCSV = createServerFn({ method: "GET" }).middleware([r
     if (batch.length < PAGE) break;
   }
 
-  // Quantidade de endossos por apólice (também paginado).
+  // Endossos por apólice: quantidade e maior sequencial (= endosso atual real).
   const endorsementCount = new Map<string, number>();
+  const lastEndorsement = new Map<string, string>();
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await supabaseAdmin
       .from("endorsements")
-      .select("numero_apolice")
+      .select("numero_apolice, numero_endosso")
       .range(from, from + PAGE - 1);
     if (error) throw new Error(error.message);
-    const batch = (data ?? []) as Array<{ numero_apolice: string }>;
+    const batch = (data ?? []) as Array<{ numero_apolice: string; numero_endosso: string }>;
     for (const e of batch) {
       endorsementCount.set(e.numero_apolice, (endorsementCount.get(e.numero_apolice) ?? 0) + 1);
+      const prev = lastEndorsement.get(e.numero_apolice);
+      if (!prev || e.numero_endosso > prev) lastEndorsement.set(e.numero_apolice, e.numero_endosso);
     }
     if (batch.length < PAGE) break;
   }
+
 
   const header = [
     "numero_apolice",
@@ -243,7 +247,7 @@ export const exportPoliciesCSV = createServerFn({ method: "GET" }).middleware([r
     const { valor, moeda } = computePremioTotal(r.proposta ?? {});
     out.push([
       r.numero_apolice,
-      r.numero_endosso_atual ?? "",
+      lastEndorsement.get(r.numero_apolice) ?? r.numero_endosso_atual ?? "",
       endorsementCount.get(r.numero_apolice) ?? 0,
       segurado?.nome ?? "",
       segurado?.documentos?.[0]?.valor ?? "",
