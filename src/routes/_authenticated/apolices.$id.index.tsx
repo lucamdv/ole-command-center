@@ -50,7 +50,7 @@ export default function ApoliceDetail() {
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Voltar à carteira
         </Link>
-        <div className="rounded-xl border border-border bg-surface p-12 text-center">
+        <div className="panel p-12 text-center">
           <FileText className="h-8 w-8 mx-auto text-muted-foreground/50 mb-3" />
           <div className="text-[13px] font-medium">Apólice não encontrada</div>
           <div className="text-[11.5px] text-muted-foreground mt-1">
@@ -136,7 +136,7 @@ export default function ApoliceDetail() {
       </Section>
 
       <Section title="Endossos" subtitle={`${policy.endorsements.length} no histórico`}>
-        <div className="rounded-xl border border-border bg-surface overflow-hidden">
+        <div className="panel overflow-hidden">
           <div className="grid grid-cols-12 px-4 py-2.5 text-[10.5px] uppercase tracking-wider text-muted-foreground bg-surface-2/60 border-b border-border">
             <div className="col-span-2">#</div>
             <div className="col-span-7">Identificador</div>

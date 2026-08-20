@@ -431,7 +431,7 @@ function AnalyticsPage() {
               hint="Metade das resoluções abaixo deste tempo"
             />
           </div>
-          <div className="rounded-xl border border-border bg-surface/60 overflow-x-auto">
+          <div className="panel bg-surface/60 overflow-x-auto">
             {(ops?.resolutionTime.byTipo.length ?? 0) === 0 ? (
               <div className="px-4 py-6 text-[12.5px] text-muted-foreground">
                 Nenhuma inconsistência foi resolvida ainda. Marque um achado como
@@ -1104,7 +1104,7 @@ function Kpi({
   const showDelta = delta !== undefined && Number.isFinite(delta) && Math.abs(delta) >= 0.05;
   const positive = invertDelta ? (delta ?? 0) < 0 : (delta ?? 0) > 0;
   return (
-    <div className="rounded-2xl border border-border bg-surface p-4 shadow-elevated">
+    <div className="panel p-4">
       <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-medium">
         {label}
       </div>
@@ -1158,7 +1158,7 @@ function ChartCard({
     <div
       data-export="chart"
       data-title={title}
-      className={`rounded-2xl border border-border bg-surface p-5 shadow-elevated ${className ?? ""}`}
+      className={`panel p-5 ${className ?? ""}`}
     >
       <div className="mb-4">
         <div className="text-[13px] font-semibold">{title}</div>

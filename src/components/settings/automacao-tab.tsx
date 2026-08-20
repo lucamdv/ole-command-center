@@ -62,7 +62,7 @@ function ScheduleCard({ schedule }: { schedule: AutomationSchedule }) {
   };
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
+    <div className="panel p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2">

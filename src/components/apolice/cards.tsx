@@ -248,7 +248,7 @@ export function CancelamentoCard({
         ? "Dados da alteração"
         : "Dados do endosso";
   return (
-    <div className="rounded-xl border border-border bg-surface overflow-hidden">
+    <div className="panel overflow-hidden">
       <div className="px-5 py-3 border-b border-border bg-surface-2/50 text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
         {titulo}
       </div>
@@ -274,7 +274,7 @@ export function CancelamentoCard({
 // ============ Dados gerais ============
 export function DadosGeraisCard({ dados }: { dados: DadosGerais }) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="panel p-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <Field label="Nº proposta seguradora" value={dados.numeroPropostaSeguradora} mono />
       <Field label="Proposta origem" value={dados.idPropostaOrigem} mono />
       <Field label="Produto" value={dados.idProduto} mono />
@@ -339,7 +339,7 @@ export function DadosGeraisCard({ dados }: { dados: DadosGerais }) {
 // ============ Datas ============
 export function DatasCard({ datas }: { datas: DatasInfo }) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="panel p-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <Field label="Início da vigência" value={fmtDate(datas.inicioVigencia)} mono />
       <Field label="Fim da vigência" value={fmtDate(datas.fimVigencia)} mono />
       <Field label="Data de emissão" value={fmtDate(datas.dataEmissao)} mono />
@@ -355,7 +355,7 @@ export function DatasCard({ datas }: { datas: DatasInfo }) {
 export function PartesList({ partes }: { partes: ParteInfo[] }) {
   if (partes.length === 0)
     return (
-      <div className="rounded-xl border border-border bg-surface p-5 text-[12px] text-muted-foreground">
+      <div className="panel p-5 text-[12px] text-muted-foreground">
         Nenhuma parte registrada.
       </div>
     );
@@ -584,14 +584,14 @@ function CoberturaCard({ c }: { c: CoberturaInfo }) {
 export function ItensCoberturas({ itens }: { itens: ItemInfo[] }) {
   if (itens.length === 0)
     return (
-      <div className="rounded-xl border border-border bg-surface p-5 text-[12px] text-muted-foreground">
+      <div className="panel p-5 text-[12px] text-muted-foreground">
         Nenhum item segurado.
       </div>
     );
   return (
     <div className="space-y-4">
       {itens.map((it, i) => (
-        <div key={i} className="rounded-xl border border-border bg-surface p-5 space-y-4">
+        <div key={i} className="panel p-5 space-y-4">
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
               <div className="text-[13.5px] font-semibold">
@@ -632,7 +632,7 @@ export function ItensCoberturas({ itens }: { itens: ItemInfo[] }) {
 export function PagamentoCard({ pagamento }: { pagamento: PagamentoInfo }) {
   if (pagamento.parcelas.length === 0)
     return (
-      <div className="rounded-xl border border-border bg-surface p-5 text-[12px] text-muted-foreground">
+      <div className="panel p-5 text-[12px] text-muted-foreground">
         Sem parcelas registradas.
       </div>
     );
@@ -640,7 +640,7 @@ export function PagamentoCard({ pagamento }: { pagamento: PagamentoInfo }) {
     pagamento.parcelas.find((p) => p.moeda)?.moeda ?? "BRL";
   const totalMoeda = pagamento.parcelas.reduce((acc, p) => acc + (p.valor ?? 0), 0);
   return (
-    <div className="rounded-xl border border-border bg-surface overflow-hidden">
+    <div className="panel overflow-hidden">
       <table className="w-full text-[12px]">
         <thead className="bg-surface-2/60 text-muted-foreground">
           <tr>
@@ -679,7 +679,7 @@ export function PagamentoCard({ pagamento }: { pagamento: PagamentoInfo }) {
 export function CotacaoCard({ cotacoes }: { cotacoes: CotacaoInfo[] }) {
   if (cotacoes.length === 0) return null;
   return (
-    <div className="rounded-xl border border-border bg-surface p-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="panel p-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {cotacoes.map((c, i) => (
         <div key={i} className="space-y-1">
           <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground">
@@ -701,7 +701,7 @@ export function CotacaoCard({ cotacoes }: { cotacoes: CotacaoInfo[] }) {
 export function LimiteApoliceCard({ limite }: { limite: LimiteApoliceInfo | null }) {
   if (!limite) return null;
   return (
-    <div className="rounded-xl border border-border bg-surface p-5 flex items-center justify-between gap-4 flex-wrap">
+    <div className="panel p-5 flex items-center justify-between gap-4 flex-wrap">
       <div>
         <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground">
           Limite máximo da apólice

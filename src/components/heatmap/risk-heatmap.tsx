@@ -11,7 +11,7 @@ export function RiskHeatmap() {
   const max = Math.max(...HEATMAP_DATA.flatMap((r) => r.weeks));
 
   return (
-    <div className="rounded-2xl border border-border bg-surface/80 backdrop-blur shadow-elevated overflow-hidden">
+    <div className="panel overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3.5 sm:py-4 border-b border-border bg-linear-to-r from-surface to-surface-2">
         <div>
           <div className="text-[14px] font-semibold tracking-tight">Matriz de Risco Operacional</div>

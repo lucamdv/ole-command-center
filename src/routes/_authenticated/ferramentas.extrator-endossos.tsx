@@ -186,7 +186,7 @@ function ExtratorPage() {
       </div>
 
       {/* Tabela */}
-      <div className="rounded-xl border border-border bg-surface overflow-hidden">
+      <div className="panel overflow-hidden">
         <div
           className={
             isAdmin

@@ -49,7 +49,7 @@ function EndossoDetail() {
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Voltar à apólice
         </Link>
-        <div className="rounded-xl border border-border bg-surface p-12 text-center page-subtitle">
+        <div className="panel p-12 text-center page-subtitle">
           Endosso não encontrado.
         </div>
       </div>

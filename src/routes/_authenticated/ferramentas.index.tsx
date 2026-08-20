@@ -34,7 +34,7 @@ function FerramentasPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <Link
           to="/ferramentas/extrator-endossos"
-          className="group relative overflow-hidden rounded-2xl border border-border bg-linear-to-br from-surface to-surface-2 p-6 shadow-elevated hover:border-primary/40 transition"
+          className="group relative overflow-hidden panel p-5 hover:border-primary/40 transition"
         >
           <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
           <div className="relative">
@@ -58,7 +58,7 @@ function FerramentasPage() {
         </Link>
 
 
-        <div className="relative overflow-hidden rounded-2xl border border-border bg-linear-to-br from-surface to-surface-2 p-6 shadow-elevated">
+        <div className="relative overflow-hidden panel p-5">
           <div className="relative">
             <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md border border-border bg-muted/40 text-muted-foreground text-[11px] font-mono uppercase tracking-wider mb-4">
               <Hammer className="h-3 w-3" />

@@ -118,7 +118,7 @@ function PageHeader({
   const { profile } = useProfile();
   const firstName = (profile.nome || "").split(/\s+/)[0] || "Operador";
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border bg-linear-to-br from-surface via-surface to-surface-2 px-6 py-5 shadow-elevated">
+    <div className="relative overflow-hidden panel px-5 py-5">
       <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
       <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-primary/40 to-transparent" />
       <div className="relative flex items-start justify-between gap-6 flex-wrap">
@@ -309,7 +309,7 @@ function Dashboard({
       {/* Severidade split + linha secundária */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <SeveritySplit sev={sev} />
-        <div className="rounded-xl border border-border bg-surface/60 grid grid-cols-2 md:grid-cols-4 lg:col-span-2 divide-y md:divide-y-0 md:divide-x divide-border overflow-hidden">
+        <div className="panel bg-surface/60 grid grid-cols-2 md:grid-cols-4 lg:col-span-2 divide-y md:divide-y-0 md:divide-x divide-border overflow-hidden">
           <MiniStat label="Risco Operacional" value={`${k.operationalRisk.toFixed(1)}%`} tone="warning" />
           <MiniStat label="Regras Acionadas" value={formatInt(k.uniqueErrorTypes)} tone="info" />
           <MiniStat label="Apólices Afetadas" value={formatInt(k.affectedPolicies)} tone="destructive" />
@@ -321,7 +321,7 @@ function Dashboard({
 
 
       {/* Pulso real: tendência + distribuição */}
-      <div className="rounded-2xl border border-border bg-surface/80 backdrop-blur overflow-hidden shadow-elevated">
+      <div className="panel overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3.5 sm:py-4 border-b border-border bg-linear-to-r from-surface to-surface-2">
           <div>
             <div className="text-[14px] font-semibold tracking-tight">Pulso Operacional</div>
@@ -404,7 +404,7 @@ function Dashboard({
 
       {/* Heatmap real */}
       {heatmap.rows.length > 0 && (
-        <div className="rounded-2xl border border-border bg-surface/80 backdrop-blur shadow-elevated overflow-hidden">
+        <div className="panel overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3.5 sm:py-4 border-b border-border bg-linear-to-r from-surface to-surface-2">
             <div>
               <div className="text-[14px] font-semibold tracking-tight">Matriz de Risco Operacional</div>
@@ -452,7 +452,7 @@ function Dashboard({
 
       {/* Top apólices afetadas */}
       <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-        <div className="rounded-2xl border border-border bg-surface p-5 shadow-elevated">
+        <div className="panel p-5">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
             <div>
               <div className="text-[13px] font-semibold">Apólices com mais inconsistências</div>
@@ -500,7 +500,7 @@ function Dashboard({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border bg-surface p-5 shadow-elevated">
+        <div className="panel p-5">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
             <div>
               <div className="text-[13px] font-semibold">Ranking de Regras Acionadas</div>
@@ -578,7 +578,7 @@ function ConsolidatedBanner({
   grouped: number;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-linear-to-r from-surface to-surface-2 px-5 py-4 flex flex-wrap items-center gap-x-6 gap-y-2 shadow-elevated">
+    <div className="panel px-5 py-4 flex flex-wrap items-center gap-x-6 gap-y-2 shadow-elevated">
       <div className="flex items-center gap-2">
         <span className="text-[18px]">📊</span>
         <div>
@@ -640,7 +640,7 @@ function SeveritySplit({ sev }: { sev: { erros: number; alertas: number; infos: 
   const pa = total ? (sev.alertas / total) * 100 : 0;
   const pi = total ? (sev.infos / total) * 100 : 0;
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
+    <div className="panel p-4">
       <div className="flex items-center justify-between mb-2">
         <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">Severidade</span>
         <span className="text-[11px] font-mono text-muted-foreground">{formatInt(total)} achados</span>
@@ -705,7 +705,7 @@ function BreakdownTable({ findings, totalFindings }: { findings: AuditFindingRow
   if (rows.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-border bg-surface shadow-elevated overflow-hidden">
+    <div className="panel overflow-hidden">
       <div className="px-5 py-4 border-b border-border flex flex-wrap items-center justify-between gap-2">
         <div>
           <div className="text-[14px] font-semibold tracking-tight">Breakdown Severidade × Tipo</div>
@@ -764,7 +764,7 @@ function BreakdownTable({ findings, totalFindings }: { findings: AuditFindingRow
 
 function EndossosCard({ endossos }: { endossos: ReturnType<typeof groupByEndosso> }) {
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5 shadow-elevated">
+    <div className="panel p-5">
       <div className="mb-4">
         <div className="text-[13px] font-semibold">Endossos mais problemáticos</div>
         <div className="text-[11px] text-muted-foreground">Top 8 endossos por número de achados</div>
@@ -799,7 +799,7 @@ function EndossosCard({ endossos }: { endossos: ReturnType<typeof groupByEndosso
 function MonthlyWindowCard({ months }: { months: ReturnType<typeof bucketByMonth> }) {
   const max = Math.max(1, ...months.map((m) => m.count));
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5 shadow-elevated">
+    <div className="panel p-5">
       <div className="mb-4">
         <div className="text-[13px] font-semibold">Janela de Vigência mais afetada</div>
         <div className="text-[11px] text-muted-foreground">Distribuição dos achados por mês de início</div>
@@ -832,7 +832,7 @@ function RunHistoryTable({ history }: { history: ReturnType<typeof useAuditHisto
   if (history.length === 0) return null;
   const rows = history.slice(0, 10);
   return (
-    <div className="rounded-2xl border border-border bg-surface shadow-elevated overflow-hidden">
+    <div className="panel overflow-hidden">
       <div className="px-5 py-4 border-b border-border">
         <div className="text-[14px] font-semibold tracking-tight">Histórico de Auditorias</div>
         <div className="text-[11px] text-muted-foreground">Últimas {rows.length} execuções</div>

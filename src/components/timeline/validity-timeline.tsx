@@ -23,7 +23,7 @@ export function ValidityTimeline({ policy }: { policy: Policy }) {
   const totalMs = end - start;
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-5">
+    <div className="panel p-5">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <div>
           <div className="text-[13px] font-semibold">Linha do Tempo de Vigência</div>

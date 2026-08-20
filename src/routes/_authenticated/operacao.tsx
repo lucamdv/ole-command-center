@@ -197,7 +197,7 @@ function OperacaoPage() {
       </div>
 
       {/* Run history chart */}
-      <div className="rounded-2xl border border-border bg-surface shadow-elevated overflow-hidden">
+      <div className="panel overflow-hidden">
         <div className="px-5 py-4 border-b border-border flex flex-wrap items-center justify-between gap-2">
           <div>
             <div className="text-[13px] font-semibold flex items-center gap-2">
@@ -282,7 +282,7 @@ function OperacaoPage() {
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Error type breakdown */}
-        <div className="lg:col-span-2 rounded-2xl border border-border bg-surface shadow-elevated overflow-hidden">
+        <div className="lg:col-span-2 panel overflow-hidden">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center justify-between gap-2">
             <div className="text-[13px] font-semibold">Inconsistências por tipo</div>
             <div className="text-[11px] text-muted-foreground">
@@ -331,7 +331,7 @@ function OperacaoPage() {
         </div>
 
         {/* Critical findings */}
-        <div className="rounded-2xl border border-border bg-surface shadow-elevated overflow-hidden">
+        <div className="panel overflow-hidden">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center justify-between gap-2">
             <div className="text-[13px] font-semibold flex items-center gap-2">
               <AlertOctagon className="h-4 w-4 text-destructive" /> Findings críticos
@@ -392,7 +392,7 @@ function OperacaoPage() {
       </div>
 
       {/* Motor strip */}
-      <div className="rounded-xl border border-border bg-surface p-5 flex items-center gap-6 flex-wrap">
+      <div className="panel p-5 flex items-center gap-6 flex-wrap">
         <div className="flex items-center gap-2">
           <Cpu className="h-4 w-4 text-primary" />
           <div>
@@ -447,7 +447,7 @@ function MetricTile({
   delta?: number;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
+    <div className="panel p-4">
       <div className="flex items-center gap-2 mb-3">
         <div
           className={cn(
