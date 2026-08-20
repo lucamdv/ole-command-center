@@ -178,7 +178,7 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
             .upsert(
               {
                 numero_apolice: numero,
-                numero_endosso_atual: currentEndNum,
+                numero_endosso_atual: endossoAtual,
                 premio_liquido: premio,
                 proposta,
                 last_sync_run_id: runId,
