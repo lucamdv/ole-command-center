@@ -18,6 +18,7 @@ import type {
   DocumentoInfo,
   ItemInfo,
   LimiteApoliceInfo,
+  MotivoEndossoInfo,
   PagamentoInfo,
   ParteInfo,
   TipoEndosso,
