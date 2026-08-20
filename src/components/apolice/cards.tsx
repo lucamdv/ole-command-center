@@ -238,6 +238,8 @@ export function DocumentoHeader({
 const MOTIVO_ENDOSSO_LABEL: Record<string, string> = {
   ERRO_EMISSAO: "Erro de emissão",
   AJUSTE: "Ajuste",
+  FATURA: "Fatura",
+  INADIMPLENCIA: "Inadimplência",
   CANCELAMENTO: "Cancelamento",
   ALTERACAO: "Alteração",
   INCLUSAO: "Inclusão",
@@ -247,6 +249,7 @@ const MOTIVO_ENDOSSO_LABEL: Record<string, string> = {
   SUBSTITUICAO: "Substituição",
   REATIVACAO: "Reativação",
 };
+
 
 /** Cores por natureza do motivo — destaca alterações vs. correções. */
 function motivoTone(codigo: string | null): string {
