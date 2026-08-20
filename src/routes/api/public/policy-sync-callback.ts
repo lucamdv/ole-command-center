@@ -109,72 +109,92 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
         const startedAt = new Date((existing as { created_at: string }).created_at).getTime();
         const durationMs = Date.now() - startedAt;
 
-        // Persiste cada apólice + endossos (idempotente).
-        // Aceita tanto "*_seguradora" quanto os nomes enviados pelo MOTOR OLÉ atual.
+        const { normalizeEndossoNum } = await import("@/lib/excelsior/translate");
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pickNum = (o: any): string | undefined =>
-          o?.numero_apolice_seguradora ?? o?.numero_apolice ?? o?.numeroApolice ?? undefined;
+        const pickNum = (o: any): string | undefined => {
+          const v =
+            o?.numero_apolice_seguradora ?? o?.numero_apolice ?? o?.numeroApolice ?? undefined;
+          return v === undefined || v === null ? undefined : String(v);
+        };
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pickEnd = (o: any): string | null =>
-          o?.numero_endosso_seguradora ?? o?.numero_endosso ?? o?.numeroEndosso ?? null;
+        const pickEnd = (o: any): string | null => {
+          const v =
+            o?.numero_endosso_seguradora ?? o?.numero_endosso ?? o?.numeroEndosso ?? null;
+          return v === undefined || v === null ? null : String(v);
+        };
+
+        type FlatEndo = {
+          apolice: string;
+          num: string;
+          seq: number;
+          premio: number;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          proposta: any;
+        };
+
+        // `dados` agora é uma lista plana de endossos novos. Mantemos suporte ao
+        // formato antigo (apólice com `historico_endossos` aninhado) expandindo-o.
+        const flat: FlatEndo[] = [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        for (const item of payload.dados as Array<Record<string, any>>) {
+          const apoliceNum = pickNum(item);
+          if (!apoliceNum) continue;
+
+          const historico = Array.isArray(item.historico_endossos)
+            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (item.historico_endossos as Array<Record<string, any>>)
+            : null;
+
+          if (historico) {
+            for (const e of historico) {
+              const endRaw = pickEnd(e);
+              const num = normalizeEndossoNum(endRaw ?? "0");
+              const isBase = num === "000000";
+              const proposta = isBase
+                ? {
+                    ...(e.proposta ?? {}),
+                    data_emissao: item.data_emissao ?? e.proposta?.data_emissao,
+                  }
+                : (e.proposta ?? {});
+              flat.push({
+                apolice: pickNum(e) ?? apoliceNum,
+                num,
+                seq: parseInt(num, 10) || 0,
+                premio: Number(e.premio_liquido ?? 0) || 0,
+                proposta,
+              });
+            }
+            continue;
+          }
+
+          const endRaw = pickEnd(item);
+          if (endRaw === null) continue;
+          const num = normalizeEndossoNum(endRaw);
+          flat.push({
+            apolice: apoliceNum,
+            num,
+            seq: parseInt(num, 10) || 0,
+            premio: Number(item.premio_liquido ?? 0) || 0,
+            proposta: item.proposta ?? {},
+          });
+        }
+
+        // Agrupa por apólice para resolver o vínculo relacional uma vez só.
+        const byPolicy = new Map<string, FlatEndo[]>();
+        for (const e of flat) {
+          const list = byPolicy.get(e.apolice);
+          if (list) list.push(e);
+          else byPolicy.set(e.apolice, [e]);
+        }
 
         let processed = 0;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        for (const apolice of payload.dados as Array<Record<string, any>>) {
-          const numero = pickNum(apolice);
-          if (!numero) continue;
+        let insertedEndos = 0;
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const historico = (apolice.historico_endossos ?? []) as Array<Record<string, any>>;
-          // O n8n envia a apólice "casca" (sem proposta/prêmio); os dados reais
-          // vivem em cada item de historico_endossos. Pegamos o endosso "atual"
-          // (numero_endosso do topo, normalizado p/ 6 dígitos).
-          const { normalizeEndossoNum } = await import("@/lib/excelsior/translate");
-          const currentEndNumRaw = pickEnd(apolice);
-          // Normaliza todos os endossos do histórico para podermos descobrir o maior número
-          // mesmo quando o topo do payload não traz o "endosso atual".
-          const normalizedHistorico = historico.map((e) => {
-            const raw = pickEnd(e);
-            return { e, n: raw ? normalizeEndossoNum(raw) : null };
-          });
-          const maxFromHistorico =
-            normalizedHistorico
-              .map((x) => x.n)
-              .filter((n): n is string => !!n)
-              .sort()
-              .pop() ?? null;
-          // Fallback: usa o número do topo quando vier; caso contrário, o maior do histórico.
-          const currentEndNum = currentEndNumRaw
-            ? normalizeEndossoNum(currentEndNumRaw)
-            : maxFromHistorico;
-          // "Endosso atual" da apólice = maior sequencial existente. O topo do
-          // payload costuma trazer 000000 (a apólice base), então nunca confiamos
-          // apenas nele.
-          const endossoAtual =
-            [currentEndNum, maxFromHistorico]
-              .filter((n): n is string => !!n)
-              .sort()
-              .pop() ?? null;
-          let currentEndo = currentEndNum
-            ? normalizedHistorico.find((x) => x.n === currentEndNum)?.e
-            : undefined;
-          if (!currentEndo) {
-            console.warn(
-              `[policy-sync-callback] historico sem match para numero_endosso=${currentEndNumRaw}; usando último item`,
-            );
-            currentEndo = historico[historico.length - 1];
-          }
-          const isApoliceBase = currentEndNum === "000000";
-          const baseProposta = currentEndo?.proposta ?? apolice.proposta ?? {};
-          // Quando o item escolhido é a apólice (000000), o `data_emissao` real
-          // mora no topo do objeto da apólice — mescla para a UI exibir certo.
-          const proposta = isApoliceBase
-            ? { ...baseProposta, data_emissao: apolice.data_emissao ?? baseProposta?.data_emissao }
-            : baseProposta;
-          const premio = currentEndo?.premio_liquido ?? apolice.premio_liquido ?? 0;
+        for (const [numero, endos] of byPolicy) {
+          // Endosso de maior sequencial dita os dados "atuais" da apólice.
+          const top = endos.reduce((a, b) => (b.seq >= a.seq ? b : a));
 
-          // Estado atual no banco: nunca deixamos uma resposta incremental
-          // rebaixar o endosso atual nem apagar proposta/prêmio já existentes.
           const { data: existingPolicy } = await supabaseAdmin
             .from("policies")
             .select("id, numero_endosso_atual")
@@ -184,27 +204,11 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
             | { id: string; numero_endosso_atual: string | null }
             | null;
 
-          const endossoAtualFinal =
-            [endossoAtual, existingRow?.numero_endosso_atual ?? null]
-              .filter((n): n is string => !!n)
-              .map((n) => normalizeEndossoNum(n))
-              .sort()
-              .pop() ?? null;
-
-          const hasNovidade = historico.length > 0;
-
-          // Sem endossos novos: só marca que a apólice foi verificada neste run.
-          if (!hasNovidade && existingRow) {
-            await supabaseAdmin
-              .from("policies")
-              .update({
-                numero_endosso_atual: endossoAtualFinal,
-                last_sync_run_id: runId,
-                updated_at: new Date().toISOString(),
-              } as never)
-              .eq("id", existingRow.id);
-            continue;
-          }
+          const existingSeq = existingRow?.numero_endosso_atual
+            ? parseInt(existingRow.numero_endosso_atual.replace(/\D/g, ""), 10) || 0
+            : -1;
+          // Nunca rebaixa o endosso atual da apólice.
+          const endossoAtualFinal = top.seq >= existingSeq ? top.num : existingRow!.numero_endosso_atual;
 
           const patch: Record<string, unknown> = {
             numero_apolice: numero,
@@ -212,10 +216,10 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
             last_sync_run_id: runId,
             updated_at: new Date().toISOString(),
           };
-          // Só sobrescreve dados de conteúdo quando o payload realmente traz algo.
-          if (hasNovidade || !existingRow) {
-            patch.premio_liquido = premio;
-            patch.proposta = proposta;
+          // Só atualiza conteúdo quando o endosso recebido é o mais novo.
+          if (top.seq >= existingSeq) {
+            patch.premio_liquido = top.premio;
+            patch.proposta = top.proposta ?? {};
           }
 
           const { data: up, error: upErr } = await supabaseAdmin
@@ -229,29 +233,25 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
           }
           const policyId = (up as { id: string }).id;
 
-          // Upsert (não delete+insert): endossos já existentes permanecem.
-          const endos = historico.map((e, idx) => {
-            const endRaw = pickEnd(e);
-            const num = endRaw ? normalizeEndossoNum(endRaw) : String(idx).padStart(6, "0");
-            const seq = parseInt(num, 10);
-            return {
-              policy_id: policyId,
-              numero_apolice: pickNum(e) ?? numero,
-              numero_endosso: num,
-              premio_liquido: e.premio_liquido ?? 0,
-              proposta: e.proposta ?? {},
-              // Ordem derivada do próprio sequencial (payload pode ser parcial).
-              ordem: Number.isFinite(seq) ? seq : idx,
-            };
-          });
-          if (endos.length > 0) {
-            const { error: endErr } = await supabaseAdmin
-              .from("endorsements")
-              .upsert(endos as never, { onConflict: "policy_id,numero_endosso" });
-            if (endErr) console.error("[policy-sync-callback] upsert endorsements", endErr);
+          const rows = endos.map((e) => ({
+            policy_id: policyId,
+            numero_apolice: numero,
+            numero_endosso: e.num,
+            premio_liquido: e.premio,
+            proposta: e.proposta ?? {},
+            ordem: e.seq,
+          }));
+          const { error: endErr } = await supabaseAdmin
+            .from("endorsements")
+            .upsert(rows as never, { onConflict: "policy_id,numero_endosso" });
+          if (endErr) {
+            console.error("[policy-sync-callback] upsert endorsements", endErr);
+            continue;
           }
+          insertedEndos += rows.length;
           processed++;
         }
+
 
 
         const { error: updErr } = await supabaseAdmin
@@ -266,7 +266,13 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
           .eq("id", runId);
         if (updErr) return json({ error: updErr.message }, 500);
 
-        return json({ ok: true, run_id: runId, processed, duration_ms: durationMs });
+        return json({
+          ok: true,
+          run_id: runId,
+          processed,
+          endorsements: insertedEndos,
+          duration_ms: durationMs,
+        });
       },
     },
   },

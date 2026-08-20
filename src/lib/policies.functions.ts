@@ -348,11 +348,15 @@ export interface EndorsementDetail {
 }
 
 // Schema do callback do MOTOR OLÉ — tolerante a variações de nomes de chave.
+// `dados` pode ser: lista plana de endossos novos (formato atual) ou lista de
+// apólices com `historico_endossos` aninhado (formato antigo).
 export const PolicySyncCallbackSchema = z.object({
   origem: z.string().optional(),
   total_apolices: z.coerce.number().optional(),
+  total_endossos_novos: z.coerce.number().optional(),
   dados: z
     .array(z.record(z.string(), z.unknown()))
     .optional()
     .default([]),
 });
+
