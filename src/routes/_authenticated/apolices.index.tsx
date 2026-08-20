@@ -6,6 +6,8 @@ import { NextRunCountdown } from "@/components/automation/next-run-countdown";
 
 import { formatDateTime, relativeTime } from "@/lib/format";
 import { fmtNum } from "@/components/apolice/cards";
+import { useBillingTagMap } from "@/hooks/use-billing";
+import { billingTagClass, type BillingTag } from "@/lib/billing/status";
 import { cn } from "@/lib/utils";
 import { VirtualList } from "@/components/ui/virtual-list";
 
@@ -24,6 +26,7 @@ function ApolicesPage() {
   const { data: policies, isLoading } = usePolicies();
   const { data: lastSync } = useLatestPolicySync();
   const { mutate: runSync, isRunning } = useRunPolicySync();
+  const { map: billingTags } = useBillingTagMap();
 
   const filtered = useMemo(() => {
     if (!policies) return [];
@@ -136,7 +139,7 @@ function ApolicesPage() {
             gap={8}
             className="max-h-[70dvh] rounded-xl"
           >
-            {(p) => <PolicyRow p={p} />}
+            {(p) => <PolicyRow p={p} billingTag={billingTags.get(p.numero_apolice)} />}
           </VirtualList>
         )}
       </div>
@@ -146,8 +149,10 @@ function ApolicesPage() {
 
 const PolicyRow = memo(function PolicyRow({
   p,
+  billingTag,
 }: {
   p: NonNullable<ReturnType<typeof usePolicies>["data"]>[number];
+  billingTag?: BillingTag;
 }) {
   // Split USD prefix from numeric value so we can style the currency tag
   const formatted = fmtNum(p.premio_liquido, p.premio_moeda);
@@ -167,8 +172,20 @@ const PolicyRow = memo(function PolicyRow({
 
         {/* Apólice */}
         <div className="py-3 md:py-3.5 pl-4 md:pl-5 pr-3 min-w-0">
-          <div className="font-mono text-[12.5px] font-semibold tracking-tight text-foreground group-hover:text-primary transition-colors truncate">
-            {p.numero_apolice}
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="font-mono text-[12.5px] font-semibold tracking-tight text-foreground group-hover:text-primary transition-colors truncate">
+              {p.numero_apolice}
+            </div>
+            {billingTag && (
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-md border px-1.5 py-0.5 font-mono text-[10px] font-semibold whitespace-nowrap",
+                  billingTagClass(billingTag),
+                )}
+              >
+                {billingTag}
+              </span>
+            )}
           </div>
           {p.segurado_nome && (
             <div className="text-[11px] text-muted-foreground truncate mt-0.5">

@@ -9,6 +9,7 @@ import {
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { NATUREZA_PREMIO_LABEL, TIPO_PESSOA_LABEL } from "@/lib/excelsior/codes";
+import { billingTagInfo, type BillingRecord } from "@/lib/billing/status";
 import type {
   CancelamentoInfo,
   CoberturaInfo,
@@ -180,12 +181,14 @@ export function DocumentoHeader({
   premioValor,
   premioMoeda,
   seguradoNome,
+  badge,
   extra,
 }: {
   documento: DocumentoInfo;
   premioValor?: number | null;
   premioMoeda?: string;
   seguradoNome?: string | null;
+  badge?: ReactNode;
   extra?: ReactNode;
 }) {
   const isApolice = documento.tipo === "APOLICE";
@@ -203,6 +206,7 @@ export function DocumentoHeader({
               tipoEndosso={documento.tipoEndosso}
               sequencial={isApolice ? undefined : documento.sequencial}
             />
+            {badge}
             {!isApolice && (
               <span className="text-[11px] text-muted-foreground">
                 da apólice <span className="font-mono">{documento.numeroApolice}</span>
@@ -813,6 +817,130 @@ export function EndossoSemDadosAviso({ numeroApolice }: { numeroApolice: string 
         partes, itens e composição de prêmio, consulte a apólice mãe{" "}
         <span className="font-mono text-foreground">{numeroApolice}</span>.
       </p>
+    </div>
+  );
+}
+
+// ============ Cobrança ============
+export function BillingBadge({
+  statusPagamento,
+  situacaoEmissao,
+  size = "md",
+}: {
+  statusPagamento: string | null | undefined;
+  situacaoEmissao: string | null | undefined;
+  size?: "sm" | "md";
+}) {
+  const { label, className } = billingTagInfo(statusPagamento, situacaoEmissao);
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-md font-mono font-semibold border whitespace-nowrap",
+        size === "sm" ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-0.5 text-[10.5px]",
+        className,
+      )}
+    >
+      {label}
+    </span>
+  );
+}
+
+/** Data pura (yyyy-mm-dd) sem deslocamento de fuso. */
+function fmtDateOnly(v: string | null | undefined): string {
+  if (!v) return "—";
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  return fmtDate(v);
+}
+
+function statusPagamentoLabel(v: string | null | undefined): string {
+  const s = (v ?? "").trim().toLowerCase();
+  if (s.startsWith("total")) return "Total (quitado)";
+  if (s.startsWith("parcial")) return "Parcial";
+  if (s.startsWith("abert")) return "Aberta";
+  return v ?? "—";
+}
+
+/** Card de cobrança de um documento (apólice vigente ou endosso). */
+export function CobrancaCard({
+  record,
+  titulo = "Cobrança",
+}: {
+  record: BillingRecord | null;
+  titulo?: string;
+}) {
+  if (!record) {
+    return (
+      <div className="panel p-5 text-[12.5px] text-muted-foreground">
+        Sem dados de cobrança para este documento.
+      </div>
+    );
+  }
+  return (
+    <div className="panel overflow-hidden">
+      <div className="px-5 py-3 border-b border-border bg-surface-2/50 flex items-center justify-between gap-3">
+        <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+          {titulo}
+        </span>
+        <BillingBadge
+          statusPagamento={record.status_pagamento}
+          situacaoEmissao={record.situacao_emissao}
+        />
+      </div>
+      <div className="p-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Field label="Status do pagamento" value={statusPagamentoLabel(record.status_pagamento)} />
+        <Field label="Situação da emissão" value={record.situacao_emissao || "—"} />
+        <Field label="Nº da proposta" value={record.numero_proposta ?? "—"} mono />
+        <Field label="Vencimento" value={fmtDateOnly(record.data_vencimento)} mono />
+        <Field label="Quitação" value={fmtDate(record.data_quitacao)} mono />
+        <Field label="Endosso" value={record.numero_endosso} mono />
+      </div>
+    </div>
+  );
+}
+
+/** Histórico de cobranças por endosso da apólice. */
+export function CobrancasList({ rows }: { rows: BillingRecord[] }) {
+  if (rows.length === 0) {
+    return (
+      <div className="panel p-5 text-[12.5px] text-muted-foreground">
+        Nenhuma cobrança registrada para esta apólice.
+      </div>
+    );
+  }
+  return (
+    <div className="panel overflow-hidden">
+      <div className="grid grid-cols-12 px-4 py-2.5 text-[10.5px] uppercase tracking-wider text-muted-foreground bg-surface-2/60 border-b border-border">
+        <div className="col-span-2">Endosso</div>
+        <div className="col-span-3">Proposta</div>
+        <div className="col-span-2">Status</div>
+        <div className="col-span-2 text-right">Vencimento</div>
+        <div className="col-span-3 text-right">Quitação</div>
+      </div>
+      {rows.map((r) => (
+        <div
+          key={`${r.numero_apolice}-${r.numero_endosso}`}
+          className="grid grid-cols-12 items-center px-4 py-2.5 border-b border-border/40 last:border-0 text-[12px]"
+        >
+          <div className="col-span-2 font-mono text-muted-foreground">{r.numero_endosso}</div>
+          <div className="col-span-3 font-mono text-[11.5px] text-muted-foreground truncate">
+            {r.numero_proposta ?? "—"}
+          </div>
+          <div className="col-span-2">
+            <BillingBadge
+              statusPagamento={r.status_pagamento}
+              situacaoEmissao={r.situacao_emissao}
+              size="sm"
+            />
+          </div>
+          <div className="col-span-2 text-right font-mono text-[11.5px]">
+            {fmtDateOnly(r.data_vencimento)}
+          </div>
+          <div className="col-span-3 text-right font-mono text-[11.5px]">
+            {fmtDate(r.data_quitacao)}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
