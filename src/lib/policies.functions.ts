@@ -51,7 +51,13 @@ export interface PolicySyncStatus {
   error_message: string | null;
   duration_ms: number | null;
   finished_at: string | null;
+  emissoes_status: string;
+  emissoes_finished_at: string | null;
+  cobrancas_status: string;
+  cobrancas_finished_at: string | null;
+  cobrancas_total: number;
 }
+
 
 // Implementação interna (sem auth). Usada tanto pela serverFn protegida quanto
 // pelo hook público /api/public/hooks/policy-sync (que já valida shared-secret).
