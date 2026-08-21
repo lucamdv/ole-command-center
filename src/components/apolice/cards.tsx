@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Accordion,
@@ -9,7 +9,13 @@ import {
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { NATUREZA_PREMIO_LABEL, TIPO_PESSOA_LABEL } from "@/lib/excelsior/codes";
-import { billingTagInfo, type BillingRecord } from "@/lib/billing/status";
+import { billingTagInfo, type BillingRecord, type BillingTag } from "@/lib/billing/status";
+import {
+  BillingFilters,
+  matchSituacao,
+  type SituacaoFilter,
+} from "@/components/billing/billing-filters";
+
 import type {
   CancelamentoInfo,
   CoberturaInfo,
