@@ -148,6 +148,26 @@ function ApolicesPage() {
         </div>
       </div>
 
+      {/* Filtros de cobrança */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <BillingFilters
+          tags={tags}
+          onToggleTag={(t) =>
+            setTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]))
+          }
+          onClearTags={() => setTags([])}
+          situacao={situacao}
+          onSituacao={setSituacao}
+          sort={sort}
+          onSort={setSort}
+          sortOptions={SORT_OPTIONS}
+        />
+        <span className="text-[11.5px] text-muted-foreground">
+          {filtered.length} de {policies?.length ?? 0}
+        </span>
+      </div>
+
+
       {/* Table */}
       <div>
         <div className="hidden md:grid grid-cols-[1fr_140px_120px_200px_140px] text-[10.5px] font-semibold text-muted-foreground/80 uppercase tracking-[0.14em] pb-2">
