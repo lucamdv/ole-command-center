@@ -79,7 +79,9 @@ export async function runPolicySyncImpl(webhookMode?: WebhookMode | null) {
   const base =
     process.env.PUBLIC_APP_URL ||
     (process.env.NODE_ENV === "production" ? PRODUCTION_PUBLIC_URL : PREVIEW_PUBLIC_URL);
-  const callbackUrl = `${base.replace(/\/$/, "")}/api/public/policy-sync-callback?run_id=${runId}`;
+  const origin = base.replace(/\/$/, "");
+  const callbackUrl = `${origin}/api/public/policy-sync-callback?run_id=${runId}`;
+  const callbackUrlCobrancas = `${origin}/api/public/billing-sync-callback?run_id=${runId}`;
 
   // Mapa { numero_apolice: maior_sequencial_de_endosso } para o motor devolver
   // apenas os endossos novos (sincronização incremental).
@@ -106,17 +108,52 @@ export async function runPolicySyncImpl(webhookMode?: WebhookMode | null) {
     console.error("[policy-sync] falha ao montar ultimos_endossos_plataforma", err);
   }
 
+  // Documentos ainda pendentes de cobrança: emissão Ativa + pagamento Aberto.
+  // Identificador = 24 primeiros dígitos da apólice + sequencial do endosso (6).
+  const documentosPendentes: string[] = [];
+  try {
+    const { data: billing } = await supabaseAdmin
+      .from("policy_billing")
+      .select("numero_apolice, numero_endosso, status_pagamento, situacao_emissao");
+    const seen = new Set<string>();
+    for (const b of (billing ?? []) as Array<{
+      numero_apolice: string;
+      numero_endosso: string;
+      status_pagamento: string | null;
+      situacao_emissao: string | null;
+    }>) {
+      const pago = (b.status_pagamento ?? "").trim().toLowerCase();
+      const situacao = (b.situacao_emissao ?? "").trim().toLowerCase();
+      if (!pago.startsWith("abert") || !situacao.startsWith("ativ")) continue;
+      const seq = String(b.numero_endosso).replace(/\D/g, "").slice(-6).padStart(6, "0");
+      const doc = b.numero_apolice.slice(0, -6) + seq;
+      if (!seen.has(doc)) {
+        seen.add(doc);
+        documentosPendentes.push(doc);
+      }
+    }
+  } catch (err) {
+    console.error("[policy-sync] falha ao montar documentos_pendentes_cobranca", err);
+  }
+
   try {
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         run_id: runId,
+        callback_url_emissoes: callbackUrl,
+        callback_url_cobrancas: callbackUrlCobrancas,
+        // Compatibilidade com o fluxo antigo do n8n.
         callback_url: callbackUrl,
         trigger: "ole-copilot-policies",
         at: new Date().toISOString(),
         ultimos_endossos_plataforma: ultimosEndossos,
+        documentos_pendentes_cobranca: documentosPendentes,
       }),
+      signal: AbortSignal.timeout(30_000),
+    });
+
       signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) {
