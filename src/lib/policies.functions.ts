@@ -154,8 +154,6 @@ export async function runPolicySyncImpl(webhookMode?: WebhookMode | null) {
       signal: AbortSignal.timeout(30_000),
     });
 
-      signal: AbortSignal.timeout(30_000),
-    });
     if (!res.ok) {
       const body = await res.text().catch(() => "");
       const msg =
