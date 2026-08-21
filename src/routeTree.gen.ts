@@ -24,6 +24,7 @@ import { Route as AuthenticatedApolicesIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedFerramentasIndexRouteImport } from './routes/_authenticated/ferramentas.index'
 import { Route as AuthenticatedFerramentasExtratorEndossosRouteImport } from './routes/_authenticated/ferramentas.extrator-endossos'
 import { Route as ApiPublicAuditCallbackRouteImport } from './routes/api/public/audit-callback'
+import { Route as ApiPublicBillingSyncCallbackRouteImport } from './routes/api/public/billing-sync-callback'
 import { Route as ApiPublicEndorsementExtractionCallbackRouteImport } from './routes/api/public/endorsement-extraction-callback'
 import { Route as ApiPublicPolicySyncCallbackRouteImport } from './routes/api/public/policy-sync-callback'
 import { Route as AuthenticatedApolicesIdIndexRouteImport } from './routes/_authenticated/apolices.$id.index'
@@ -111,6 +112,12 @@ const ApiPublicAuditCallbackRoute = ApiPublicAuditCallbackRouteImport.update({
   path: '/api/public/audit-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicBillingSyncCallbackRoute =
+  ApiPublicBillingSyncCallbackRouteImport.update({
+    id: '/api/public/billing-sync-callback',
+    path: '/api/public/billing-sync-callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicEndorsementExtractionCallbackRoute =
   ApiPublicEndorsementExtractionCallbackRouteImport.update({
     id: '/api/public/endorsement-extraction-callback',
@@ -160,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/ferramentas/extrator-endossos': typeof AuthenticatedFerramentasExtratorEndossosRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
+  '/api/public/billing-sync-callback': typeof ApiPublicBillingSyncCallbackRoute
   '/api/public/endorsement-extraction-callback': typeof ApiPublicEndorsementExtractionCallbackRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
   '/apolices/': typeof AuthenticatedApolicesIndexRoute
@@ -181,6 +189,7 @@ export interface FileRoutesByTo {
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/ferramentas/extrator-endossos': typeof AuthenticatedFerramentasExtratorEndossosRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
+  '/api/public/billing-sync-callback': typeof ApiPublicBillingSyncCallbackRoute
   '/api/public/endorsement-extraction-callback': typeof ApiPublicEndorsementExtractionCallbackRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
   '/apolices': typeof AuthenticatedApolicesIndexRoute
@@ -205,6 +214,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/_authenticated/ferramentas/extrator-endossos': typeof AuthenticatedFerramentasExtratorEndossosRoute
   '/api/public/audit-callback': typeof ApiPublicAuditCallbackRoute
+  '/api/public/billing-sync-callback': typeof ApiPublicBillingSyncCallbackRoute
   '/api/public/endorsement-extraction-callback': typeof ApiPublicEndorsementExtractionCallbackRoute
   '/api/public/policy-sync-callback': typeof ApiPublicPolicySyncCallbackRoute
   '/_authenticated/apolices/': typeof AuthenticatedApolicesIndexRoute
@@ -229,6 +239,7 @@ export interface FileRouteTypes {
     | '/admin/usuarios'
     | '/ferramentas/extrator-endossos'
     | '/api/public/audit-callback'
+    | '/api/public/billing-sync-callback'
     | '/api/public/endorsement-extraction-callback'
     | '/api/public/policy-sync-callback'
     | '/apolices/'
@@ -250,6 +261,7 @@ export interface FileRouteTypes {
     | '/admin/usuarios'
     | '/ferramentas/extrator-endossos'
     | '/api/public/audit-callback'
+    | '/api/public/billing-sync-callback'
     | '/api/public/endorsement-extraction-callback'
     | '/api/public/policy-sync-callback'
     | '/apolices'
@@ -273,6 +285,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/usuarios'
     | '/_authenticated/ferramentas/extrator-endossos'
     | '/api/public/audit-callback'
+    | '/api/public/billing-sync-callback'
     | '/api/public/endorsement-extraction-callback'
     | '/api/public/policy-sync-callback'
     | '/_authenticated/apolices/'
@@ -288,6 +301,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   InviteTokenRoute: typeof InviteTokenRoute
   ApiPublicAuditCallbackRoute: typeof ApiPublicAuditCallbackRoute
+  ApiPublicBillingSyncCallbackRoute: typeof ApiPublicBillingSyncCallbackRoute
   ApiPublicEndorsementExtractionCallbackRoute: typeof ApiPublicEndorsementExtractionCallbackRoute
   ApiPublicPolicySyncCallbackRoute: typeof ApiPublicPolicySyncCallbackRoute
   ApiPublicHooksPolicySyncRoute: typeof ApiPublicHooksPolicySyncRoute
@@ -401,6 +415,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAuditCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/billing-sync-callback': {
+      id: '/api/public/billing-sync-callback'
+      path: '/api/public/billing-sync-callback'
+      fullPath: '/api/public/billing-sync-callback'
+      preLoaderRoute: typeof ApiPublicBillingSyncCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/endorsement-extraction-callback': {
       id: '/api/public/endorsement-extraction-callback'
       path: '/api/public/endorsement-extraction-callback'
@@ -500,6 +521,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   InviteTokenRoute: InviteTokenRoute,
   ApiPublicAuditCallbackRoute: ApiPublicAuditCallbackRoute,
+  ApiPublicBillingSyncCallbackRoute: ApiPublicBillingSyncCallbackRoute,
   ApiPublicEndorsementExtractionCallbackRoute:
     ApiPublicEndorsementExtractionCallbackRoute,
   ApiPublicPolicySyncCallbackRoute: ApiPublicPolicySyncCallbackRoute,
