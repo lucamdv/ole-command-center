@@ -8,6 +8,12 @@ import { formatDateTime, relativeTime } from "@/lib/format";
 import { fmtNum } from "@/components/apolice/cards";
 import { useBillingTagMap } from "@/hooks/use-billing";
 import { billingTagClass, type BillingTag } from "@/lib/billing/status";
+import {
+  BillingFilters,
+  matchSituacao,
+  type SituacaoFilter,
+} from "@/components/billing/billing-filters";
+
 import { cn } from "@/lib/utils";
 import { VirtualList } from "@/components/ui/virtual-list";
 
