@@ -501,8 +501,13 @@ export type Database = {
       }
       policy_sync_runs: {
         Row: {
+          cobrancas_finished_at: string | null
+          cobrancas_status: string
+          cobrancas_total: number
           created_at: string
           duration_ms: number | null
+          emissoes_finished_at: string | null
+          emissoes_status: string
           error_message: string | null
           finished_at: string | null
           id: string
@@ -511,8 +516,13 @@ export type Database = {
           total_apolices: number
         }
         Insert: {
+          cobrancas_finished_at?: string | null
+          cobrancas_status?: string
+          cobrancas_total?: number
           created_at?: string
           duration_ms?: number | null
+          emissoes_finished_at?: string | null
+          emissoes_status?: string
           error_message?: string | null
           finished_at?: string | null
           id?: string
@@ -521,8 +531,13 @@ export type Database = {
           total_apolices?: number
         }
         Update: {
+          cobrancas_finished_at?: string | null
+          cobrancas_status?: string
+          cobrancas_total?: number
           created_at?: string
           duration_ms?: number | null
+          emissoes_finished_at?: string | null
+          emissoes_status?: string
           error_message?: string | null
           finished_at?: string | null
           id?: string
