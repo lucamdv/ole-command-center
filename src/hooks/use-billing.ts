@@ -49,10 +49,18 @@ export function useEndorsementBilling(numero: string | undefined, endosso: strin
   return { record, isLoading };
 }
 
-/** Mapa apólice → tag vigente, para a listagem da carteira. */
+export interface BillingInfo {
+  tag: BillingTag;
+  situacaoEmissao: string;
+  statusPagamento: string;
+  dataVencimento: string | null;
+  dataQuitacao: string | null;
+}
+
+/** Mapa apólice → cobrança vigente (tag + campos), para a listagem da carteira. */
 export function useBillingTagMap() {
   const query = useQuery(billingIndexQuery);
-  const map = useMemo(() => {
+  const { map, infoMap } = useMemo(() => {
     const byPolicy = new Map<string, BillingRecord[]>();
     for (const r of query.data ?? []) {
       const list = byPolicy.get(r.numero_apolice);
@@ -60,11 +68,22 @@ export function useBillingTagMap() {
       else byPolicy.set(r.numero_apolice, [r]);
     }
     const out = new Map<string, BillingTag>();
+    const info = new Map<string, BillingInfo>();
     for (const [ap, list] of byPolicy) {
       const cur = currentBilling(list);
-      if (cur) out.set(ap, billingTag(cur.status_pagamento, cur.situacao_emissao));
+      if (!cur) continue;
+      const tag = billingTag(cur.status_pagamento, cur.situacao_emissao);
+      out.set(ap, tag);
+      info.set(ap, {
+        tag,
+        situacaoEmissao: cur.situacao_emissao ?? "",
+        statusPagamento: cur.status_pagamento ?? "",
+        dataVencimento: cur.data_vencimento,
+        dataQuitacao: cur.data_quitacao,
+      });
     }
-    return out;
+    return { map: out, infoMap: info };
   }, [query.data]);
-  return { map, isLoading: query.isLoading };
+  return { map, infoMap, isLoading: query.isLoading };
 }
+
