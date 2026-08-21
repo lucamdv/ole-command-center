@@ -109,30 +109,32 @@ export async function runPolicySyncImpl(webhookMode?: WebhookMode | null) {
   }
 
   // Documentos ainda pendentes de cobrança: emissão Ativa + pagamento Aberto.
-  // O identificador trafegado é o NÚMERO DA PROPOSTA.
+  // Identificador = 24 primeiros dígitos da apólice + sequencial do endosso (6).
   const documentosPendentes: string[] = [];
   try {
     const { data: billing } = await supabaseAdmin
       .from("policy_billing")
-      .select("numero_proposta, status_pagamento, situacao_emissao");
+      .select("numero_apolice, numero_endosso, status_pagamento, situacao_emissao");
     const seen = new Set<string>();
     for (const b of (billing ?? []) as Array<{
-      numero_proposta: string | null;
+      numero_apolice: string;
+      numero_endosso: string;
       status_pagamento: string | null;
       situacao_emissao: string | null;
     }>) {
       const pago = (b.status_pagamento ?? "").trim().toLowerCase();
       const situacao = (b.situacao_emissao ?? "").trim().toLowerCase();
       if (!pago.startsWith("abert") || !situacao.startsWith("ativ")) continue;
-      const proposta = (b.numero_proposta ?? "").trim();
-      if (!proposta || seen.has(proposta)) continue;
-      seen.add(proposta);
-      documentosPendentes.push(proposta);
+      const seq = String(b.numero_endosso).replace(/\D/g, "").slice(-6).padStart(6, "0");
+      const doc = b.numero_apolice.slice(0, -6) + seq;
+      if (!seen.has(doc)) {
+        seen.add(doc);
+        documentosPendentes.push(doc);
+      }
     }
   } catch (err) {
     console.error("[policy-sync] falha ao montar documentos_pendentes_cobranca", err);
   }
-
 
   try {
     const res = await fetch(url, {

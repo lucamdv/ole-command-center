@@ -94,57 +94,23 @@ export const Route = createFileRoute("/api/public/billing-sync-callback")({
           updated_at: string;
         };
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-        // O identificador trafegado é o NÚMERO DA PROPOSTA. Resolvemos
-        // apólice/endosso a partir dele; se vier apólice explícita, usamos.
-        const { data: existing } = await supabaseAdmin
-          .from("policy_billing")
-          .select("numero_apolice, numero_endosso, numero_proposta");
-        const byProposta = new Map<string, { numero_apolice: string; numero_endosso: string }>();
-        for (const r of (existing ?? []) as Array<{
-          numero_apolice: string;
-          numero_endosso: string;
-          numero_proposta: string | null;
-        }>) {
-          const p = (r.numero_proposta ?? "").trim();
-          if (p) byProposta.set(p, { numero_apolice: r.numero_apolice, numero_endosso: r.numero_endosso });
-        }
-
         const byKey = new Map<string, Row>();
-        const ignorados: string[] = [];
         for (const item of parsed.data.dados) {
-          const propostaRaw =
-            item.numero_proposta ?? item.documento ?? item.numero_documento ?? null;
-          const proposta = propostaRaw != null ? String(propostaRaw).trim() || null : null;
-
-          let apolice: string | null = null;
-          let seq: string | null = null;
-
-          const apoliceDigits = item.numero_apolice
-            ? String(item.numero_apolice).replace(/\D/g, "")
-            : "";
-          if (apoliceDigits.length >= 12) {
-            apolice = apoliceDigits.slice(0, -6) + "000000";
-            seq =
-              item.numero_endosso != null
-                ? String(item.numero_endosso).replace(/\D/g, "").slice(-6).padStart(6, "0")
-                : apoliceDigits.slice(-6);
-          } else if (proposta && byProposta.has(proposta)) {
-            const hit = byProposta.get(proposta)!;
-            apolice = hit.numero_apolice;
-            seq = hit.numero_endosso;
-          }
-
-          if (!apolice || !seq) {
-            if (proposta) ignorados.push(proposta);
-            continue;
-          }
-
+          const docRaw = item.numero_apolice ?? item.documento ?? item.numero_documento;
+          if (!docRaw) continue;
+          const digits = String(docRaw).replace(/\D/g, "");
+          if (digits.length < 12) continue;
+          const seq =
+            item.numero_endosso != null
+              ? String(item.numero_endosso).replace(/\D/g, "").slice(-6).padStart(6, "0")
+              : digits.slice(-6);
+          // A apólice é sempre gravada com sequencial 000000.
+          const apolice = digits.slice(0, -6) + "000000";
           const row: Row = {
             numero_apolice: apolice,
             numero_endosso: seq,
-            numero_proposta: proposta,
+            numero_proposta:
+              item.numero_proposta != null ? String(item.numero_proposta).trim() || null : null,
             status_pagamento: (item.status_pagamento ?? "").trim() || "Aberta",
             situacao_emissao: (item.situacao_emissao ?? "").trim() || "Ativa",
             data_vencimento: toDateOnly(item.data_vencimento),
@@ -155,8 +121,9 @@ export const Route = createFileRoute("/api/public/billing-sync-callback")({
         }
 
         const rows = [...byKey.values()];
-        if (rows.length === 0) return json({ ok: true, upserted: 0, ignorados });
+        if (rows.length === 0) return json({ ok: true, upserted: 0 });
 
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         let upserted = 0;
         for (let i = 0; i < rows.length; i += 500) {
           const chunk = rows.slice(i, i + 500);
@@ -170,7 +137,7 @@ export const Route = createFileRoute("/api/public/billing-sync-callback")({
           upserted += chunk.length;
         }
 
-        return json({ ok: true, upserted, ignorados });
+        return json({ ok: true, upserted });
       },
     },
   },
