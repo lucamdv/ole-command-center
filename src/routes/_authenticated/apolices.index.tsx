@@ -21,22 +21,65 @@ export const Route = createFileRoute("/_authenticated/apolices/")({
   component: ApolicesPage,
 });
 
+const SORT_OPTIONS = [
+  { value: "atualizado", label: "Atualizado" },
+  { value: "status", label: "Status de pagamento" },
+  { value: "vencimento", label: "Vencimento" },
+  { value: "apolice", label: "Nº da apólice" },
+  { value: "premio", label: "Prêmio total" },
+];
+
+const TAG_ORDER: Record<BillingTag, number> = { CANCELADA: 0, ABERTA: 1, PARCIAL: 2, PAGO: 3 };
+
 function ApolicesPage() {
   const [q, setQ] = useState("");
+  const [tags, setTags] = useState<BillingTag[]>([]);
+  const [situacao, setSituacao] = useState<SituacaoFilter>("todas");
+  const [sort, setSort] = useState("atualizado");
   const { data: policies, isLoading } = usePolicies();
   const { data: lastSync } = useLatestPolicySync();
   const { mutate: runSync, isRunning } = useRunPolicySync();
-  const { map: billingTags } = useBillingTagMap();
+  const { map: billingTags, infoMap: billingInfo } = useBillingTagMap();
 
   const filtered = useMemo(() => {
     if (!policies) return [];
-    if (!q) return policies;
     const s = q.toLowerCase();
-    return policies.filter((p) =>
-      p.numero_apolice.toLowerCase().includes(s) ||
-      (p.segurado_nome ?? "").toLowerCase().includes(s),
-    );
-  }, [policies, q]);
+    const list = policies.filter((p) => {
+      if (
+        s &&
+        !p.numero_apolice.toLowerCase().includes(s) &&
+        !(p.segurado_nome ?? "").toLowerCase().includes(s)
+      )
+        return false;
+      const info = billingInfo.get(p.numero_apolice);
+      if (tags.length > 0 && (!info || !tags.includes(info.tag))) return false;
+      if (situacao !== "todas" && !matchSituacao(info?.situacaoEmissao, situacao)) return false;
+      return true;
+    });
+
+    const sorted = [...list];
+    sorted.sort((a, b) => {
+      const ia = billingInfo.get(a.numero_apolice);
+      const ib = billingInfo.get(b.numero_apolice);
+      switch (sort) {
+        case "status":
+          return (
+            (ia ? TAG_ORDER[ia.tag] : 99) - (ib ? TAG_ORDER[ib.tag] : 99) ||
+            a.numero_apolice.localeCompare(b.numero_apolice)
+          );
+        case "vencimento":
+          return (ia?.dataVencimento ?? "9999").localeCompare(ib?.dataVencimento ?? "9999");
+        case "apolice":
+          return a.numero_apolice.localeCompare(b.numero_apolice);
+        case "premio":
+          return (b.premio_liquido ?? 0) - (a.premio_liquido ?? 0);
+        default:
+          return (b.updated_at ?? "").localeCompare(a.updated_at ?? "");
+      }
+    });
+    return sorted;
+  }, [policies, q, tags, situacao, sort, billingInfo]);
+
 
   const synced = !!lastSync?.finished_at;
 
