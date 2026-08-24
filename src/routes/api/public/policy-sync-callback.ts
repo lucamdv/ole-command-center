@@ -80,6 +80,8 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
               .from("policy_sync_runs")
               .update({
                 status: "error",
+                emissoes_status: "error",
+                emissoes_finished_at: new Date().toISOString(),
                 error_message:
                   "Payload inválido: " + JSON.stringify(parsed.error.issues).slice(0, 500),
                 raw: (raw ?? {}) as unknown as Record<string, unknown>,
@@ -296,14 +298,15 @@ export const Route = createFileRoute("/api/public/policy-sync-callback")({
         const { error: updErr } = await supabaseAdmin
           .from("policy_sync_runs")
           .update({
-            status: "success",
             total_apolices: processed,
             duration_ms: durationMs,
-            finished_at: new Date().toISOString(),
             raw: payload as unknown as Record<string, unknown>,
           } as never)
           .eq("id", runId);
         if (updErr) return json({ error: updErr.message }, 500);
+
+        const { markSyncLeg } = await import("@/lib/sync-legs.server");
+        await markSyncLeg(runId, "emissoes", { status: "success", total: processed });
 
         return json({
           ok: true,

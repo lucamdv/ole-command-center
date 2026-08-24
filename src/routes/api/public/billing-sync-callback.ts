@@ -59,6 +59,8 @@ export const Route = createFileRoute("/api/public/billing-sync-callback")({
         const provided = request.headers.get("x-callback-secret");
         if (!expected || provided !== expected) return json({ error: "Unauthorized" }, 401);
 
+        const runId = new URL(request.url).searchParams.get("run_id");
+
         let raw: unknown;
         try {
           raw = await request.json();
@@ -66,15 +68,21 @@ export const Route = createFileRoute("/api/public/billing-sync-callback")({
           return json({ error: "Invalid JSON" }, 400);
         }
 
-        // Aceita array cru, { dados | cobrancas | items | data: [...] } ou objeto único.
+        // Aceita array cru, { atualizacoes | dados | cobrancas | items | data: [...] } ou objeto único.
         let candidate: unknown = raw;
         if (Array.isArray(candidate)) {
           candidate = { dados: candidate };
         } else if (candidate && typeof candidate === "object") {
           const obj = { ...(candidate as Record<string, unknown>) };
-          const key = ["dados", "cobrancas", "billing", "items", "data", "results"].find((k) =>
-            Array.isArray(obj[k]),
-          );
+          const key = [
+            "atualizacoes",
+            "dados",
+            "cobrancas",
+            "billing",
+            "items",
+            "data",
+            "results",
+          ].find((k) => Array.isArray(obj[k]));
           candidate = key ? { dados: obj[key] } : { dados: [obj] };
         }
 
@@ -82,6 +90,7 @@ export const Route = createFileRoute("/api/public/billing-sync-callback")({
         if (!parsed.success) {
           return json({ error: "Payload inválido", issues: parsed.error.issues }, 400);
         }
+
 
         type Row = {
           numero_apolice: string;
@@ -121,7 +130,12 @@ export const Route = createFileRoute("/api/public/billing-sync-callback")({
         }
 
         const rows = [...byKey.values()];
-        if (rows.length === 0) return json({ ok: true, upserted: 0 });
+        const { markSyncLeg } = await import("@/lib/sync-legs.server");
+
+        if (rows.length === 0) {
+          if (runId) await markSyncLeg(runId, "cobrancas", { status: "success", total: 0 });
+          return json({ ok: true, upserted: 0 });
+        }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         let upserted = 0;
@@ -132,10 +146,18 @@ export const Route = createFileRoute("/api/public/billing-sync-callback")({
             .upsert(chunk as never, { onConflict: "numero_apolice,numero_endosso" });
           if (error) {
             console.error("[billing-sync-callback] upsert falhou", error.message);
+            if (runId)
+              await markSyncLeg(runId, "cobrancas", {
+                status: "error",
+                total: upserted,
+                errorMessage: `Cobranças: ${error.message}`,
+              });
             return json({ error: error.message, upserted }, 500);
           }
           upserted += chunk.length;
         }
+
+        if (runId) await markSyncLeg(runId, "cobrancas", { status: "success", total: upserted });
 
         return json({ ok: true, upserted });
       },
