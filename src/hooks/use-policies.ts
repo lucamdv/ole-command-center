@@ -4,6 +4,7 @@ import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/r
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
+  cancelPolicySync,
   getEndorsement,
   getLatestPolicySync,
   getPolicies,
@@ -51,14 +52,19 @@ export function useEndorsementDetail(numero: string | undefined, endosso: string
   });
 }
 
+export type LegStatus = "running" | "success" | "error" | "cancelled";
+
 export function useRunPolicySync() {
   const qc = useQueryClient();
   const fireFn = useServerFn(runPolicySync);
   const { mode } = useWebhookMode();
   const statusFn = useServerFn(getPolicySyncStatus);
+  const cancelFn = useServerFn(cancelPolicySync);
 
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [isPolling, setIsPolling] = useState(false);
+  const [emissoes, setEmissoes] = useState<LegStatus | null>(null);
+  const [cobrancas, setCobrancas] = useState<LegStatus | null>(null);
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(
@@ -80,11 +86,20 @@ export function useRunPolicySync() {
   const pollOnce = async (runId: string, startedAt: number) => {
     try {
       const row = await statusFn({ data: { runId } });
+      if (row) {
+        setEmissoes((row.emissoes_status ?? "running") as LegStatus);
+        setCobrancas((row.cobrancas_status ?? "running") as LegStatus);
+      }
+      if (row?.status === "cancelled") {
+        stopPolling();
+        return;
+      }
       if (row?.status === "success") {
         toast.success("Carteira sincronizada", {
-          description: `${row.total_apolices} apólices atualizadas.`,
+          description: `${row.total_apolices} apólices atualizadas · ${row.cobrancas_total ?? 0} cobranças.`,
         });
         qc.invalidateQueries({ queryKey: ["policies"] });
+        qc.invalidateQueries({ queryKey: ["billing"] });
         stopPolling();
         return;
       }
@@ -93,6 +108,8 @@ export function useRunPolicySync() {
           description: row.error_message ?? "Erro desconhecido.",
           duration: 30_000,
         });
+        qc.invalidateQueries({ queryKey: ["policies"] });
+        qc.invalidateQueries({ queryKey: ["billing"] });
         stopPolling();
         return;
       }
@@ -112,6 +129,8 @@ export function useRunPolicySync() {
     onSuccess: ({ runId }) => {
       setActiveRunId(runId);
       setIsPolling(true);
+      setEmissoes("running");
+      setCobrancas("running");
       toast.info("Sincronização iniciada", { description: "Aguardando MOTOR OLÉ…" });
       const startedAt = Date.now();
       pollTimer.current = setTimeout(() => pollOnce(runId, startedAt), 3_000);
@@ -121,5 +140,29 @@ export function useRunPolicySync() {
     },
   });
 
-  return { ...mutation, isRunning: mutation.isPending || isPolling, activeRunId };
+  const cancelMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeRunId) return { ok: true };
+      return cancelFn({ data: { runId: activeRunId } });
+    },
+    onSuccess: () => {
+      setEmissoes("cancelled");
+      setCobrancas("cancelled");
+      stopPolling();
+      toast.warning("Sincronização cancelada");
+    },
+    onError: (err: Error) => {
+      toast.error("Não foi possível cancelar", { description: err.message });
+    },
+  });
+
+  return {
+    ...mutation,
+    isRunning: mutation.isPending || isPolling,
+    activeRunId,
+    emissoes,
+    cobrancas,
+    cancel: () => cancelMutation.mutate(),
+    isCancelling: cancelMutation.isPending,
+  };
 }

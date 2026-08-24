@@ -195,11 +195,36 @@ export const getPolicySyncStatus = createServerFn({ method: "GET" }).middleware(
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await supabaseAdmin
       .from("policy_sync_runs")
-      .select("id, status, total_apolices, error_message, duration_ms, finished_at")
+      .select(
+        "id, status, total_apolices, error_message, duration_ms, finished_at, emissoes_status, emissoes_finished_at, cobrancas_status, cobrancas_finished_at, cobrancas_total",
+      )
       .eq("id", data.runId)
       .maybeSingle();
     if (error) throw new Error(error.message);
     return row as PolicySyncStatus | null;
+  });
+
+export const cancelPolicySync = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { runId: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const now = new Date().toISOString();
+    const { error } = await supabaseAdmin
+      .from("policy_sync_runs")
+      .update({
+        status: "cancelled",
+        error_message: "Sincronização cancelada pelo usuário.",
+        finished_at: now,
+        emissoes_status: "cancelled",
+        cobrancas_status: "cancelled",
+        emissoes_finished_at: now,
+        cobrancas_finished_at: now,
+      } as never)
+      .eq("id", data.runId)
+      .eq("status", "running");
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const getLatestPolicySync = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
