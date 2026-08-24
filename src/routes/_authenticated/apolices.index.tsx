@@ -117,14 +117,32 @@ function ApolicesPage() {
         </div>
         <div className="flex flex-col items-start sm:items-end gap-1.5">
           <NextRunCountdown job="policy_sync" />
-          <button
-            onClick={() => runSync()}
-            disabled={isRunning}
-            className="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-primary text-primary-foreground text-[12.5px] font-semibold shadow-lg shadow-primary/10 hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <RefreshCw className={cn("h-3.5 w-3.5", isRunning && "animate-spin")} />
-            {isRunning ? "Sincronizando…" : "Sincronizar carteira"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => runSync()}
+              disabled={isRunning}
+              className="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-primary text-primary-foreground text-[12.5px] font-semibold shadow-lg shadow-primary/10 hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <RefreshCw className={cn("h-3.5 w-3.5", isRunning && "animate-spin")} />
+              {isRunning ? "Sincronizando…" : "Sincronizar carteira"}
+            </button>
+            {isRunning && (
+              <button
+                onClick={() => cancelSync()}
+                disabled={isCancelling}
+                className="inline-flex items-center gap-2 h-10 px-3 rounded-lg border border-border bg-card text-[12.5px] font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors disabled:opacity-60"
+              >
+                <X className="h-3.5 w-3.5" />
+                Cancelar
+              </button>
+            )}
+          </div>
+          {(isRunning || emissoes || cobrancas) && (
+            <div className="flex items-center gap-2 pt-0.5">
+              <LegIndicator label="Emissões" status={emissoes} />
+              <LegIndicator label="Cobranças" status={cobrancas} />
+            </div>
+          )}
         </div>
 
       </div>
