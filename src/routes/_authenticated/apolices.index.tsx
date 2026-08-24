@@ -1,7 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { memo, useMemo, useState } from "react";
-import { FileText, RefreshCw, Search } from "lucide-react";
-import { usePolicies, useLatestPolicySync, useRunPolicySync } from "@/hooks/use-policies";
+import { Check, FileText, RefreshCw, Search, X } from "lucide-react";
+import {
+  usePolicies,
+  useLatestPolicySync,
+  useRunPolicySync,
+  type LegStatus,
+} from "@/hooks/use-policies";
 import { NextRunCountdown } from "@/components/automation/next-run-countdown";
 
 import { formatDateTime, relativeTime } from "@/lib/format";
@@ -16,6 +21,42 @@ import {
 
 import { cn } from "@/lib/utils";
 import { VirtualList } from "@/components/ui/virtual-list";
+
+function LegIndicator({ label, status }: { label: string; status: LegStatus | null }) {
+  const done = status === "success";
+  const failed = status === "error";
+  const cancelled = status === "cancelled";
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 h-6 px-2 rounded-full border text-[11px] font-medium",
+        done
+          ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+          : failed
+            ? "border-destructive/40 bg-destructive/10 text-destructive"
+            : cancelled
+              ? "border-border bg-muted/50 text-muted-foreground"
+              : "border-warning/40 bg-warning/10 text-warning",
+      )}
+    >
+      {done ? (
+        <Check className="h-3 w-3" />
+      ) : (
+        <span
+          className={cn(
+            "inline-block h-1.5 w-1.5 rounded-full",
+            failed
+              ? "bg-destructive"
+              : cancelled
+                ? "bg-muted-foreground"
+                : "bg-warning animate-pulse",
+          )}
+        />
+      )}
+      {label}
+    </span>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/apolices/")({
   head: () => ({
@@ -44,7 +85,14 @@ function ApolicesPage() {
   const [sort, setSort] = useState("atualizado");
   const { data: policies, isLoading } = usePolicies();
   const { data: lastSync } = useLatestPolicySync();
-  const { mutate: runSync, isRunning } = useRunPolicySync();
+  const {
+    mutate: runSync,
+    isRunning,
+    emissoes,
+    cobrancas,
+    cancel: cancelSync,
+    isCancelling,
+  } = useRunPolicySync();
   const { map: billingTags, infoMap: billingInfo } = useBillingTagMap();
 
   const filtered = useMemo(() => {
